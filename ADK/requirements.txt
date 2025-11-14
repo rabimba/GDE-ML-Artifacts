@@ -1,0 +1,4 @@
+# Top-level dependencies
+google-adk==1.18.0
+google-generativeai==0.5.4
+streamlit==1.33.0
