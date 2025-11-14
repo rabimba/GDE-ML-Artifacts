@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google ADK Multi-Agent Capabilities Demo</title>
+    <style>
+:root {
+  --color-white: rgba(255, 255, 255, 1);
+  --color-black: rgba(0, 0, 0, 1);
+  --color-cream-50: rgba(252, 252, 249, 1);
+  --color-cream-100: rgba(255, 255, 253, 1);
+  --color-gray-200: rgba(245, 245, 245, 1);
+  --color-gray-300: rgba(167, 169, 169, 1);
+  --color-gray-400: rgba(119, 124, 124, 1);
+  --color-slate-500: rgba(98, 108, 113, 1);
+  --color-brown-600: rgba(94, 82, 64, 1);
+  --color-charcoal-700: rgba(31, 33, 33, 1);
+  --color-charcoal-800: rgba(38, 40, 40, 1);
+  --color-slate-900: rgba(19, 52, 59, 1);
+  --color-teal-300: rgba(50, 184, 198, 1);
+  --color-teal-400: rgba(45, 166, 178, 1);
+  --color-teal-500: rgba(33, 128, 141, 1);
+  --color-teal-600: rgba(29, 116, 128, 1);
+  --color-teal-700: rgba(26, 104, 115, 1);
+  --color-teal-800: rgba(41, 150, 161, 1);
+  --color-red-400: rgba(255, 84, 89, 1);
+  --color-red-500: rgba(192, 21, 47, 1);
+  --color-orange-400: rgba(230, 129, 97, 1);
+  --color-orange-500: rgba(168, 75, 47, 1);
+  --color-brown-600-rgb: 94, 82, 64;
+  --color-teal-500-rgb: 33, 128, 141;
+  --color-slate-900-rgb: 19, 52, 59;
+  --color-slate-500-rgb: 98, 108, 113;
+  --color-red-500-rgb: 192, 21, 47;
+  --color-red-400-rgb: 255, 84, 89;
+  --color-orange-500-rgb: 168, 75, 47;
+  --color-orange-400-rgb: 230, 129, 97;
+  --color-bg-1: rgba(59, 130, 246, 0.08);
+  --color-bg-2: rgba(245, 158, 11, 0.08);
+  --color-bg-3: rgba(34, 197, 94, 0.08);
+  --color-bg-4: rgba(239, 68, 68, 0.08);
+  --color-bg-5: rgba(147, 51, 234, 0.08);
+  --color-bg-6: rgba(249, 115, 22, 0.08);
+  --color-bg-7: rgba(236, 72, 153, 0.08);
+  --color-bg-8: rgba(6, 182, 212, 0.08);
+  --color-background: var(--color-cream-50);
+  --color-surface: var(--color-cream-100);
+  --color-text: var(--color-slate-900);
+  --color-text-secondary: var(--color-slate-500);
+  --color-primary: var(--color-teal-500);
+  --color-primary-hover: var(--color-teal-600);
+  --color-primary-active: var(--color-teal-700);
+  --color-secondary: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-secondary-hover: rgba(var(--color-brown-600-rgb), 0.2);
+  --color-secondary-active: rgba(var(--color-brown-600-rgb), 0.25);
+  --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+  --color-btn-primary-text: var(--color-cream-50);
+  --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-card-border-inner: rgba(var(--color-brown-600-rgb), 0.12);
+  --color-error: var(--color-red-500);
+  --color-success: var(--color-teal-500);
+  --color-warning: var(--color-orange-500);
+  --color-info: var(--color-slate-500);
+  --color-focus-ring: rgba(var(--color-teal-500-rgb), 0.4);
+  --color-select-caret: rgba(var(--color-slate-900-rgb), 0.8);
+  --focus-ring: 0 0 0 3px var(--color-focus-ring);
+  --focus-outline: 2px solid var(--color-primary);
+  --status-bg-opacity: 0.15;
+  --status-border-opacity: 0.25;
+  --color-success-rgb: 33, 128, 141;
+  --color-error-rgb: 192, 21, 47;
+  --color-warning-rgb: 168, 75, 47;
+  --color-info-rgb: 98, 108, 113;
+  --font-family-base: "FKGroteskNeue", "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 30px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 550;
+  --font-weight-bold: 600;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --letter-spacing-tight: -0.01em;
+  --space-0: 0;
+  --space-1: 1px;
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --radius-sm: 6px;
+  --radius-base: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-inset-sm: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  --google-blue: #4285F4;
+  --google-red: #EA4335;
+  --google-yellow: #FBBC04;
+  --google-green: #34A853;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-gray-400-rgb: 119, 124, 124;
+    --color-teal-300-rgb: 50, 184, 198;
+    --color-gray-300-rgb: 167, 169, 169;
+    --color-gray-200-rgb: 245, 245, 245;
+    --color-bg-1: rgba(29, 78, 216, 0.15);
+    --color-bg-2: rgba(180, 83, 9, 0.15);
+    --color-bg-3: rgba(21, 128, 61, 0.15);
+    --color-bg-4: rgba(185, 28, 28, 0.15);
+    --color-bg-5: rgba(107, 33, 168, 0.15);
+    --color-bg-6: rgba(194, 65, 12, 0.15);
+    --color-bg-7: rgba(190, 24, 93, 0.15);
+    --color-bg-8: rgba(8, 145, 178, 0.15);
+    --color-background: var(--color-charcoal-700);
+    --color-surface: var(--color-charcoal-800);
+    --color-text: var(--color-gray-200);
+    --color-text-secondary: rgba(var(--color-gray-300-rgb), 0.7);
+    --color-primary: var(--color-teal-300);
+    --color-primary-hover: var(--color-teal-400);
+    --color-primary-active: var(--color-teal-800);
+    --color-secondary: rgba(var(--color-gray-400-rgb), 0.15);
+    --color-secondary-hover: rgba(var(--color-gray-400-rgb), 0.25);
+    --color-secondary-active: rgba(var(--color-gray-400-rgb), 0.3);
+    --color-border: rgba(var(--color-gray-400-rgb), 0.3);
+    --color-error: var(--color-red-400);
+    --color-success: var(--color-teal-300);
+    --color-warning: var(--color-orange-400);
+    --color-info: var(--color-gray-300);
+    --color-focus-ring: rgba(var(--color-teal-300-rgb), 0.4);
+    --color-btn-primary-text: var(--color-slate-900);
+    --color-card-border: rgba(var(--color-gray-400-rgb), 0.2);
+    --color-card-border-inner: rgba(var(--color-gray-400-rgb), 0.15);
+    --shadow-inset-sm: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+    --color-success-rgb: var(--color-teal-300-rgb);
+    --color-error-rgb: var(--color-red-400-rgb);
+    --color-warning-rgb: var(--color-orange-400-rgb);
+    --color-info-rgb: var(--color-gray-300-rgb);
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-family-base);
+  background: var(--color-background);
+  color: var(--color-text);
+  line-height: var(--line-height-normal);
+  overflow-x: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--google-blue) 0%, var(--google-red) 25%, var(--google-yellow) 50%, var(--google-green) 100%);
+  color: white;
+  padding: var(--space-32) var(--space-24);
+  text-align: center;
+  position: relative;
+}
+
+.header h1 {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-12);
+  color: white;
+}
+
+.header p {
+  font-size: var(--font-size-lg);
+  opacity: 0.95;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.dark-mode-toggle {
+  position: absolute;
+  top: var(--space-16);
+  right: var(--space-16);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-full);
+  color: white;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  transition: background 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-16);
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: var(--space-16) var(--space-24);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab.active {
+  color: var(--color-primary);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-primary);
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-32) var(--space-24);
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.4s;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-24);
+  margin-top: var(--space-24);
+}
+
+.feature-card {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-16);
+}
+
+.feature-card h3 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-12);
+  color: var(--color-text);
+}
+
+.feature-card p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.agent-type-card {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+  transition: transform 0.3s;
+}
+
+.agent-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.agent-icon {
+  font-size: 40px;
+}
+
+.agent-header h3 {
+  font-size: var(--font-size-2xl);
+  color: var(--color-text);
+}
+
+.use-cases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+}
+
+.use-case-tag {
+  background: var(--color-bg-1);
+  padding: var(--space-6) var(--space-12);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.code-snippet {
+  display: none;
+  background: var(--color-charcoal-800);
+  color: var(--color-gray-200);
+  padding: var(--space-16);
+  border-radius: var(--radius-base);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  overflow-x: auto;
+  margin-top: var(--space-16);
+  white-space: pre;
+}
+
+.code-snippet.active {
+  display: block;
+  animation: fadeIn 0.3s;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-btn-primary-text);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background: var(--color-secondary-hover);
+}
+
+.workflow-pattern {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+}
+
+.workflow-pattern h3 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-12);
+  color: var(--color-text);
+}
+
+.workflow-visual {
+  margin: var(--space-24) 0;
+  padding: var(--space-32);
+  background: var(--color-bg-1);
+  border-radius: var(--radius-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  position: relative;
+  overflow: hidden;
+}
+
+.agent-node {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  display: inline-block;
+  margin: var(--space-8);
+  transition: transform 0.3s;
+}
+
+.agent-node:hover {
+  transform: scale(1.05);
+}
+
+.arrow {
+  color: var(--color-text-secondary);
+  font-size: 24px;
+  margin: 0 var(--space-8);
+}
+
+.comm-method-card {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+}
+
+.comm-method-card h3 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-12);
+  color: var(--color-text);
+}
+
+.demo-form {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-8);
+  color: var(--color-text);
+}
+
+.form-group input,
+.form-group select {
+  padding: var(--space-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-base);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.interests-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  margin-top: var(--space-8);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.agent-execution {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+  display: none;
+}
+
+.agent-execution.active {
+  display: block;
+  animation: fadeIn 0.4s;
+}
+
+.execution-stage {
+  margin-bottom: var(--space-24);
+}
+
+.stage-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-12);
+  color: var(--color-text);
+}
+
+.parallel-agents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-16);
+}
+
+.agent-box {
+  background: var(--color-bg-2);
+  padding: var(--space-16);
+  border-radius: var(--radius-base);
+  border: 2px solid transparent;
+  text-align: center;
+  transition: border-color 0.3s;
+}
+
+.agent-box.active {
+  border-color: var(--color-primary);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.agent-box.complete {
+  border-color: var(--color-success);
+  animation: none;
+}
+
+.spinner {
+  border: 3px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: var(--space-12) auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-16);
+  margin-bottom: var(--space-24);
+  display: none;
+}
+
+.results-grid.active {
+  display: grid;
+  animation: fadeIn 0.5s;
+}
+
+.result-card {
+  background: var(--color-surface);
+  padding: var(--space-20);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  transition: transform 0.3s;
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.result-card h4 {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-12);
+  color: var(--color-text);
+}
+
+.result-details {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+}
+
+.price-tag {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  margin-top: var(--space-12);
+}
+
+.execution-log {
+  background: var(--color-surface);
+  padding: var(--space-24);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-card-border);
+  margin-bottom: var(--space-24);
+  display: none;
+}
+
+.execution-log.active {
+  display: block;
+  animation: fadeIn 0.4s;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-16);
+  cursor: pointer;
+}
+
+.log-entry {
+  padding: var(--space-12);
+  border-left: 3px solid var(--color-border);
+  margin-bottom: var(--space-12);
+  background: var(--color-bg-1);
+  border-radius: var(--radius-sm);
+  animation: slideIn 0.3s;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.log-entry.processing {
+  border-left-color: var(--google-yellow);
+}
+
+.log-entry.complete {
+  border-left-color: var(--google-green);
+}
+
+.log-time {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  margin-right: var(--space-8);
+}
+
+.log-agent {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  margin-right: var(--space-8);
+}
+
+.log-message {
+  color: var(--color-text);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal.active {
+  display: flex;
+  animation: fadeIn 0.3s;
+}
+
+.modal-content {
+  background: var(--color-surface);
+  padding: var(--space-32);
+  border-radius: var(--radius-lg);
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-16);
+  right: var(--space-16);
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.modal-close:hover {
+  color: var(--color-text);
+}
+
+.info-button {
+  background: var(--color-bg-1);
+  border: none;
+  padding: var(--space-6) var(--space-12);
+  border-radius: var(--radius-base);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--space-12);
+  transition: background 0.3s;
+}
+
+.info-button:hover {
+  background: var(--color-bg-2);
+}
+
+.workflow-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.coordinator-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-24);
+}
+
+.specialists {
+  display: flex;
+  gap: var(--space-16);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.connection-line {
+  width: 2px;
+  height: 30px;
+  background: var(--color-border);
+}
+
+.parallel-visual {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.sequential-visual {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.total-cost {
+  background: var(--color-bg-3);
+  padding: var(--space-20);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  margin-top: var(--space-16);
+}
+
+.total-cost h3 {
+  font-size: var(--font-size-2xl);
+  color: var(--color-text);
+  margin-bottom: var(--space-8);
+}
+
+.total-amount {
+  font-size: var(--font-size-4xl);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.reset-button {
+  margin-top: var(--space-16);
+}
+
+.log-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.log-content.expanded {
+  max-height: 1000px;
+}
+
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tabs {
+    justify-content: flex-start;
+  }
+  
+  .header h1 {
+    font-size: var(--font-size-3xl);
+  }
+}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+        <h1>Google ADK Multi-Agent Capabilities Demo</h1>
+        <p>Explore the power of Google's Agent Development Kit with interactive multi-agent demonstrations</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('overview')">Overview</button>
+        <button class="tab" onclick="switchTab('agent-types')">Agent Types</button>
+        <button class="tab" onclick="switchTab('workflow-patterns')">Workflow Patterns</button>
+        <button class="tab" onclick="switchTab('communication')">Communication Methods</button>
+        <button class="tab" onclick="switchTab('demo')">Interactive Demo</button>
+    </div>
+
+    <div class="content">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <h2>What is Google ADK?</h2>
+            <p style="font-size: var(--font-size-lg); color: var(--color-text-secondary); margin: var(--space-20) 0;">Google's Agent Development Kit (ADK) is a comprehensive framework for building sophisticated multi-agent applications powered by Large Language Models. ADK enables developers to create scalable, modular AI systems with specialized agents working together seamlessly.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🏗️</div>
+                    <h3>Multi-Agent Architecture</h3>
+                    <p>Create modular, scalable applications with specialized agents working together</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧰</div>
+                    <h3>Rich Tool Ecosystem</h3>
+                    <p>Use pre-built tools, create custom functions, or integrate third-party tools</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Model Flexibility</h3>
+                    <p>Use Gemini, access Vertex AI Model Garden, or integrate other LLM providers</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <h3>Flexible Orchestration</h3>
+                    <p>Structured workflows or dynamic LLM-driven routing for adaptive behavior</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>Built-in Evaluation</h3>
+                    <p>Systematically assess agent performance and execution trajectories</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Deployment Ready</h3>
+                    <p>Containerize and deploy anywhere - local, Cloud Run, or Vertex AI</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Types Tab -->
+        <div id="agent-types" class="tab-content">
+            <h2>Agent Types in Google ADK</h2>
+            <p style="color: var(--color-text-secondary); margin: var(--space-16) 0;">ADK provides different agent types to handle various use cases and execution patterns.</p>
+
+            <div class="agent-type-card" id="llm-agent-card">
+                <div class="agent-header">
+                    <div class="agent-icon">🧠</div>
+                    <div>
+                        <h3>LLM Agent</h3>
+                        <p style="color: var(--color-text-secondary);">Powered by LLMs like Gemini to understand natural language, reason, and make decisions</p>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <span class="use-case-tag">Question answering</span>
+                    <span class="use-case-tag">Content generation</span>
+                    <span class="use-case-tag">Data analysis</span>
+                    <span class="use-case-tag">Decision making</span>
+                </div>
+                <button class="info-button" onclick="toggleCode('llm-code')">View Code Example</button>
+                <div id="llm-code" class="code-snippet">from google.adk.agents import LlmAgent
+
+agent = LlmAgent(
+  name="assistant",
+  model="gemini-2.5-flash",
+  instruction="You are a helpful assistant",
+  tools=[google_search]
+)</div>
+            </div>
+
+            <div class="agent-type-card">
+                <div class="agent-header">
+                    <div class="agent-icon">🔀</div>
+                    <div>
+                        <h3>Workflow Agents</h3>
+                        <p style="color: var(--color-text-secondary);">Orchestrate multiple agents with different execution patterns</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: var(--space-24);">
+                    <h4 style="margin-bottom: var(--space-12); color: var(--color-text);">➡️ Sequential Agent</h4>
+                    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-12);">Executes sub-agents one after another in a fixed order</p>
+                    <div class="use-cases">
+                        <span class="use-case-tag">Step-by-step pipelines</span>
+                        <span class="use-case-tag">Data processing workflows</span>
+                        <span class="use-case-tag">Multi-stage analysis</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--space-24);">
+                    <h4 style="margin-bottom: var(--space-12); color: var(--color-text);">⚡ Parallel Agent</h4>
+                    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-12);">Executes multiple sub-agents concurrently for speed</p>
+                    <div class="use-cases">
+                        <span class="use-case-tag">Independent data fetching</span>
+                        <span class="use-case-tag">Simultaneous API calls</span>
+                        <span class="use-case-tag">Concurrent processing</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--space-24);">
+                    <h4 style="margin-bottom: var(--space-12); color: var(--color-text);">🔄 Loop Agent</h4>
+                    <p style="color: var(--color-text-secondary); margin-bottom: var(--space-12);">Repeatedly executes sub-agents until condition is met</p>
+                    <div class="use-cases">
+                        <span class="use-case-tag">Iterative refinement</span>
+                        <span class="use-case-tag">Polling operations</span>
+                        <span class="use-case-tag">Retry logic</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-type-card">
+                <div class="agent-header">
+                    <div class="agent-icon">⚙️</div>
+                    <div>
+                        <h3>Custom Agent</h3>
+                        <p style="color: var(--color-text-secondary);">User-defined agents with specialized non-LLM logic</p>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <span class="use-case-tag">API integrations</span>
+                    <span class="use-case-tag">Data transformations</span>
+                    <span class="use-case-tag">Custom business logic</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Patterns Tab -->
+        <div id="workflow-patterns" class="tab-content">
+            <h2>Workflow Patterns</h2>
+            <p style="color: var(--color-text-secondary); margin: var(--space-16) 0;">Discover how to orchestrate multiple agents with different execution patterns.</p>
+
+            <div class="workflow-pattern">
+                <h3>🎯 Coordinator/Dispatcher Pattern</h3>
+                <p style="color: var(--color-text-secondary);">Central agent routes requests to specialized sub-agents</p>
+                <div class="workflow-visual">
+                    <div class="coordinator-visual">
+                        <div class="agent-node">Coordinator Agent</div>
+                        <div class="specialists">
+                            <div class="agent-node">Billing Specialist</div>
+                            <div class="agent-node">Technical Support</div>
+                            <div class="agent-node">General Info</div>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top: var(--space-16); color: var(--color-text-secondary);"><strong>Example:</strong> Help desk routing billing and technical support</p>
+                <button class="info-button" onclick="showModal('coordinator')">Learn More</button>
+            </div>
+
+            <div class="workflow-pattern">
+                <h3>➡️ Sequential Workflow</h3>
+                <p style="color: var(--color-text-secondary);">Agents execute in predetermined order</p>
+                <div class="workflow-visual">
+                    <div class="sequential-visual">
+                        <div class="agent-node">Data Collection</div>
+                        <span class="arrow">→</span>
+                        <div class="agent-node">Analysis</div>
+                        <span class="arrow">→</span>
+                        <div class="agent-node">Synthesis</div>
+                        <span class="arrow">→</span>
+                        <div class="agent-node">Report</div>
+                    </div>
+                </div>
+                <p style="margin-top: var(--space-16); color: var(--color-text-secondary);"><strong>Example:</strong> Research → Analyze → Summarize → Report</p>
+                <button class="info-button" onclick="showModal('sequential')">Learn More</button>
+            </div>
+
+            <div class="workflow-pattern">
+                <h3>⚡ Parallel Workflow</h3>
+                <p style="color: var(--color-text-secondary);">Multiple agents execute simultaneously</p>
+                <div class="workflow-visual">
+                    <div class="parallel-visual">
+                        <div class="agent-node">Root</div>
+                        <span class="arrow">→</span>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-8);">
+                            <div class="agent-node">Flight Search</div>
+                            <div class="agent-node">Hotel Search</div>
+                            <div class="agent-node">Activities Search</div>
+                        </div>
+                        <span class="arrow">→</span>
+                        <div class="agent-node">Merge Results</div>
+                    </div>
+                </div>
+                <p style="margin-top: var(--space-16); color: var(--color-text-secondary);"><strong>Example:</strong> Fetch flight, hotel, and activity data concurrently</p>
+                <button class="info-button" onclick="showModal('parallel')">Learn More</button>
+            </div>
+
+            <div class="workflow-pattern">
+                <h3>🌲 Hierarchical Pattern</h3>
+                <p style="color: var(--color-text-secondary);">Parent agents manage child agents in tree structure</p>
+                <div class="workflow-visual">
+                    <div class="coordinator-visual">
+                        <div class="agent-node">Root Coordinator</div>
+                        <div class="specialists">
+                            <div class="agent-node">Flight Manager</div>
+                            <div class="agent-node">Hotel Manager</div>
+                            <div class="agent-node">Activities Manager</div>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin-top: var(--space-16); color: var(--color-text-secondary);"><strong>Example:</strong> Travel planner with specialized sub-agents</p>
+                <button class="info-button" onclick="showModal('hierarchical')">Learn More</button>
+            </div>
+        </div>
+
+        <!-- Communication Methods Tab -->
+        <div id="communication" class="tab-content">
+            <h2>Communication Methods</h2>
+            <p style="color: var(--color-text-secondary); margin: var(--space-16) 0;">Learn how agents communicate and share information.</p>
+
+            <div class="comm-method-card">
+                <h3>📦 Shared State</h3>
+                <p style="color: var(--color-text-secondary); margin: var(--space-12) 0;">Agents communicate through shared session state</p>
+                <p style="margin: var(--space-12) 0;"><strong>How it works:</strong> One agent writes to state, another reads from it</p>
+                <button class="info-button" onclick="toggleCode('shared-state-code')">View Code Example</button>
+                <div id="shared-state-code" class="code-snippet"># Agent 1 writes
+context.state['data'] = processed_data
+
+# Agent 2 reads
+data = context.state.get('data')</div>
+            </div>
+
+            <div class="comm-method-card">
+                <h3>🔀 LLM-Driven Delegation</h3>
+                <p style="color: var(--color-text-secondary); margin: var(--space-12) 0;">LLM decides which sub-agent to route to</p>
+                <p style="margin: var(--space-12) 0;"><strong>How it works:</strong> Parent agent's LLM generates transfer_to_agent() call</p>
+                
+                <div style="margin-top: var(--space-16); background: var(--color-bg-1); padding: var(--space-16); border-radius: var(--radius-base);">
+                    <p style="font-weight: var(--font-weight-semibold); margin-bottom: var(--space-12);">Example Routing:</p>
+                    <div style="margin-bottom: var(--space-12);">
+                        <span style="color: var(--color-text-secondary);">"Book a flight to Paris"</span> → <span style="color: var(--color-primary); font-weight: var(--font-weight-semibold);">Flight Booking Agent</span>
+                    </div>
+                    <div style="margin-bottom: var(--space-12);">
+                        <span style="color: var(--color-text-secondary);">"My payment failed"</span> → <span style="color: var(--color-primary); font-weight: var(--font-weight-semibold);">Billing Agent</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--color-text-secondary);">"I can't log in"</span> → <span style="color: var(--color-primary); font-weight: var(--font-weight-semibold);">Technical Support Agent</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comm-method-card">
+                <h3>🔧 Agent as Tool</h3>
+                <p style="color: var(--color-text-secondary); margin: var(--space-12) 0;">Agents wrapped as tools for parent agent</p>
+                <p style="margin: var(--space-12) 0;"><strong>How it works:</strong> Parent calls AgentTool which executes sub-agent</p>
+                
+                <div style="margin-top: var(--space-16);">
+                    <p style="font-weight: var(--font-weight-semibold); margin-bottom: var(--space-12);">Benefits:</p>
+                    <div class="use-cases">
+                        <span class="use-case-tag">Modular design</span>
+                        <span class="use-case-tag">Reusable components</span>
+                        <span class="use-case-tag">Clear interfaces</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Demo Tab -->
+        <div id="demo" class="tab-content">
+            <h2>Interactive Travel Planning Demo</h2>
+            <p style="color: var(--color-text-secondary); margin: var(--space-16) 0;">Experience a multi-agent system in action! Plan a trip and watch as specialized agents work in parallel to find flights, hotels, and activities.</p>
+
+            <div class="demo-form">
+                <h3 style="margin-bottom: var(--space-16);">Plan Your Trip</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Destination</label>
+                        <input type="text" id="destination" placeholder="e.g., Paris, Tokyo, New York" value="Paris">
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Date</label>
+                        <input type="date" id="departure-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Return Date</label>
+                        <input type="date" id="return-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Budget ($)</label>
+                        <input type="number" id="budget" placeholder="2000" value="2000" min="500" max="10000">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-top: var(--space-16);">
+                    <label>Interests</label>
+                    <div class="interests-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="adventure" checked>
+                            <span>Adventure</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="culture" checked>
+                            <span>Culture</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="relaxation">
+                            <span>Relaxation</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="food" checked>
+                            <span>Food</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="planTrip()" style="margin-top: var(--space-20); padding: var(--space-12) var(--space-32); font-size: var(--font-size-lg);">🚀 Plan My Trip</button>
+            </div>
+
+            <div id="agent-execution" class="agent-execution">
+                <div class="execution-stage">
+                    <div class="stage-title">Step 1: Coordinator Analysis</div>
+                    <div class="agent-box" id="coordinator-box">
+                        <div style="font-weight: var(--font-weight-semibold);">Root Coordinator</div>
+                        <div id="coordinator-status" style="color: var(--color-text-secondary); margin-top: var(--space-8);">Analyzing request...</div>
+                    </div>
+                </div>
+
+                <div class="execution-stage" style="margin-top: var(--space-24);">
+                    <div class="stage-title">Step 2: Parallel Agent Execution</div>
+                    <div class="parallel-agents">
+                        <div class="agent-box" id="flight-box">
+                            <div style="font-weight: var(--font-weight-semibold);">✈️ Flight Agent</div>
+                            <div id="flight-spinner" class="spinner" style="display: none;"></div>
+                            <div id="flight-status" style="color: var(--color-text-secondary); margin-top: var(--space-8);">Waiting...</div>
+                        </div>
+                        <div class="agent-box" id="hotel-box">
+                            <div style="font-weight: var(--font-weight-semibold);">🏨 Hotel Agent</div>
+                            <div id="hotel-spinner" class="spinner" style="display: none;"></div>
+                            <div id="hotel-status" style="color: var(--color-text-secondary); margin-top: var(--space-8);">Waiting...</div>
+                        </div>
+                        <div class="agent-box" id="activities-box">
+                            <div style="font-weight: var(--font-weight-semibold);">🎯 Activities Agent</div>
+                            <div id="activities-spinner" class="spinner" style="display: none;"></div>
+                            <div id="activities-status" style="color: var(--color-text-secondary); margin-top: var(--space-8);">Waiting...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="execution-stage" style="margin-top: var(--space-24);">
+                    <div class="stage-title">Step 3: Results Summary</div>
+                    <div class="agent-box" id="summary-box">
+                        <div style="font-weight: var(--font-weight-semibold);">Summary Agent</div>
+                        <div id="summary-status" style="color: var(--color-text-secondary); margin-top: var(--space-8);">Waiting...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results" class="results-grid">
+                <!-- Results will be dynamically inserted here -->
+            </div>
+
+            <div id="total-cost" style="display: none;">
+                <div class="total-cost">
+                    <h3>Total Estimated Cost</h3>
+                    <div class="total-amount" id="total-amount">$0</div>
+                </div>
+                <button class="btn btn-secondary reset-button" onclick="resetDemo()">🔄 Plan Another Trip</button>
+            </div>
+
+            <div id="execution-log" class="execution-log">
+                <div class="log-header" onclick="toggleLog()">
+                    <h3>Execution Log</h3>
+                    <span id="log-toggle">▼ Expand</span>
+                </div>
+                <div id="log-content" class="log-content">
+                    <!-- Log entries will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let darkMode = false;
+        let logExpanded = false;
+
+        // Initialize dates
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const twoWeeks = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('departure-date').value = nextWeek.toISOString().split('T')[0];
+            document.getElementById('return-date').value = twoWeeks.toISOString().split('T')[0];
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.style.filter = darkMode ? 'invert(1) hue-rotate(180deg)' : 'none';
+        }
+
+        // Code snippet toggle
+        function toggleCode(id) {
+            const codeBlock = document.getElementById(id);
+            codeBlock.classList.toggle('active');
+        }
+
+        // Modal functions
+        function showModal(type) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            const content = {
+                coordinator: {
+                    title: 'Coordinator/Dispatcher Pattern',
+                    description: 'The coordinator pattern uses a central agent to analyze incoming requests and route them to specialized sub-agents based on the request type. This pattern is ideal for scenarios where different types of requests require different expertise.',
+                    benefits: ['Clear separation of concerns', 'Easy to add new specialists', 'Centralized routing logic', 'Efficient resource utilization'],
+                    useCase: 'Perfect for customer service systems, multi-domain query handling, or any scenario requiring intelligent request routing.'
+                },
+                sequential: {
+                    title: 'Sequential Workflow',
+                    description: 'Sequential workflows execute agents in a predetermined order, where each agent builds upon the results of the previous one. This pattern ensures a logical flow of data processing and transformation.',
+                    benefits: ['Predictable execution order', 'Easy to debug and monitor', 'Clear data dependencies', 'Simple to implement'],
+                    useCase: 'Ideal for data processing pipelines, report generation, multi-stage analysis, or any workflow with clear sequential dependencies.'
+                },
+                parallel: {
+                    title: 'Parallel Workflow',
+                    description: 'Parallel workflows execute multiple agents simultaneously, significantly reducing total execution time. This pattern is perfect when agents have independent tasks that don\'t depend on each other.',
+                    benefits: ['Faster execution time', 'Efficient resource usage', 'Independent task processing', 'Scalable performance'],
+                    useCase: 'Best for fetching data from multiple sources, concurrent API calls, or any scenario where tasks can run independently.'
+                },
+                hierarchical: {
+                    title: 'Hierarchical Pattern',
+                    description: 'Hierarchical patterns organize agents in a tree structure with parent agents managing child agents. This creates a clear organizational hierarchy and enables sophisticated delegation strategies.',
+                    benefits: ['Clear organizational structure', 'Modular agent design', 'Easy to scale and extend', 'Reusable sub-agents'],
+                    useCase: 'Perfect for complex systems requiring multiple levels of specialization, enterprise applications, or large-scale agent orchestration.'
+                }
+            };
+
+            const info = content[type];
+            modalBody.innerHTML = `
+                <h2 style="margin-bottom: var(--space-16); color: var(--color-text);">${info.title}</h2>
+                <p style="color: var(--color-text-secondary); margin-bottom: var(--space-20); line-height: 1.6;">${info.description}</p>
+                
+                <h3 style="margin-bottom: var(--space-12); color: var(--color-text);">Key Benefits:</h3>
+                <ul style="color: var(--color-text-secondary); margin-bottom: var(--space-20); padding-left: var(--space-20); line-height: 1.8;">
+                    ${info.benefits.map(b => `<li>${b}</li>`).join('')}
+                </ul>
+                
+                <h3 style="margin-bottom: var(--space-12); color: var(--color-text);">Use Case:</h3>
+                <p style="color: var(--color-text-secondary); line-height: 1.6;">${info.useCase}</p>
+            `;
+            
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Log toggle
+        function toggleLog() {
+            logExpanded = !logExpanded;
+            const logContent = document.getElementById('log-content');
+            const logToggle = document.getElementById('log-toggle');
+            
+            if (logExpanded) {
+                logContent.classList.add('expanded');
+                logToggle.textContent = '▲ Collapse';
+            } else {
+                logContent.classList.remove('expanded');
+                logToggle.textContent = '▼ Expand';
+            }
+        }
+
+        // Add log entry
+        function addLogEntry(time, agent, message, status) {
+            const logContent = document.getElementById('log-content');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${status}`;
+            entry.innerHTML = `
+                <span class="log-time">[${time}ms]</span>
+                <span class="log-agent">[${agent}]</span>
+                <span class="log-message">${message}</span>
+            `;
+            logContent.appendChild(entry);
+        }
+
+        // Mock data
+        const mockFlights = [
+            { airline: 'SkyWings Airlines', departure: '10:30 AM', arrival: '2:45 PM', duration: '4h 15m', priceBase: 350, type: 'Economy' },
+            { airline: 'Global Express', departure: '2:15 PM', arrival: '6:30 PM', duration: '4h 15m', priceBase: 425, type: 'Business' },
+            { airline: 'AirRoute', departure: '6:00 PM', arrival: '10:20 PM', duration: '4h 20m', priceBase: 285, type: 'Economy' }
+        ];
+
+        const mockHotels = [
+            { name: 'Grand Plaza Hotel', rating: 4.5, priceBase: 180, amenities: ['Free WiFi', 'Pool', 'Gym', 'Restaurant'], location: 'City Center' },
+            { name: 'Seaside Resort & Spa', rating: 4.8, priceBase: 250, amenities: ['Beach Access', 'Spa', 'Free Breakfast', 'Ocean View'], location: 'Beachfront' },
+            { name: 'Budget Inn Express', rating: 4.0, priceBase: 95, amenities: ['Free WiFi', 'Parking', 'Continental Breakfast'], location: 'Airport Area' }
+        ];
+
+        const mockActivities = {
+            adventure: [
+                { name: 'Zip Line Adventure', duration: '3 hours', price: 75, description: 'Soar through the canopy on thrilling zip lines' },
+                { name: 'Scuba Diving Expedition', duration: '4 hours', price: 120, description: 'Explore underwater reefs with certified instructors' }
+            ],
+            culture: [
+                { name: 'Historical City Walking Tour', duration: '2.5 hours', price: 35, description: 'Discover local history and architecture' },
+                { name: 'Museum of Art Visit', duration: '2 hours', price: 25, description: 'World-class art collection spanning centuries' }
+            ],
+            relaxation: [
+                { name: 'Sunset Beach Yoga', duration: '1.5 hours', price: 30, description: 'Peaceful yoga session with ocean views' },
+                { name: 'Spa Day Package', duration: '3 hours', price: 150, description: 'Full relaxation with massage and treatments' }
+            ],
+            food: [
+                { name: 'Culinary Walking Tour', duration: '3 hours', price: 65, description: 'Taste authentic local cuisine at 6 locations' },
+                { name: 'Cooking Class Experience', duration: '2.5 hours', price: 55, description: 'Learn to cook traditional dishes with a chef' }
+            ]
+        };
+
+        // Main trip planning function
+        async function planTrip() {
+            const destination = document.getElementById('destination').value || 'Paris';
+            const budget = parseInt(document.getElementById('budget').value) || 2000;
+            const interests = {
+                adventure: document.getElementById('adventure').checked,
+                culture: document.getElementById('culture').checked,
+                relaxation: document.getElementById('relaxation').checked,
+                food: document.getElementById('food').checked
+            };
+
+            // Reset previous results
+            resetDemo(false);
+
+            // Show execution section
+            document.getElementById('agent-execution').classList.add('active');
+            document.getElementById('execution-log').classList.add('active');
+            document.getElementById('log-content').innerHTML = '';
+
+            // Step 1: Coordinator analysis
+            addLogEntry(0, 'Root Coordinator', 'Analyzing travel request...', 'processing');
+            document.getElementById('coordinator-box').classList.add('active');
+            document.getElementById('coordinator-status').textContent = 'Analyzing request...';
+
+            await sleep(500);
+            
+            const interestsStr = Object.keys(interests).filter(k => interests[k]).join(', ');
+            addLogEntry(250, 'Root Coordinator', `Request parsed: destination=${destination}, budget=$${budget}`, 'complete');
+            document.getElementById('coordinator-status').textContent = 'Analysis complete ✓';
+            document.getElementById('coordinator-box').classList.remove('active');
+            document.getElementById('coordinator-box').classList.add('complete');
+
+            await sleep(300);
+
+            // Step 2: Route to parallel agents
+            addLogEntry(300, 'Root Coordinator', 'Routing to specialized agents (parallel execution)...', 'processing');
+            
+            await sleep(300);
+            
+            // Start parallel execution
+            addLogEntry(350, 'Flight Agent', `Searching for flights to ${destination}...`, 'processing');
+            addLogEntry(350, 'Hotel Agent', 'Finding hotels within budget range...', 'processing');
+            addLogEntry(350, 'Activities Agent', `Curating activities based on interests: ${interestsStr}...`, 'processing');
+
+            // Show all agents as active
+            document.getElementById('flight-box').classList.add('active');
+            document.getElementById('hotel-box').classList.add('active');
+            document.getElementById('activities-box').classList.add('active');
+            
+            document.getElementById('flight-spinner').style.display = 'block';
+            document.getElementById('hotel-spinner').style.display = 'block';
+            document.getElementById('activities-spinner').style.display = 'block';
+            
+            document.getElementById('flight-status').textContent = 'Searching flights...';
+            document.getElementById('hotel-status').textContent = 'Finding hotels...';
+            document.getElementById('activities-status').textContent = 'Curating activities...';
+
+            // Simulate parallel completion
+            await sleep(850);
+            
+            // Flight agent completes
+            addLogEntry(1200, 'Flight Agent', 'Found 3 flight options', 'complete');
+            document.getElementById('flight-box').classList.remove('active');
+            document.getElementById('flight-box').classList.add('complete');
+            document.getElementById('flight-spinner').style.display = 'none';
+            document.getElementById('flight-status').textContent = 'Complete ✓';
+
+            await sleep(200);
+
+            // Hotel agent completes
+            addLogEntry(1400, 'Hotel Agent', 'Found 3 hotel recommendations', 'complete');
+            document.getElementById('hotel-box').classList.remove('active');
+            document.getElementById('hotel-box').classList.add('complete');
+            document.getElementById('hotel-spinner').style.display = 'none';
+            document.getElementById('hotel-status').textContent = 'Complete ✓';
+
+            await sleep(200);
+
+            // Activities agent completes
+            const activityCount = Object.values(interests).filter(v => v).length * 2;
+            addLogEntry(1600, 'Activities Agent', `Curated ${activityCount} activities matching preferences`, 'complete');
+            document.getElementById('activities-box').classList.remove('active');
+            document.getElementById('activities-box').classList.add('complete');
+            document.getElementById('activities-spinner').style.display = 'none';
+            document.getElementById('activities-status').textContent = 'Complete ✓';
+
+            await sleep(250);
+
+            // Step 3: Summary agent
+            addLogEntry(1650, 'Summary Agent', 'Combining results from all agents...', 'processing');
+            document.getElementById('summary-box').classList.add('active');
+            document.getElementById('summary-status').textContent = 'Combining results...';
+
+            await sleep(300);
+
+            addLogEntry(1900, 'Summary Agent', 'Travel plan generated successfully!', 'complete');
+            document.getElementById('summary-box').classList.remove('active');
+            document.getElementById('summary-box').classList.add('complete');
+            document.getElementById('summary-status').textContent = 'Complete ✓';
+
+            // Display results
+            displayResults(destination, budget, interests);
+        }
+
+        function displayResults(destination, budget, interests) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            let totalCost = 0;
+
+            // Calculate trip duration
+            const departureDate = new Date(document.getElementById('departure-date').value);
+            const returnDate = new Date(document.getElementById('return-date').value);
+            const nights = Math.ceil((returnDate - departureDate) / (1000 * 60 * 60 * 24));
+
+            // Display flights
+            const flightOptions = mockFlights.map(flight => {
+                const price = Math.round(flight.priceBase * (1 + Math.random() * 0.2));
+                return { ...flight, price };
+            }).sort((a, b) => a.price - b.price);
+
+            flightOptions.forEach((flight, index) => {
+                if (index === 0) totalCost += flight.price * 2; // Round trip
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <h4>✈️ ${flight.airline}</h4>
+                    <div class="result-details">
+                        <div>${flight.departure} - ${flight.arrival}</div>
+                        <div>Duration: ${flight.duration}</div>
+                        <div>Class: ${flight.type}</div>
+                    </div>
+                    <div class="price-tag">$${flight.price} ${index === 0 ? '(Selected)' : ''}</div>
+                `;
+                resultsDiv.appendChild(card);
+            });
+
+            // Display hotels
+            const hotelOptions = mockHotels.map(hotel => {
+                const pricePerNight = Math.round(hotel.priceBase * (budget / 2000));
+                const totalPrice = pricePerNight * nights;
+                return { ...hotel, pricePerNight, totalPrice };
+            }).filter(h => h.totalPrice <= budget * 0.5).sort((a, b) => b.rating - a.rating);
+
+            hotelOptions.forEach((hotel, index) => {
+                if (index === 0) totalCost += hotel.totalPrice;
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <h4>🏨 ${hotel.name}</h4>
+                    <div class="result-details">
+                        <div>⭐ ${hotel.rating} Rating</div>
+                        <div>📍 ${hotel.location}</div>
+                        <div>🛏️ ${nights} nights</div>
+                        <div style="margin-top: 8px;">${hotel.amenities.slice(0, 3).join(' • ')}</div>
+                    </div>
+                    <div class="price-tag">$${hotel.totalPrice} ${index === 0 ? '(Selected)' : ''}</div>
+                `;
+                resultsDiv.appendChild(card);
+            });
+
+            // Display activities
+            const selectedActivities = [];
+            Object.keys(interests).forEach(interest => {
+                if (interests[interest] && mockActivities[interest]) {
+                    selectedActivities.push(...mockActivities[interest]);
+                }
+            });
+
+            selectedActivities.slice(0, 4).forEach(activity => {
+                totalCost += activity.price;
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <h4>🎯 ${activity.name}</h4>
+                    <div class="result-details">
+                        <div>⏱️ ${activity.duration}</div>
+                        <div>${activity.description}</div>
+                    </div>
+                    <div class="price-tag">$${activity.price}</div>
+                `;
+                resultsDiv.appendChild(card);
+            });
+
+            // Show results
+            resultsDiv.classList.add('active');
+            
+            // Show total cost
+            document.getElementById('total-amount').textContent = `$${totalCost.toLocaleString()}`;
+            document.getElementById('total-cost').style.display = 'block';
+        }
+
+        function resetDemo(scrollToTop = true) {
+            // Hide execution and results
+            document.getElementById('agent-execution').classList.remove('active');
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('execution-log').classList.remove('active');
+            document.getElementById('total-cost').style.display = 'none';
+            
+            // Reset all agent boxes
+            ['coordinator-box', 'flight-box', 'hotel-box', 'activities-box', 'summary-box'].forEach(id => {
+                const box = document.getElementById(id);
+                box.classList.remove('active', 'complete');
+            });
+            
+            // Reset statuses
+            document.getElementById('coordinator-status').textContent = 'Analyzing request...';
+            document.getElementById('flight-status').textContent = 'Waiting...';
+            document.getElementById('hotel-status').textContent = 'Waiting...';
+            document.getElementById('activities-status').textContent = 'Waiting...';
+            document.getElementById('summary-status').textContent = 'Waiting...';
+            
+            // Hide spinners
+            document.getElementById('flight-spinner').style.display = 'none';
+            document.getElementById('hotel-spinner').style.display = 'none';
+            document.getElementById('activities-spinner').style.display = 'none';
+            
+            // Clear log
+            document.getElementById('log-content').innerHTML = '';
+            logExpanded = false;
+            document.getElementById('log-toggle').textContent = '▼ Expand';
+            document.getElementById('log-content').classList.remove('expanded');
+            
+            if (scrollToTop) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
