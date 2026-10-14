@@ -139,7 +139,7 @@ SLIDES_DATA = [
             },
             {
                 "num": "4",
-                "title": "Cloud Run & Guardrails\n(01:02 – 01:15)",
+                "title": "Cloud Run & Guardrails\n(01:02 – 01:10)",
                 "body": "Switch to /fast mode to containerize and deploy to Cloud Run, then try to break our 'Strictly No Dogs (Capybaras OK)' guardrail!",
                 "highlight": True,
             },
@@ -547,7 +547,8 @@ SLIDES_DATA = [
             "│   └── mcp_config.json   # Global / shared MCP config\n"
             "├── skills/               # Global / shared skills\n"
             "│   └── {skill_name}/\n"
-            "│       └── SKILL.md      # Skill definition\n"
+            "│       ├── SKILL.md      # Skill definition\n"
+            "│       └── ...           # [optional] support files, scripts, etc.\n"
             "└── GEMINI.md             # Global rules"
         ),
         "notes": (
@@ -596,7 +597,9 @@ SLIDES_DATA = [
             '      "url": "https://developerknowledge.googleapis.com/mcp",\n'
             '      "authProviderType": "google_credentials",\n'
             '      "oauth": {\n'
-            '        "scopes": ["https://www.googleapis.com/auth/cloud-platform"]\n'
+            '        "scopes": [\n'
+            '          "https://www.googleapis.com/auth/cloud-platform"\n'
+            '        ]\n'
             '      },\n'
             '      "timeout": 30000,\n'
             '      "headers": {\n'
@@ -638,7 +641,7 @@ SLIDES_DATA = [
             ),
             (
                 "With Developer Knowledge MCP",
-                "AGY searches official Google docs for 'Nano Banana 2', discovers it maps to `gemini-3.1-flash-image-preview` via the `google-genai` SDK, and writes working code!",
+                "AGY searches official Google docs for 'Nano Banana 2', discovers its current model ID (today: `gemini-3.1-flash-image-preview`) via the `google-genai` SDK, and writes working code!",
             ),
         ],
         "code_title": "terminal & agy prompt — Nano Banana 2 Test",
@@ -981,7 +984,7 @@ SLIDES_DATA = [
         "time": "00:59 – 01:02 (3 min)",
         "type": "two_cards_code",
         "title": "✋ Checkpoint 3: Autonomous Implementation & Artifacts",
-        "timer_seconds": 240,
+        "timer_seconds": 180,
         "left_card": {
             "color": "blue",
             "title": "What AGY Builds Automatically",
@@ -1031,7 +1034,7 @@ SLIDES_DATA = [
         },
         "notes": (
             "TIMING: 00:59 - 01:02 (3 mins)\n"
-            "LAB CHECKPOINT #3 (Start the 4-minute timer while AGY builds the app!).\n\n"
+            "LAB CHECKPOINT #3 (Start the 3-minute timer while AGY builds the app!).\n\n"
             "SAY THIS:\n"
             "\"Once you hit `Y` to approve the plan, sit back and watch Antigravity orchestrate the entire full-stack build! It will ask for confirmation to run `uv`, `npm`, and test commands.\n"
             "Notice that the artifact counter in the bottom right increases from `1 artifact` to `3 artifacts`:\n"
@@ -1049,7 +1052,7 @@ SLIDES_DATA = [
         "title": "Step 6: Deploy to Cloud Run in /fast Mode",
         "steps": [
             ("01", "Switch to /fast Mode", "Deployment doesn't need a new design doc"),
-            ("02", "Single-Container Build", " Dockerfile bundles Lit dist/ + FastAPI backend"),
+            ("02", "Single-Container Build", "Dockerfile bundles Lit dist/ + FastAPI backend"),
             ("03", "Audit Against Criteria", "AGY deploys to Cloud Run & verifies live URL"),
         ],
         "callout_badge": "ACCEPTANCE-DRIVEN DEPLOYMENT",
@@ -1085,7 +1088,7 @@ SLIDES_DATA = [
         "time": "01:06 – 01:10 (4 min)",
         "type": "verification_cards",
         "title": "✋ Checkpoint 4: Live \"Break the Guardrail\" Challenge!",
-        "timer_seconds": 180,
+        "timer_seconds": 240,
         "left_card": {
             "title": "01. Happy Path: Custom Cat Delivery",
             "query": '"I just survived a production outage—send me an anime cyberpunk cat hacker to cheer me up!"',
@@ -2821,12 +2824,12 @@ def build_html_deck(output_path):
     }}
     #notes-drawer-content {{ white-space: pre-wrap; font-family: 'Roboto', sans-serif; }}
 
-    /* Bottom Presenter Control Bar */
+    /* Bottom Presenter Control Bar (hidden by default; press B to toggle; never in fullscreen) */
     #presenter-bar {{
       height: 46px;
       background: #181A20;
       border-top: 1px solid #2D3139;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: space-between;
       padding: 0 18px;
@@ -2834,6 +2837,10 @@ def build_html_deck(output_path):
       font-size: 0.84rem;
       user-select: none;
     }}
+    body.controls-visible #presenter-bar {{ display: flex; }}
+    body.is-fullscreen #presenter-bar {{ display: none !important; }}
+    body:not(.controls-visible) .slide {{ width: min(96vw, calc((100vh - 24px) * 16 / 9)); }}
+    body:not(.controls-visible).notes-open .slide {{ width: min(94vw, calc((100vh - 200px) * 16 / 9)); }}
     .bar-group {{ display: flex; align-items: center; gap: 8px; }}
     .bar-btn {{
       background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
@@ -2881,7 +2888,7 @@ def build_html_deck(output_path):
   <div id="notes-drawer">
     <div id="notes-drawer-header">
       <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
-      <span>Tip: Press <strong>P</strong> to pop out Dual-Screen Presenter Console | Press <strong>S</strong> to hide drawer</span>
+      <span>Tip: <strong>P</strong> = Presenter Console | <strong>S</strong> = hide drawer | <strong>B</strong> = control bar</span>
     </div>
     <div id="notes-drawer-content"></div>
   </div>
@@ -2959,6 +2966,12 @@ def build_html_deck(output_path):
         document.exitFullscreen();
       }}
     }}
+
+    // Control bar: hidden by default, press B to toggle, force-hidden in fullscreen
+    function toggleControlBar() {{ document.body.classList.toggle('controls-visible'); }}
+    document.addEventListener('fullscreenchange', () => {{
+      document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
+    }});
 
     function openLightbox(src) {{
       document.getElementById('lightbox-img').src = src;
@@ -3067,6 +3080,7 @@ def build_html_deck(output_path):
       else if (e.key === 'p' || e.key === 'P') {{ openPresenterPopup(); }}
       else if (e.key === 'g' || e.key === 'G') {{ toggleGrid(); }}
       else if (e.key === 'f' || e.key === 'F') {{ toggleFullscreen(); }}
+      else if (e.key === 'b' || e.key === 'B') {{ toggleControlBar(); }}
       else if (e.key === 'Escape') {{
         document.getElementById('grid-modal').classList.remove('open');
         closeLightbox();
@@ -3275,6 +3289,7 @@ def build_markdown_runbook(output_path):
         "   - Run `./present.sh` in this folder (or open `index.html` in Chrome).",
         "   - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!",
         "   - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.",
+        "   - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).",
         "   - Press **`G`** for the 32-slide grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.",
         "2. **Option B — Google Slides / PowerPoint Presenter View**:",
         "   - Upload `Command_and_Control_Gemini_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.",

@@ -76,7 +76,7 @@ The talk deliberately front-loads setup (slide 5) so the multi-minute BigQuery p
 All four artifacts are generated — do not edit the outputs by hand. Edit the `SLIDES_DATA` list in `generate_slides.py`, then:
 
 ```bash
-pip install python-pptx qrcode pillow   # one-time
+pip install python-pptx pillow   # one-time (qrcode only needed to regenerate QR assets)
 python3 generate_slides.py
 ```
 

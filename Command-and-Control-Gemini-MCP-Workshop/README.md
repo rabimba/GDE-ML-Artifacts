@@ -23,7 +23,7 @@
 
 ### Option 1: Present Directly from Browser (Interactive Mode + Dual-Screen Notes)
 ```bash
-cd /home/rabimba/Documents/GitHub/GDE-ML-Artifacts/Command-and-Control-Gemini-MCP-Workshop
+cd Command-and-Control-Gemini-MCP-Workshop
 ./present.sh
 ```
 - Press **`P`** inside the deck to pop out the **Synchronized Speaker Notes Console** onto your laptop screen while keeping `index.html` full-screen (`F`) on the projector!

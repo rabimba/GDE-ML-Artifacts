@@ -13,6 +13,7 @@
    - Run `./present.sh` in this folder (or open `index.html` in Chrome).
    - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!
    - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.
+   - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).
    - Press **`G`** for the 32-slide grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.
 2. **Option B — Google Slides / PowerPoint Presenter View**:
    - Upload `Command_and_Control_Gemini_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.
@@ -340,7 +341,8 @@ SAY THIS:
 │   └── mcp_config.json   # Global / shared MCP config
 ├── skills/               # Global / shared skills
 │   └── {skill_name}/
-│       └── SKILL.md      # Skill definition
+│       ├── SKILL.md      # Skill definition
+│       └── ...           # [optional] support files, scripts, etc.
 └── GEMINI.md             # Global rules
 ```
 
@@ -371,7 +373,9 @@ Finally, launch `agy` and type `/mcp`. You should see `google-developer-knowledg
       "url": "https://developerknowledge.googleapis.com/mcp",
       "authProviderType": "google_credentials",
       "oauth": {
-        "scopes": ["https://www.googleapis.com/auth/cloud-platform"]
+        "scopes": [
+          "https://www.googleapis.com/auth/cloud-platform"
+        ]
       },
       "timeout": 30000,
       "headers": {
@@ -591,7 +595,7 @@ SAY THIS:
 #### 🎙️ Speaker Notes:
 ```text
 TIMING: 00:59 - 01:02 (3 mins)
-LAB CHECKPOINT #3 (Start the 4-minute timer while AGY builds the app!).
+LAB CHECKPOINT #3 (Start the 3-minute timer while AGY builds the app!).
 
 SAY THIS:
 "Once you hit `Y` to approve the plan, sit back and watch Antigravity orchestrate the entire full-stack build! It will ask for confirmation to run `uv`, `npm`, and test commands.

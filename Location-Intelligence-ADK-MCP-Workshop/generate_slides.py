@@ -32,7 +32,7 @@ REF_PPTX = os.path.join(
 )
 
 # ---------------------------------------------------------------------------
-# COMPLETE 32-SLIDE DATA & VERBATIM SPEAKER NOTES
+# COMPLETE 38-SLIDE DATA & VERBATIM SPEAKER NOTES
 # ---------------------------------------------------------------------------
 SLIDES_DATA = [
     # =====================================================================
@@ -296,13 +296,19 @@ SLIDES_DATA = [
             "root_agent = LlmAgent(\n"
             "    model='gemini-3.5-flash',\n"
             "    name='root_agent',\n"
-            "    instruction=f\"\"\"Help the user by strategically combining:\n"
-            "        1. BigQuery toolset — demographics, foot traffic,\n"
-            "           pricing and sales in the `mcp_bakery` dataset.\n"
-            "           Run all query jobs from project id: {PROJECT_ID}.\n"
-            "        2. Maps Toolset — real-world location analysis,\n"
-            "           competition search, and travel routes.\n"
-            "           Include a hyperlink to an interactive map.\n"
+            "    instruction=f\"\"\"\n"
+            "      Help the user answer questions by strategically\n"
+            "      combining insights from two sources:\n"
+            "      1. **BigQuery toolset:** Access demographic (inc.\n"
+            "         foot traffic index), product pricing, and\n"
+            "         historical sales data in the mcp_bakery\n"
+            "         dataset. Do not use any other dataset.\n"
+            "         Run all query jobs from project id: {PROJECT_ID}.\n"
+            "      2. **Maps Toolset:** Use this for real-world\n"
+            "         location analysis, finding competition/places\n"
+            "         and calculating necessary travel routes.\n"
+            "         Include a hyperlink to an interactive map in\n"
+            "         your response where appropriate.\n"
             "    \"\"\",\n"
             "    tools=[maps_toolset, bigquery_toolset]\n"
             ")"
@@ -374,7 +380,7 @@ SLIDES_DATA = [
         "bullets": [
             ("BigQuery", "https://bigquery.googleapis.com/mcp"),
             ("Google Maps (Grounding Lite)", "https://mapstools.googleapis.com/mcp"),
-            ("Also GA/Preview", "GCE, GKE, Spanner, AlloyDB, Cloud Run, Developer Knowledge..."),
+            ("Also live", "GCE & GKE today — rolling out next: Spanner, AlloyDB, Cloud Run, Developer Knowledge..."),
             ("Enable per project", "gcloud beta services mcp enable <service> (setup_env.sh did this)"),
             ("Governance", "IAM (roles/mcp.toolUser), audit logging, Model Armor for prompt-injection defense"),
         ],
@@ -452,21 +458,27 @@ SLIDES_DATA = [
             ("BigQuery", "OAuth 2.0 bearer token from your Application Default Credentials + x-goog-user-project for billing."),
             ("⚠️ Token lifetime", "ADC tokens expire ~60 min and ADK does not auto-refresh — re-run gcloud auth application-default login if a long session dies."),
         ],
-        "code_title": "adk_agent/mcp_bakery_app/tools.py",
+        "code_title": "adk_agent/mcp_bakery_app/tools.py (excerpt)",
         "code": (
-            "# --- Maps: API key ---\n"
-            "MCPToolset(connection_params=\n"
-            "  StreamableHTTPConnectionParams(\n"
-            "    url='https://mapstools.googleapis.com/mcp',\n"
-            "    headers={'X-Goog-Api-Key': maps_api_key}))\n\n"
-            "# --- BigQuery: OAuth bearer (from ADC) ---\n"
-            "creds, pid = google.auth.default(scopes=[BQ_SCOPE])\n"
-            "creds.refresh(Request())\n"
-            "MCPToolset(connection_params=\n"
-            "  StreamableHTTPConnectionParams(\n"
-            "    url='https://bigquery.googleapis.com/mcp',\n"
-            "    headers={'Authorization': f'Bearer {creds.token}',\n"
-            "             'x-goog-user-project': pid}))"
+            "# --- Maps: API key header ---\n"
+            "MCPToolset(\n"
+            "  connection_params=StreamableHTTPConnectionParams(\n"
+            "    url=\"https://mapstools.googleapis.com/mcp\",\n"
+            "    headers={\"X-Goog-Api-Key\": maps_api_key},\n"
+            "    timeout=30.0, sse_read_timeout=300.0))\n\n"
+            "# --- BigQuery: OAuth bearer from ADC ---\n"
+            "credentials, project_id = google.auth.default(\n"
+            "    scopes=[\"https://www.googleapis.com/auth/bigquery\"])\n"
+            "credentials.refresh(\n"
+            "    google.auth.transport.requests.Request())\n"
+            "HEADERS_WITH_OAUTH = {\n"
+            "    \"Authorization\": f\"Bearer {credentials.token}\",\n"
+            "    \"x-goog-user-project\": project_id}\n"
+            "MCPToolset(\n"
+            "  connection_params=StreamableHTTPConnectionParams(\n"
+            "    url=\"https://bigquery.googleapis.com/mcp\",\n"
+            "    headers=HEADERS_WITH_OAUTH,\n"
+            "    timeout=30.0, sse_read_timeout=300.0))"
         ),
         "notes": (
             "TIMING: 00:20 - 00:21 (1 min)\n"
@@ -587,7 +599,7 @@ SLIDES_DATA = [
         ),
     },
     # =====================================================================
-    # MODULE 2 — LAB A: SETUP (00:26 – 00:38)
+    # MODULE 2 — LAB A: SETUP (00:26 – 00:36)
     # =====================================================================
     # SLIDE 21 — Lab divider
     {
@@ -669,17 +681,17 @@ SLIDES_DATA = [
         "time": "00:31 – 00:33 (2 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 1: Your data is live",
-        "timer_seconds": 180,
+        "timer_seconds": 120,
         "bullets": [
             ("Open", "the BigQuery console in your project"),
             ("Confirm", "dataset mcp_bakery exists with 4 tables"),
-            ("Peek", "at foot_traffic → notice the morning score column"),
+            ("Peek", "at foot_traffic → rows where time_of_day='morning' carry a foot_traffic_score"),
             ("Stuck?", "re-run ./setup/setup_bigquery.sh; check PROJECT_ID is set"),
         ],
         "screenshot": "codelab_bigquery_console.jpeg",
         "caption": "BigQuery console: mcp_bakery dataset with its 4 tables",
         "notes": (
-            "TIMING: 00:31 - 00:33 (2 mins) — START THE 3-MIN LAB TIMER.\n"
+            "TIMING: 00:31 - 00:33 (2 mins) — START THE 2-MIN LAB TIMER.\n"
             "GOAL: First tangible win; everyone sees their own data.\n\n"
             "SAY THIS:\n"
             "\"First checkpoint — make it real. Open the BigQuery console. You should see a dataset called mcp_bakery with four tables: demographics, bakery_prices, sales_history_weekly, foot_traffic. Click into foot_traffic and find the morning score column — that's the exact column the agent is about to query for question one.\"\n\n"
@@ -718,7 +730,7 @@ SLIDES_DATA = [
         ),
     },
     # =====================================================================
-    # MODULE 3 — LAB B: RUN THE AGENT (00:36 – 00:50)
+    # MODULE 3 — LAB B: RUN THE AGENT (00:36 – 00:55)
     # =====================================================================
     # SLIDE 26 — Inspect the code
     {
@@ -782,9 +794,9 @@ SLIDES_DATA = [
         "time": "00:41 – 00:44 (3 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 2: First tool call (macro)",
-        "timer_seconds": 300,
+        "timer_seconds": 180,
         "bullets": [
-            ("Ask", "\"I want to open a bakery in LA. Find the zip code with the highest morning foot traffic score.\""),
+            ("Ask", "\"I want to open a bakery in Los Angeles. Find the zip code with the highest morning foot traffic score.\""),
             ("Watch the trace", "agent calls get_table_info, then execute_sql on foot_traffic"),
             ("Expect", "zip 90403 (Santa Monica) surfaces to the top"),
             ("Auth error?", "re-run gcloud auth application-default login (60-min token)"),
@@ -792,10 +804,10 @@ SLIDES_DATA = [
         "screenshot": "codelab_adk_macro.png",
         "caption": "ADK web: execute_sql finds the top morning-traffic zip",
         "notes": (
-            "TIMING: 00:41 - 00:44 (3 mins) — START THE 5-MIN TIMER.\n"
+            "TIMING: 00:41 - 00:44 (3 mins) — START THE 3-MIN TIMER.\n"
             "GOAL: The 'wow' moment — the agent writes and runs its own SQL.\n\n"
             "SAY THIS:\n"
-            "\"First real question — copy it from the codelab, don't type it: 'I want to open a bakery in LA. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer — open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 — Santa Monica — floats to the top.\"\n\n"
+            "\"First real question — copy it from the codelab, don't type it: 'I want to open a bakery in Los Angeles. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer — open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 — Santa Monica — floats to the top.\"\n\n"
             "\"You just watched a model turn English into SQL, run it against governed data, and reason over the result. If you got an auth error instead — say it with me — 60-minute token; re-run gcloud auth application-default login.\""
         ),
     },
@@ -806,9 +818,9 @@ SLIDES_DATA = [
         "time": "00:44 – 00:47 (3 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 3: Validate on the ground (micro)",
-        "timer_seconds": 300,
+        "timer_seconds": 180,
         "bullets": [
-            ("Follow up", "\"Search for 'Bakeries' in that zip code — is it saturated?\""),
+            ("Follow up", "\"Can you search for 'Bakeries' in that zip code to see if it's saturated?\""),
             ("Notice", "no zip in your prompt — the agent carried 90403 from memory"),
             ("Watch", "the trace switch servers: Maps search_places"),
             ("Click", "the Google Maps link in the answer — that's the required attribution"),
@@ -819,7 +831,7 @@ SLIDES_DATA = [
             "TIMING: 00:44 - 00:47 (3 mins)\n"
             "GOAL: The pivot moment — same conversation, different server, conversational memory.\n\n"
             "SAY THIS:\n"
-            "\"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Search for Bakeries in that zip code — is it saturated?' Two things to notice. First, you never repeated the zip — the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps.\"\n\n"
+            "\"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Can you search for Bakeries in that zip code to see if it's saturated?' Two things to notice. First, you never repeated the zip — the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps.\"\n\n"
             "\"Same thread, two data worlds. And when the answer comes back with a Maps link — click it. That link isn't decoration, it's the attribution requirement we talked about, and the agent included it because the instruction told it to.\""
         ),
     },
@@ -875,9 +887,9 @@ SLIDES_DATA = [
                 "# Ask about the weather on opening day\n"
                 "\"Weather in 90403 this Saturday?\"\n"
                 "   → Maps lookup_weather\n\n"
-                "# Safety: swap to read-only SQL\n"
-                "# in tools.py, the agent can only\n"
-                "# call execute_sql_readonly"
+                "# Safety: force read-only SQL\n"
+                "# MCPToolset(tool_filter=['execute_sql_readonly'])\n"
+                "# or an IAM deny on execute_sql"
             ),
             "bullets": [
                 ("Weather", "a 3rd tool you never configured — it was just there"),
@@ -902,7 +914,7 @@ SLIDES_DATA = [
         "intro": "Hit a wall? It's almost certainly one of these:",
         "bullets": [
             ("Auth errors mid-lab", "ADC token expired (~60 min) → gcloud auth application-default login"),
-            ("'API not enabled' / 403", "MCP endpoint off → gcloud beta services mcp enable bigquery.googleapis.com mapstools.googleapis.com"),
+            ("'API not enabled' / 403", "MCP endpoint off → gcloud beta services mcp enable bigquery.googleapis.com && gcloud beta services mcp enable mapstools.googleapis.com"),
             ("Empty app dropdown", "adk web run from wrong dir → cd mcp/examples/launchmybakery/adk_agent"),
             ("Web Preview refuses", "missing --allow_origins 'regex:https://.*\\.cloudshell\\.dev'"),
             ("Maps calls fail", "key missing/restricted wrong → check .env MAPS_API_KEY, target service mapstools.googleapis.com"),
@@ -937,7 +949,7 @@ SLIDES_DATA = [
         "code_title": "Cloud Shell (repo root)",
         "code": (
             "# Ctrl+C to stop adk web, then:\n"
-            "cd mcp/examples/launchmybakery\n\n"
+            "cd ~/mcp/examples/launchmybakery\n\n"
             "chmod +x cleanup/cleanup_env.sh\n"
             "./cleanup/cleanup_env.sh\n\n"
             "# Deletes: mcp_bakery dataset,\n"
@@ -989,7 +1001,7 @@ SLIDES_DATA = [
             {
                 "icon": "icon_mcp.png",
                 "title": "More MCP servers",
-                "body": "Same pattern, new tools: GCE, GKE, Spanner, AlloyDB, Cloud Run, Developer Knowledge — google/mcp on GitHub.",
+                "body": "Live now: GCE & GKE. Rolling out: Spanner, AlloyDB, Cloud Run, Developer Knowledge — full list: google/mcp on GitHub.",
             },
             {
                 "icon": "icon_bigquery.png",
@@ -1077,7 +1089,9 @@ SLIDES_DATA = [
                 "cd adk_agent/\n"
                 "adk web --allow_origins \\\n"
                 "  'regex:https://.*\\.cloudshell\\.dev'\n\n"
-                "# later:\n"
+                "# later, from the repo root:\n"
+                "cd ~/mcp/examples/launchmybakery\n"
+                "chmod +x cleanup/cleanup_env.sh\n"
                 "./cleanup/cleanup_env.sh"
             ),
             "bullets": [
@@ -2903,12 +2917,12 @@ def build_html_deck(output_path):
     }}
     #notes-drawer-content {{ white-space: pre-wrap; font-family: 'Roboto', sans-serif; }}
 
-    /* Bottom Presenter Control Bar */
+    /* Bottom Presenter Control Bar (hidden by default; press B to toggle; never in fullscreen) */
     #presenter-bar {{
       height: 46px;
       background: #181A20;
       border-top: 1px solid #2D3139;
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: space-between;
       padding: 0 18px;
@@ -2916,6 +2930,10 @@ def build_html_deck(output_path):
       font-size: 0.84rem;
       user-select: none;
     }}
+    body.controls-visible #presenter-bar {{ display: flex; }}
+    body.is-fullscreen #presenter-bar {{ display: none !important; }}
+    body:not(.controls-visible) .slide {{ width: min(96vw, calc((100vh - 24px) * 16 / 9)); }}
+    body:not(.controls-visible).notes-open .slide {{ width: min(94vw, calc((100vh - 200px) * 16 / 9)); }}
     .bar-group {{ display: flex; align-items: center; gap: 8px; }}
     .bar-btn {{
       background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
@@ -3061,7 +3079,7 @@ def build_html_deck(output_path):
   <div id="notes-drawer">
     <div id="notes-drawer-header">
       <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
-      <span>Tip: Press <strong>P</strong> to pop out Dual-Screen Presenter Console | Press <strong>S</strong> to hide drawer</span>
+      <span>Tip: <strong>P</strong> = Presenter Console | <strong>S</strong> = hide drawer | <strong>B</strong> = control bar</span>
     </div>
     <div id="notes-drawer-content"></div>
   </div>
@@ -3139,6 +3157,12 @@ def build_html_deck(output_path):
         document.exitFullscreen();
       }}
     }}
+
+    // Control bar: hidden by default, press B to toggle, force-hidden in fullscreen
+    function toggleControlBar() {{ document.body.classList.toggle('controls-visible'); }}
+    document.addEventListener('fullscreenchange', () => {{
+      document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
+    }});
 
     function openLightbox(src) {{
       document.getElementById('lightbox-img').src = src;
@@ -3247,6 +3271,7 @@ def build_html_deck(output_path):
       else if (e.key === 'p' || e.key === 'P') {{ openPresenterPopup(); }}
       else if (e.key === 'g' || e.key === 'G') {{ toggleGrid(); }}
       else if (e.key === 'f' || e.key === 'F') {{ toggleFullscreen(); }}
+      else if (e.key === 'b' || e.key === 'B') {{ toggleControlBar(); }}
       else if (e.key === 'Escape') {{
         document.getElementById('grid-modal').classList.remove('open');
         closeLightbox();
@@ -3309,7 +3334,7 @@ def build_speaker_notes_html(output_path):
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Speaker Notes &amp; Teleprompter — Command and Control Workshop</title>
+  <title>Speaker Notes &amp; Teleprompter — Location Intelligence ADK Workshop</title>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     body {{
@@ -3455,6 +3480,7 @@ def build_markdown_runbook(output_path):
         "   - Run `./present.sh` in this folder (or open `index.html` in Chrome).",
         "   - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!",
         "   - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.",
+        "   - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).",
         "   - Press **`G`** for the all-slides grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.",
         "2. **Option B — Google Slides / PowerPoint Presenter View**:",
         "   - Upload `Location_Intelligence_ADK_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.",
@@ -3471,7 +3497,7 @@ def build_markdown_runbook(output_path):
         "| **00:00 – 00:06** | 6 min | **Module 0: Welcome & Start Engines** | Slides 1–5 | Demo GIF + Scan QR + kick off setup scripts |",
         "| **00:06 – 00:26** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 6–20 | 🎤 Poll + 🎯 Quiz + guardrails |",
         "| **00:26 – 00:36** | 10 min | **Module 2: Lab A — Setup** | Slides 21–25 | ✋ Checkpoint #1: `mcp_bakery` dataset (3m timer) |",
-        "| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–32 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |",
+        "| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–31 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |",
         "| **00:52 – 01:03** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 32–36 | Troubleshooting buffer + cleanup + recap |",
         "| **01:03 – 01:15** | 12 min | **Closing & Q&A** | Slides 37–38 | Open Q&A + live troubleshooting + cheat sheet |",
         "",

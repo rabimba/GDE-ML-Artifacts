@@ -13,6 +13,7 @@
    - Run `./present.sh` in this folder (or open `index.html` in Chrome).
    - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!
    - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.
+   - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).
    - Press **`G`** for the all-slides grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.
 2. **Option B — Google Slides / PowerPoint Presenter View**:
    - Upload `Location_Intelligence_ADK_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.
@@ -29,7 +30,7 @@
 | **00:00 – 00:06** | 6 min | **Module 0: Welcome & Start Engines** | Slides 1–5 | Demo GIF + Scan QR + kick off setup scripts |
 | **00:06 – 00:26** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 6–20 | 🎤 Poll + 🎯 Quiz + guardrails |
 | **00:26 – 00:36** | 10 min | **Module 2: Lab A — Setup** | Slides 21–25 | ✋ Checkpoint #1: `mcp_bakery` dataset (3m timer) |
-| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–32 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |
+| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–31 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |
 | **00:52 – 01:03** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 32–36 | Troubleshooting buffer + cleanup + recap |
 | **01:03 – 01:15** | 12 min | **Closing & Q&A** | Slides 37–38 | Open Q&A + live troubleshooting + cheat sheet |
 
@@ -213,13 +214,19 @@ SAY THIS:
 root_agent = LlmAgent(
     model='gemini-3.5-flash',
     name='root_agent',
-    instruction=f"""Help the user by strategically combining:
-        1. BigQuery toolset — demographics, foot traffic,
-           pricing and sales in the `mcp_bakery` dataset.
-           Run all query jobs from project id: {PROJECT_ID}.
-        2. Maps Toolset — real-world location analysis,
-           competition search, and travel routes.
-           Include a hyperlink to an interactive map.
+    instruction=f"""
+      Help the user answer questions by strategically
+      combining insights from two sources:
+      1. **BigQuery toolset:** Access demographic (inc.
+         foot traffic index), product pricing, and
+         historical sales data in the mcp_bakery
+         dataset. Do not use any other dataset.
+         Run all query jobs from project id: {PROJECT_ID}.
+      2. **Maps Toolset:** Use this for real-world
+         location analysis, finding competition/places
+         and calculating necessary travel routes.
+         Include a hyperlink to an interactive map in
+         your response where appropriate.
     """,
     tools=[maps_toolset, bigquery_toolset]
 )
@@ -321,22 +328,28 @@ SAY THIS:
 "Now the one operational gotcha of the whole day — star this. That OAuth token lives about 60 minutes, and ADK does not refresh it for you. If your agent suddenly starts failing late in the workshop, re-run gcloud auth application-default login. Write it down."
 ```
 
-#### 💻 On-Slide Command / Prompt (`adk_agent/mcp_bakery_app/tools.py`):
+#### 💻 On-Slide Command / Prompt (`adk_agent/mcp_bakery_app/tools.py (excerpt)`):
 ```bash
-# --- Maps: API key ---
-MCPToolset(connection_params=
-  StreamableHTTPConnectionParams(
-    url='https://mapstools.googleapis.com/mcp',
-    headers={'X-Goog-Api-Key': maps_api_key}))
+# --- Maps: API key header ---
+MCPToolset(
+  connection_params=StreamableHTTPConnectionParams(
+    url="https://mapstools.googleapis.com/mcp",
+    headers={"X-Goog-Api-Key": maps_api_key},
+    timeout=30.0, sse_read_timeout=300.0))
 
-# --- BigQuery: OAuth bearer (from ADC) ---
-creds, pid = google.auth.default(scopes=[BQ_SCOPE])
-creds.refresh(Request())
-MCPToolset(connection_params=
-  StreamableHTTPConnectionParams(
-    url='https://bigquery.googleapis.com/mcp',
-    headers={'Authorization': f'Bearer {creds.token}',
-             'x-goog-user-project': pid}))
+# --- BigQuery: OAuth bearer from ADC ---
+credentials, project_id = google.auth.default(
+    scopes=["https://www.googleapis.com/auth/bigquery"])
+credentials.refresh(
+    google.auth.transport.requests.Request())
+HEADERS_WITH_OAUTH = {
+    "Authorization": f"Bearer {credentials.token}",
+    "x-goog-user-project": project_id}
+MCPToolset(
+  connection_params=StreamableHTTPConnectionParams(
+    url="https://bigquery.googleapis.com/mcp",
+    headers=HEADERS_WITH_OAUTH,
+    timeout=30.0, sse_read_timeout=300.0))
 ```
 
 ---
@@ -479,7 +492,7 @@ CHECK: 'Everyone whose scripts finished — green check in chat / hand up. Still
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:31 - 00:33 (2 mins) — START THE 3-MIN LAB TIMER.
+TIMING: 00:31 - 00:33 (2 mins) — START THE 2-MIN LAB TIMER.
 GOAL: First tangible win; everyone sees their own data.
 
 SAY THIS:
@@ -566,11 +579,11 @@ adk web --allow_origins \
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:41 - 00:44 (3 mins) — START THE 5-MIN TIMER.
+TIMING: 00:41 - 00:44 (3 mins) — START THE 3-MIN TIMER.
 GOAL: The 'wow' moment — the agent writes and runs its own SQL.
 
 SAY THIS:
-"First real question — copy it from the codelab, don't type it: 'I want to open a bakery in LA. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer — open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 — Santa Monica — floats to the top."
+"First real question — copy it from the codelab, don't type it: 'I want to open a bakery in Los Angeles. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer — open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 — Santa Monica — floats to the top."
 
 "You just watched a model turn English into SQL, run it against governed data, and reason over the result. If you got an auth error instead — say it with me — 60-minute token; re-run gcloud auth application-default login."
 ```
@@ -587,7 +600,7 @@ TIMING: 00:44 - 00:47 (3 mins)
 GOAL: The pivot moment — same conversation, different server, conversational memory.
 
 SAY THIS:
-"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Search for Bakeries in that zip code — is it saturated?' Two things to notice. First, you never repeated the zip — the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps."
+"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Can you search for Bakeries in that zip code to see if it's saturated?' Two things to notice. First, you never repeated the zip — the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps."
 
 "Same thread, two data worlds. And when the answer comes back with a Maps link — click it. That link isn't decoration, it's the attribution requirement we talked about, and the agent included it because the instruction told it to."
 ```
@@ -637,9 +650,9 @@ FACILITATOR: This slide is your pressure-release valve. Keep it up while straggl
 "Weather in 90403 this Saturday?"
    → Maps lookup_weather
 
-# Safety: swap to read-only SQL
-# in tools.py, the agent can only
-# call execute_sql_readonly
+# Safety: force read-only SQL
+# MCPToolset(tool_filter=['execute_sql_readonly'])
+# or an IAM deny on execute_sql
 ```
 
 ---
@@ -677,7 +690,7 @@ SAY THIS:
 #### 💻 On-Slide Command / Prompt (`Cloud Shell (repo root)`):
 ```bash
 # Ctrl+C to stop adk web, then:
-cd mcp/examples/launchmybakery
+cd ~/mcp/examples/launchmybakery
 
 chmod +x cleanup/cleanup_env.sh
 ./cleanup/cleanup_env.sh
@@ -773,7 +786,9 @@ cd adk_agent/
 adk web --allow_origins \
   'regex:https://.*\.cloudshell\.dev'
 
-# later:
+# later, from the repo root:
+cd ~/mcp/examples/launchmybakery
+chmod +x cleanup/cleanup_env.sh
 ./cleanup/cleanup_env.sh
 ```
 
