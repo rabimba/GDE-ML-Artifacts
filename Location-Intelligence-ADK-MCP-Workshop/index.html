@@ -44,18 +44,21 @@
       overflow: hidden;
       padding: 12px;
     }
+    /* Slides lay out once on a fixed 1600x900 design canvas; JS sets --deck-scale
+       so the whole slide scales uniformly to fit any window size or browser zoom. */
     .slide {
       display: none;
-      width: min(96vw, calc((100vh - 64px) * 16 / 9));
-      aspect-ratio: 16 / 9;
+      width: 1600px;
+      height: 900px;
       background: #FFFFFF;
       border-radius: 12px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-      position: relative;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--deck-scale, 0.9));
+      transform-origin: center center;
       overflow: hidden;
-    }
-    body.notes-open .slide {
-      width: min(94vw, calc((100vh - 245px) * 16 / 9));
     }
     .slide.active { display: block; }
     .slide-canvas {
@@ -111,14 +114,14 @@
       margin-bottom: 18px;
     }
     .cover-title {
-      font-size: clamp(1.7rem, 3.1vw, 3.1rem);
+      font-size: 3.1rem;
       line-height: 1.16;
       font-weight: 700;
       color: var(--g-dark);
       margin-bottom: 18px;
     }
     .cover-subtitle {
-      font-size: clamp(0.95rem, 1.35vw, 1.3rem);
+      font-size: 1.3rem;
       color: var(--g-gray);
       line-height: 1.45;
       margin-bottom: 22px;
@@ -142,7 +145,7 @@
     }
 
     /* QR Hub Slide */
-    .center-title { text-align: center; font-size: clamp(1.5rem, 2.5vw, 2.4rem); font-weight: 700; margin-bottom: 4px; }
+    .center-title { text-align: center; font-size: 2.4rem; font-weight: 700; margin-bottom: 4px; }
     .center-subtitle { text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }
     .qr-grid {
       display: grid;
@@ -184,9 +187,9 @@
       transition: transform .2s, box-shadow .2s, border-color .2s;
     }
     .big-qr-card:hover { transform: scale(1.02); border-color: var(--g-blue); box-shadow: 0 16px 40px rgba(26,115,232,.22); }
-    .big-qr-card img { display: block; width: min(40vh, 340px); height: auto; aspect-ratio: 1; }
+    .big-qr-card img { display: block; width: 340px; height: auto; aspect-ratio: 1; }
     .big-qr-link {
-      font-size: clamp(1.25rem, 2.6vw, 1.9rem); font-weight: 700; color: var(--g-blue);
+      font-size: 1.9rem; font-weight: 700; color: var(--g-blue);
       text-decoration: none; letter-spacing: -0.01em;
     }
     .big-qr-link:hover { text-decoration: underline; }
@@ -213,15 +216,15 @@
       gap: 6%;
     }
     .speaker-photo-wrap img {
-      width: clamp(200px, 27vw, 330px);
+      width: 330px;
       aspect-ratio: 1 / 1;
       object-fit: cover;
       border-radius: 22px;
       box-shadow: 0 12px 32px rgba(0,0,0,0.28);
       border: 4px solid #fff;
     }
-    .speaker-Bio-text h1 { font-size: clamp(2.2rem, 3.8vw, 3.8rem); line-height: 1.08; margin-bottom: 16px; }
-    .role-line { font-size: clamp(1.1rem, 1.6vw, 1.55rem); color: #3C4043; margin-bottom: 8px; font-weight: 500; }
+    .speaker-Bio-text h1 { font-size: 3.8rem; line-height: 1.12; margin-bottom: 16px; }
+    .role-line { font-size: 1.55rem; color: #3C4043; margin-bottom: 8px; font-weight: 500; }
     .speaker-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
     .tag-chip { background: var(--g-blue-bg); color: var(--g-blue-dark); padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
     .thankyou-right {
@@ -234,7 +237,7 @@
       justify-content: space-between;
       gap: 18px;
     }
-    .thankyou-text h1 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); margin-bottom: 12px; }
+    .thankyou-text h1 { font-size: 4.2rem; margin-bottom: 12px; }
     .thankyou-text p { font-size: 1.05rem; color: var(--g-gray); line-height: 1.5; }
     .thankyou-qrs { display: flex; flex-direction: column; gap: 18px; }
     .ty-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; background: #F8F9FA; padding: 10px; border-radius: 12px; border: 1px solid var(--g-border); width: 185px; }
@@ -244,7 +247,7 @@
     /* Section Poll Slide */
     .section-poll-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 88%; margin: 0 auto; }
     .section-robot-icon { width: 64px; height: 64px; margin-bottom: 8px; }
-    .section-poll-wrap h2 { font-size: clamp(1.6rem, 2.6vw, 2.5rem); margin-bottom: 16px; line-height: 1.18; }
+    .section-poll-wrap h2 { font-size: 2.5rem; margin-bottom: 16px; line-height: 1.18; }
     .interactive-poll-card {
       width: 100%;
       background: var(--g-blue-bg);
@@ -290,7 +293,7 @@
 
     /* Triad Slide */
     .triad-headline {
-      font-size: clamp(1.35rem, 2.2vw, 2.15rem);
+      font-size: 2.15rem;
       font-weight: 700;
       line-height: 1.28;
       max-width: 90%;
@@ -321,8 +324,8 @@
     .triad-arrow { font-size: 2rem; color: var(--g-gray); font-weight: 700; }
 
     /* Standard Content & Split Layouts */
-    .slide-h2 { font-size: clamp(1.35rem, 2.1vw, 2.05rem); font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
-    .sub-blue { font-size: clamp(1rem, 1.3vw, 1.22rem); color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
+    .slide-h2 { font-size: 2.05rem; font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
+    .sub-blue { font-size: 1.22rem; color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
     .body-p { font-size: 0.92rem; color: #3C4043; line-height: 1.45; margin-bottom: 10px; }
     .blue-outline-card {
       border: 2.5px solid var(--g-blue);
@@ -406,7 +409,7 @@
 
     /* Lab Divider */
     .lab-divider-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .lab-divider-center h1 { font-size: clamp(2.4rem, 4vw, 3.8rem); margin-bottom: 18px; }
+    .lab-divider-center h1 { font-size: 3.8rem; margin-bottom: 18px; }
     .lab-sub-row { display: flex; align-items: center; gap: 14px; font-size: 1.35rem; color: var(--g-blue); font-weight: 700; }
     .lab-sub-row img { width: 36px; height: 36px; }
 
@@ -574,8 +577,6 @@
     }
     body.controls-visible #presenter-bar { display: flex; }
     body.is-fullscreen #presenter-bar { display: none !important; }
-    body:not(.controls-visible) .slide { width: min(96vw, calc((100vh - 24px) * 16 / 9)); }
-    body:not(.controls-visible).notes-open .slide { width: min(94vw, calc((100vh - 200px) * 16 / 9)); }
     .bar-group { display: flex; align-items: center; gap: 8px; }
     .bar-btn {
       background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
@@ -631,7 +632,7 @@
     .build-step-text h3 { font-size: 1.1rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 2px; }
     .build-step-text p { font-size: 0.92rem; color: var(--g-gray); line-height: 1.35; }
     .build-summary {
-      margin-top: 2%; text-align: center; font-weight: 700; font-size: 1.05rem;
+      margin-top: 2%; margin-bottom: 2.5%; text-align: center; font-weight: 700; font-size: 1.05rem;
       color: var(--g-green-dark); background: #E6F4EA; border-radius: 999px; padding: 10px 18px;
     }
 
@@ -677,10 +678,10 @@
 
     .tool-cat-head { display: flex; align-items: center; gap: 14px; margin-bottom: 1%; }
     .tool-cat-head img { width: 54px; height: 54px; object-fit: contain; }
-    .tool-list { display: flex; flex-direction: column; gap: 1.4%; margin-top: 1%; }
+    .tool-list { display: flex; flex-direction: column; gap: 10px; margin-top: 1%; }
     .tool-row {
       display: flex; align-items: center; gap: 16px;
-      background: #fff; border: 1.5px solid var(--g-border); border-radius: 10px; padding: 1.4% 2%;
+      background: #fff; border: 1.5px solid var(--g-border); border-radius: 10px; padding: 10px 2%;
     }
     .tool-name {
       font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem;
@@ -1936,6 +1937,17 @@ chmod +x cleanup/cleanup_env.sh
     let currentSlide = 1;
     const channel = new BroadcastChannel('location_intel_adk_mcp_sync');
 
+    // Scale the fixed 1600x900 slide canvas to fit the available viewport.
+    // Must run before the first showSlide() so initial measurements are correct.
+    function fitDeck() {
+      const vp = document.getElementById('deck-viewport');
+      const s = Math.min((vp.clientWidth - 24) / 1600, (vp.clientHeight - 24) / 900);
+      document.documentElement.style.setProperty('--deck-scale', Math.max(0.1, s).toFixed(4));
+    }
+    new ResizeObserver(fitDeck).observe(document.getElementById('deck-viewport'));
+    window.addEventListener('resize', fitDeck);
+    fitDeck();
+
     function showSlide(n, broadcast = true) {
       if (n < 1) n = 1;
       if (n > totalSlides) n = totalSlides;
@@ -1950,6 +1962,7 @@ chmod +x cleanup/cleanup_env.sh
       document.getElementById('notes-slide-meta').textContent = `🎤 SLIDE ${meta.num}: ${meta.title} — ${meta.time}`;
       document.getElementById('notes-drawer-content').textContent = meta.notes;
       window.location.hash = `slide-${currentSlide}`;
+      fitDeck();
       if (broadcast) {
         channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide });
       }
@@ -1961,6 +1974,7 @@ chmod +x cleanup/cleanup_env.sh
     function toggleNotesDrawer() {
       document.body.classList.toggle('notes-open');
       document.getElementById('notes-btn').classList.toggle('active-toggle');
+      fitDeck();
     }
 
     function toggleFullscreen() {
@@ -1972,9 +1986,10 @@ chmod +x cleanup/cleanup_env.sh
     }
 
     // Control bar: hidden by default, press B to toggle, force-hidden in fullscreen
-    function toggleControlBar() { document.body.classList.toggle('controls-visible'); }
+    function toggleControlBar() { document.body.classList.toggle('controls-visible'); fitDeck(); }
     document.addEventListener('fullscreenchange', () => {
       document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
+      fitDeck();
     });
 
     function openLightbox(src) {
