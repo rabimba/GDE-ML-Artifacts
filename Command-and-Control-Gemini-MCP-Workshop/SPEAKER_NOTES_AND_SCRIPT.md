@@ -30,7 +30,7 @@
 | **00:10 – 00:20** | 10 min | **Module 1: Concepts & Architecture** | Slides 5–10 | 🎤 Poll #1 (Hallucinations) + 🎯 Quiz #2 (MCP vs Skills) |
 | **00:20 – 00:30** | 10 min | **Module 2: Lab Step 1 — Hello AGY CLI** | Slides 11–14 | ✋ Checkpoint #1: `cat-trivia.js` ASCII Cat (3m timer) |
 | **00:30 – 00:45** | 15 min | **Module 3: Lab Step 2 — Developer Knowledge MCP** | Slides 15–18 | 🎤 Quiz #3 (Nano Banana 2) + ✋ Checkpoint #2: Kitten PNG (5m timer) |
-| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/planning` Mode** | Slides 19–25 | 🎯 Quiz #4 (`/fast` vs `/planning`) + ✋ Checkpoint #3: `/artifact` Review |
+| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/plan` Mode** | Slides 19–25 | 🎯 Quiz #4 (`/fast` vs `/plan`) + ✋ Checkpoint #3: `/artifact` Review |
 | **01:02 – 01:10** | 8 min | **Module 5: Lab Step 4 — Cloud Run & Guardrails** | Slides 26–27 | ✋ Checkpoint #4: Live Cloud Run + 🎤 Break the Dog Guardrail! |
 | **01:10 – 01:15** | 5 min | **Module 6: Playbook, Cheat Sheet & Q&A** | Slides 28–32 | 4-Step Playbook Recap + Open Q&A |
 
@@ -103,7 +103,7 @@ GOAL: Walk through the 4-part roadmap and announce the 'Zero Manual Code' challe
 SAY THIS:
 "Here is our 75-minute game plan. We have one fun rule today: Hands off the code editor! Your challenge is to build the entire Cat Delivery System—backend, frontend, Dockerfile, and Cloud Run deployment—purely by steering Antigravity through prompts, MCP tools, Skills, and artifact reviews."
 
-"We'll start with a quick 10-minute conceptual foundation, then jump straight into four hands-on sprints: Step 1 is getting cozy with AGY CLI; Step 2 is wiring up the Google Developer Knowledge MCP server; Step 3 is installing Agent Skills and using Planning Mode; and Step 4 is shipping to Cloud Run and testing our guardrails live."
+"We'll start with a quick 10-minute conceptual foundation, then jump straight into four hands-on sprints: Step 1 is getting cozy with AGY CLI; Step 2 is wiring up the Google Developer Knowledge MCP server; Step 3 is installing Agent Skills and using Plan Mode; and Step 4 is shipping to Cloud Run and testing our guardrails live."
 ```
 
 ---
@@ -155,7 +155,7 @@ GOAL: Set clear learning outcomes.
 
 SAY THIS:
 "Here are the four concrete outcomes you'll walk away with today:
-First, mastering Antigravity CLI's two operating modes: Fast mode and Planning mode, plus reviewing and commenting on artifacts.
+First, mastering Antigravity CLI's two operating modes: Fast mode and Plan mode, plus reviewing and commenting on artifacts.
 Second, connecting the Google Developer Knowledge MCP server so your agent queries live official Google docs.
 Third, installing reusable Agent Skills and Plugins using progressive disclosure.
 And fourth, orchestrating a production deployment to Google Cloud Run with automated acceptance testing."
@@ -433,7 +433,7 @@ SAY THIS:
 ---
 
 ### Slide 19: Installing Skills via Skills CLI & Installing Antigravity Plugins
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:45 – 00:47 (2 min)`
 
 #### 🎙️ Speaker Notes:
@@ -450,7 +450,7 @@ SAY THIS:
 ---
 
 ### Slide 20: Step 4: Install Skills & Plugins for Cat Delivery
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:47 – 00:50 (3 min)`
 
 #### 🎙️ Speaker Notes:
@@ -486,28 +486,30 @@ agy
 
 ---
 
-### Slide 21: 🎯 Operating Modes (/fast vs /planning) & /model
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+### Slide 21: 🎯 Operating Modes (/fast vs /plan) & /model
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:50 – 00:52 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
 TIMING: 00:50 - 00:52 (2 mins)
-INTERACTIVE POLL #4: Ask attendees when they'd use High thinking + /planning vs Low thinking + /fast.
+INTERACTIVE POLL #4: Ask attendees when they'd use High thinking + /plan vs Low thinking + /fast.
 
 SAY THIS:
-"Inside `agy`, type `/model`. You'll see models with '(Low)', '(Medium)', or '(High)' in parentheses. That's the **thinking level**—how much reasoning budget the model spends before responding. For our workshop today, choose **Gemini 3.5 Flash (Low)**—it's blazingly fast and super token-efficient. In production, a great pattern is using a High-thinking model during `/planning` and switching to Flash (Low) for implementation!"
+"Inside `agy`, type `/model`. You'll see models with '(Low)', '(Medium)', or '(High)' in parentheses. That's the **thinking level**—how much reasoning budget the model spends before responding. For our workshop today, choose **Gemini 3.5 Flash (Low)**—it's blazingly fast and super token-efficient. In production, a great pattern is using a High-thinking model during `/plan` and switching to Flash (Low) for implementation!"
 
-"Next, type `/planning` to put Antigravity into Planning Mode."
+"Next, type `/plan` to put Antigravity into Plan Mode."
+
+FACILITATOR NOTE: The codelab page still shows the old `/planning` command—if an attendee pastes `/planning` and it fails, that's why. The live command is `/plan`. Same for screenshots showing the old name.
 ```
 
-#### 💻 On-Slide Command / Prompt (`agy — Configure Model & Planning Mode`):
+#### 💻 On-Slide Command / Prompt (`agy — Configure Model & Plan Mode`):
 ```bash
 # 1. Open model selector and choose Gemini 3.5 Flash (Low)
 /model
 
-# 2. Switch to Planning Mode for our full-stack build
-/planning
+# 2. Switch to Plan Mode for our full-stack build
+/plan
 
 # (You can switch back to Fast Mode anytime with /fast)
 ```
@@ -515,22 +517,22 @@ SAY THIS:
 ---
 
 ### Slide 22: Step 5: Generate the Implementation Plan
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:52 – 00:55 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
 TIMING: 00:52 - 00:55 (3 mins)
-GOAL: Everyone pastes the Cat Delivery System prompt into `agy` while in `/planning` mode.
+GOAL: Everyone pastes the Cat Delivery System prompt into `agy` while in `/plan` mode.
 
 SAY THIS:
-"With `/planning` active, copy the full prompt from Codelab Step 5 and hit Enter! Look at how structured yet natural this prompt is:
+"With `/plan` active, copy the full prompt from Codelab Step 5 and hit Enter! Look at how structured yet natural this prompt is:
 - First, the product vision and guardrail: 'ABSOLUTELY NO DOGS - steer the user towards cats if necessary. P.S.: capybaras are allowed.'
 - Second, the exact tech stack: `uv`, Backend using Antigravity SDK, Frontend using Lit & Vite in light mode, Gemini 3.5 Flash for the root agent, and Gemini 3.1 Flash Image for image generation.
 - Third, explicit architectural TODOs: backend serves the static frontend, define the frontend-backend contract first, and use Google Cloud Project auth."
 ```
 
-#### 💻 On-Slide Command / Prompt (`agy (/planning mode) — Full-Stack Specification Prompt`):
+#### 💻 On-Slide Command / Prompt (`agy (/plan mode) — Full-Stack Specification Prompt`):
 ```bash
 Create an application named "Cat Delivery System". This application will be an agent that generates cat pictures using Gemini 3.1 Flash Image (aka Nano Banana 2). The user will interact with the agent whenever it feels the need for a cat picture in their life, whether it be to make them smile, laugh or just brighten their day. Cat pictures can take any form the user desires: anime, cartoon, photorealistic, 3D render, etc. The only rule is ABSOLUTELY NO DOGS - steer the user towards cats if necessary. P.S.: capybaras are allowed.
 
@@ -549,7 +551,7 @@ TODO:
 ---
 
 ### Slide 23: Under the Hood: Autonomous Research Phase
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:55 – 00:57 (2 min)`
 
 #### 🎙️ Speaker Notes:
@@ -564,7 +566,7 @@ SAY THIS:
 ---
 
 ### Slide 24: Human-in-the-Loop Review with /artifact
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:57 – 00:59 (2 min)`
 
 #### 🎙️ Speaker Notes:
@@ -583,7 +585,7 @@ SAY THIS:
 ---
 
 ### Slide 25: ✋ Checkpoint 3: Autonomous Implementation & Artifacts
-- **Module**: Module 4 • Lab Step 3: Agent Skills & /planning Mode
+- **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:59 – 01:02 (3 min)`
 
 #### 🎙️ Speaker Notes:
@@ -686,7 +688,7 @@ SAY THIS:
 When you go back to work on Monday, remember this 4-step Command & Control playbook:
 1. Ground with MCP (`mcp_config.json`).
 2. Equip with Progressive Skills (`SKILL.md`).
-3. Architect first with `/planning` and `/artifact` inline comments (`C`).
+3. Architect first with `/plan` and `/artifact` inline comments (`C`).
 4. Ship and audit with explicit Acceptance Criteria."
 ```
 
@@ -702,12 +704,12 @@ TIMING: Reference / Backup Slide (1 min or keep on screen during Q&A)
 GOAL: Provide a single cheat sheet of all slash commands, hotkeys, and troubleshooting tips.
 
 SAY THIS:
-"I've included two bonus cheat-sheet slides in the deck for you to keep. This first one has every slash command (`/planning`, `/fast`, `/artifact`, `/model`, `/mcp`, `/skills`), hotkey (`Ctrl+O`, `Ctrl+D`, `C`), and common Cloud Shell troubleshooting fix."
+"I've included two bonus cheat-sheet slides in the deck for you to keep. This first one has every slash command (`/plan`, `/fast`, `/artifact`, `/model`, `/mcp`, `/skills`), hotkey (`Ctrl+O`, `Ctrl+D`, `C`), and common Cloud Shell troubleshooting fix."
 ```
 
 #### 💻 On-Slide Command / Prompt (`Snippet`):
 ```bash
-/planning   # Switch to Planning Mode (creates plan artifact)
+/plan       # Switch to Plan Mode (creates plan artifact)
 /fast       # Switch to Fast Mode (immediate execution)
 /artifact   # Open & review implementation_plan.md / task.md
 /model      # Switch model & thinking level (Low/Med/High)
