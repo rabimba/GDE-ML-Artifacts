@@ -3,203 +3,401 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GDE-ML-Artifacts Showcase</title>
+    <title>GDE-ML-Artifacts — Gemini, Gemma &amp; Agentic Workshops</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+            --g-blue: #1A73E8;
+            --g-blue-dark: #174EA6;
+            --g-blue-bg: #E8F0FE;
+            --g-red: #EA4335;
+            --g-yellow: #FBBC04;
+            --g-green: #34A853;
+            --g-green-dark: #137333;
+            --g-dark: #202124;
+            --g-gray: #5F6368;
+            --g-border: #DADCE0;
+        }
         body {
-            background-color: #f8f9fa;
+            font-family: 'Google Sans', 'Roboto', system-ui, sans-serif;
+            background-color: #F8F9FA;
+            color: var(--g-dark);
         }
         .hero {
-            background-color: #6c757d;
-            color: white;
-            padding: 4rem 2rem;
+            position: relative;
+            background: #FFFFFF;
+            padding: 4.5rem 2rem 3.5rem;
             text-align: center;
+            border-bottom: 1px solid var(--g-border);
         }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #4285F4 0%, #EA4335 33%, #FBBC04 66%, #34A853 100%);
+        }
+        .hero h1 {
+            font-weight: 700;
+            font-size: clamp(1.9rem, 4vw, 3rem);
+            letter-spacing: -0.01em;
+            margin-bottom: 0.75rem;
+        }
+        .hero .lead {
+            color: var(--g-gray);
+            max-width: 720px;
+            margin: 0 auto 1.5rem;
+            font-size: 1.1rem;
+            line-height: 1.55;
+        }
+        .hero-badge {
+            display: inline-block;
+            background: var(--g-blue-bg);
+            color: var(--g-blue);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1.5px solid var(--g-blue);
+            margin-bottom: 1.25rem;
+        }
+        .hero-links a {
+            display: inline-block;
+            margin: 0 6px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            text-decoration: none;
+            color: var(--g-blue-dark);
+            background: #fff;
+            border: 1.5px solid var(--g-border);
+            border-radius: 999px;
+            padding: 8px 18px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .hero-links a:hover {
+            border-color: var(--g-blue);
+            box-shadow: 0 2px 8px rgba(26,115,232,.18);
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 0.35rem;
+        }
+        .section-sub {
+            color: var(--g-gray);
+            margin-bottom: 1.75rem;
+        }
+        /* Featured workshop cards */
+        .workshop-card {
+            border: 1.5px solid var(--g-border);
+            border-radius: 16px;
+            overflow: hidden;
+            height: 100%;
+            background: #fff;
+            transition: transform .25s, box-shadow .25s;
+        }
+        .workshop-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 34px rgba(32,33,36,.14);
+        }
+        .workshop-card .wc-top { height: 8px; }
+        .wc-blue .wc-top { background: linear-gradient(90deg, var(--g-blue), #669DF6); }
+        .wc-green .wc-top { background: linear-gradient(90deg, var(--g-green), #81C995); }
+        .workshop-card .card-body { padding: 1.75rem; }
+        .workshop-card h5 {
+            font-weight: 700;
+            font-size: 1.25rem;
+            line-height: 1.35;
+            margin-bottom: 0.6rem;
+        }
+        .workshop-card .card-text { color: var(--g-gray); font-size: 0.95rem; line-height: 1.55; }
+        .pill-row { margin: 0.9rem 0 1.2rem; }
+        .pill {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin: 0 4px 6px 0;
+            background: #F1F3F4;
+            color: var(--g-gray);
+        }
+        .pill-hi { background: var(--g-blue-bg); color: var(--g-blue); }
+        .btn-g {
+            font-weight: 600;
+            border-radius: 999px;
+            padding: 0.55rem 1.4rem;
+        }
+        .btn-g-blue { background: var(--g-blue); border-color: var(--g-blue); color: #fff; }
+        .btn-g-blue:hover { background: var(--g-blue-dark); border-color: var(--g-blue-dark); color: #fff; }
+        .btn-g-outline { color: var(--g-blue-dark); border: 1.5px solid var(--g-blue); background: #fff; }
+        .btn-g-outline:hover { background: var(--g-blue-bg); color: var(--g-blue-dark); }
+        /* Notebook cards */
         .notebook-card {
-            margin-bottom: 2rem;
+            border: 1.5px solid var(--g-border);
+            border-radius: 14px;
+            height: 100%;
+            background: #fff;
+            transition: transform .2s, box-shadow .2s, border-color .2s;
         }
+        .notebook-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--g-blue);
+            box-shadow: 0 8px 22px rgba(32,33,36,.10);
+        }
+        .notebook-card .card-body { padding: 1.35rem; }
+        .notebook-card h5 { font-weight: 600; font-size: 1.02rem; }
+        .notebook-card .card-text { color: var(--g-gray); font-size: 0.88rem; line-height: 1.5; }
+        .nb-link {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--g-blue);
+            text-decoration: none;
+        }
+        .nb-link:hover { text-decoration: underline; }
+        .file-chip {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.72rem;
+            background: #F1F3F4;
+            border-radius: 6px;
+            padding: 2px 8px;
+            color: var(--g-gray);
+        }
+        footer {
+            margin-top: 4rem;
+            padding: 1.75rem 0;
+            text-align: center;
+            color: var(--g-gray);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--g-border);
+            background: #fff;
+        }
+        footer a { color: var(--g-blue); text-decoration: none; font-weight: 600; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="hero">
-        <h1>GDE-ML-Artifacts Showcase</h1>
-        <p class="lead">A collection of Jupyter notebooks demonstrating the power and versatility of Google's Gemini and Gemma models.</p>
+        <div class="hero-badge">Google Developer Expert • AI/ML</div>
+        <h1>GDE-ML-Artifacts</h1>
+        <p class="lead">Hands-on workshops, notebooks, and demo artifacts for Google's Gemini &amp; Gemma models — from agentic MCP workshops to function-calling quickstarts.</p>
+        <div class="hero-links">
+            <a href="https://github.com/rabimba/GDE-ML-Artifacts">GitHub Repo</a>
+            <a href="https://codelabs.developers.google.com/adk-mcp-bigquery-maps">Codelab: ADK + MCP</a>
+            <a href="https://codelabs.developers.google.com/gemini-mcp-agy">Codelab: Command &amp; Control</a>
+        </div>
     </div>
 
     <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">[Gemma_1]Common_use_cases.ipynb</h5>
-                        <p class="card-text">Demonstrates various prompting techniques with the Gemma model, including summarization, reasoning, classification, extraction, multi-turn dialogue, and basic code generation.</p>
-                        <a href="[Gemma_1]Common_use_cases.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">[Gemma_2]Deploy_in_Vertex_AI.ipynb</h5>
-                        <p class="card-text">A step-by-step guide on how to deploy a Gemma model to Vertex AI and get predictions from the deployed endpoint.</p>
-                        <a href="[Gemma_2]Deploy_in_Vertex_AI.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">[Gemma3n]_Speakwise_Conference_Talk_Feedbacker.ipynb</h5>
-                        <p class="card-text">An advanced example showcasing the multimodal capabilities of Gemma 3n. It analyzes a video of a presentation (video, audio, and text) and provides feedback on public speaking skills.</p>
-                        <a href="[Gemma3n]_Speakwise_Conference_Talk_Feedbacker.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Arxiv_Reader.ipynb</h5>
-                        <p class="card-text">Shows how to use Gemini to read and summarize a research paper from an Arxiv PDF. It extracts text and images from the PDF and uses them to generate a summary.</p>
-                        <a href="Arxiv_Reader.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Ask_Arxiv.ipynb</h5>
-                        <p class="card-text">Similar to Arxiv_Reader.ipynb, this notebook demonstrates how to interact with a research paper from Arxiv, but with a focus on asking questions about the content.</p>
-                        <a href="Ask_Arxiv.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">function_calling_python_quickstart.ipynb</h5>
-                        <p class="card-text">A quickstart guide to using function calling with the Gemini API in Python. It covers the basics of defining functions, passing them to the model, and handling function call responses.</p>
-                        <a href="function_calling_python_quickstart.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">function-calling/intro_function_calling.ipynb</h5>
-                        <p class="card-text">A more detailed introduction to function calling with the Gemini API. It explains the "why" behind function calling and provides simple and complex examples, including a multi-turn chat session.</p>
-                        <a href="function-calling/intro_function_calling.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Gemini_Function_Calling_Example_with_Array_Outputs.ipynb</h5>
-                        <p class="card-text">This notebook demonstrates how to use function calling to extract multiple records from unstructured text data by defining an array in the <code>FunctionDeclaration</code>.</p>
-                        <a href="Gemini_Function_Calling_Example_with_Array_Outputs.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Gemini_Function_Calling_for_Structured_Data_Responses.ipynb</h5>
-                        <p class="card-text">Shows two methods for getting structured JSON data from the Gemini API: by prompting for a JSON-formatted string and by using function calling.</p>
-                        <a href="Gemini_Function_Calling_for_Structured_Data_Responses.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Gemini_Video_Explain.ipynb</h5>
-                        <p class="card-text">This notebook demonstrates how to use the Gemini 1.5 Pro model to understand and explain the content of a video by extracting frames and using them in a <code>generateContent</code> request.</p>
-                        <a href="Gemini_Video_Explain.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Gemini101_BuildWithAI_DNV.ipynb</h5>
-                        <p class="card-text">An introductory notebook that covers the basics of using the Gemini API, including text generation, image understanding, and a simple chat session.</p>
-                        <a href="Gemini101_BuildWithAI_DNV.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">quickstarts/Audio.ipynb</h5>
-                        <p class="card-text">A quickstart guide to using audio files with the Gemini API. It shows how to upload an audio file, use it in a prompt, and count the number of tokens.</p>
-                        <a href="quickstarts/Audio.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">Story_Writing.ipynb</h5>
-                        <p class="card-text">This notebook demonstrates how to use a series of interconnected prompts to guide the Gemini model through the process of writing a story, from premise to outline to the final narrative.</p>
-                        <a href="Story_Writing.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card notebook-card">
-                    <div class="card-body">
-                        <h5 class="card-title">structured_data_extraction.ipynb</h5>
-                        <p class="card-text">This notebook shows how to extract structured data from a story using both natural language prompts and the more robust function calling feature.</p>
-                        <a href="structured_data_extraction.ipynb" class="btn btn-primary">View Notebook</a>
-                    </div>
-                </div>
-            </div>
-            
-                        <div class="col-md-6">
-                            <div class="card notebook-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Video_Prompt.ipynb</h5>
-                                    <p class="card-text">This notebook demonstrates how to use the Gemini 1.5 Pro model to understand and describe the content of a video by extracting frames and using them in a <code>GenerateContent</code> request.</p>
-                                    <a href="Video_Prompt.ipynb" class="btn btn-primary">View Notebook</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card notebook-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">ADK - Agent Development Kit</h5>
-                                    <p class="card-text">A collection of Python scripts demonstrating a multi-agent system using the Agent Development Kit.</p>
-                                    <a href="ADK/index.html" class="btn btn-primary">View ADK Showcase</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <h2 class="mt-5 mb-4">Hands-On Workshops (75-min, slides + speaker kit)</h2>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card notebook-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Location Intelligence ADK Agent — MCP for BigQuery &amp; Google Maps</h5>
-                                    <p class="card-text">Interactive 38-slide web deck (presenter console, timers, copy buttons) for the codelab <code>adk-mcp-bigquery-maps</code>. Also includes editable PPTX and full facilitator runbook.</p>
-                                    <a href="Location-Intelligence-ADK-MCP-Workshop/index.html" class="btn btn-primary">Open Interactive Deck</a>
-                                </div>
-                            </div>
+        <!-- Featured workshops -->
+        <h2 class="section-title">🎤 Hands-On Workshops</h2>
+        <p class="section-sub">75-minute talk + workshop kits: interactive web decks with presenter console, editable PPTX, and full facilitator runbooks.</p>
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card workshop-card wc-blue">
+                    <div class="wc-top"></div>
+                    <div class="card-body">
+                        <h5>Location Intelligence ADK Agent<br/><small class="text-muted">MCP servers for BigQuery &amp; Google Maps</small></h5>
+                        <p class="card-text">Build a Gemini 3.5 Flash agent that reasons over enterprise data in BigQuery and the real world via Google Maps — two managed MCP servers, zero hand-written API clients. Based on the <code>adk-mcp-bigquery-maps</code> codelab.</p>
+                        <div class="pill-row">
+                            <span class="pill pill-hi">38 slides</span>
+                            <span class="pill">Interactive deck</span>
+                            <span class="pill">PPTX + notes</span>
+                            <span class="pill">Facilitator runbook</span>
                         </div>
-                        <div class="col-md-6">
-                            <div class="card notebook-card">
-                                <div class="card-body">
-                                    <h5 class="card-title">Command and Control — Orchestrate app development with Gemini and MCP</h5>
-                                    <p class="card-text">Interactive 32-slide web deck for the <code>gemini-mcp-agy</code> codelab: Antigravity CLI, Developer Knowledge MCP, Agent Skills, and Cloud Run deployment.</p>
-                                    <a href="Command-and-Control-Gemini-MCP-Workshop/index.html" class="btn btn-primary">Open Interactive Deck</a>
-                                </div>
-                            </div>
-                        </div>
+                        <a href="Location-Intelligence-ADK-MCP-Workshop/index.html" class="btn btn-g btn-g-blue">Open Interactive Deck</a>
+                        <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/Location-Intelligence-ADK-MCP-Workshop" class="btn btn-g btn-g-outline ms-1">Files</a>
                     </div>
                 </div>
-            
-                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-            </body>
-            </html>
-            
+            </div>
+            <div class="col-md-6">
+                <div class="card workshop-card wc-green">
+                    <div class="wc-top"></div>
+                    <div class="card-body">
+                        <h5>Command and Control<br/><small class="text-muted">Orchestrate app development with Gemini &amp; MCP</small></h5>
+                        <p class="card-text">Steer Google Antigravity CLI with the Developer Knowledge MCP server and Agent Skills to architect, build, and deploy a full-stack agentic app to Cloud Run — zero manual code. Based on the <code>gemini-mcp-agy</code> codelab.</p>
+                        <div class="pill-row">
+                            <span class="pill pill-hi">32 slides</span>
+                            <span class="pill">Interactive deck</span>
+                            <span class="pill">PPTX + notes</span>
+                            <span class="pill">Facilitator runbook</span>
+                        </div>
+                        <a href="Command-and-Control-Gemini-MCP-Workshop/index.html" class="btn btn-g btn-g-blue">Open Interactive Deck</a>
+                        <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/Command-and-Control-Gemini-MCP-Workshop" class="btn btn-g btn-g-outline ms-1">Files</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notebooks -->
+        <h2 class="section-title">📓 Notebooks</h2>
+        <p class="section-sub">Colab-ready notebooks demonstrating Gemini &amp; Gemma capabilities. Each opens directly in Google Colab.</p>
+        <div class="row g-4">
+
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">[Gemma_1]Common_use_cases.ipynb</span>
+                        <p class="card-text mt-2">Prompting techniques with Gemma: summarization, reasoning, classification, extraction, multi-turn dialogue, and basic code generation.</p>
+                        <a href="[Gemma_1]Common_use_cases.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">[Gemma_2]Deploy_in_Vertex_AI.ipynb</span>
+                        <p class="card-text mt-2">Step-by-step guide to deploying a Gemma model on Vertex AI and getting predictions from the endpoint.</p>
+                        <a href="[Gemma_2]Deploy_in_Vertex_AI.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">[Gemma3n]_Speakwise_Conference_Talk_Feedbacker.ipynb</span>
+                        <p class="card-text mt-2">Multimodal Gemma 3n: analyzes video of a presentation (video, audio, text) and gives public-speaking feedback.</p>
+                        <a href="[Gemma3n]_Speakwise_Conference_Talk_Feedbacker.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Arxiv_Reader.ipynb</span>
+                        <p class="card-text mt-2">Read and summarize an Arxiv research paper PDF — extracts text and images and generates a summary.</p>
+                        <a href="Arxiv_Reader.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Ask_Arxiv.ipynb</span>
+                        <p class="card-text mt-2">Ask questions about an Arxiv paper's content interactively with Gemini.</p>
+                        <a href="Ask_Arxiv.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">function_calling_python_quickstart.ipynb</span>
+                        <p class="card-text mt-2">Quickstart for function calling with the Gemini API in Python: defining functions, passing them to the model, handling responses.</p>
+                        <a href="function_calling_python_quickstart.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">function-calling/intro_function_calling.ipynb</span>
+                        <p class="card-text mt-2">Deeper intro to function calling — the "why", plus simple and complex examples with a multi-turn chat session.</p>
+                        <a href="function-calling/intro_function_calling.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Gemini_Function_Calling_Example_with_Array_Outputs.ipynb</span>
+                        <p class="card-text mt-2">Extract multiple records from unstructured text by defining an array in the <code>FunctionDeclaration</code>.</p>
+                        <a href="Gemini_Function_Calling_Example_with_Array_Outputs.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Gemini_Function_Calling_for_Structured_Data_Responses.ipynb</span>
+                        <p class="card-text mt-2">Two ways to get structured JSON from Gemini: prompt for a JSON string, or use function calling.</p>
+                        <a href="Gemini_Function_Calling_for_Structured_Data_Responses.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Gemini_Video_Explain.ipynb</span>
+                        <p class="card-text mt-2">Video understanding with Gemini: extract frames and use them in a <code>generateContent</code> request.</p>
+                        <a href="Gemini_Video_Explain.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Gemini101_BuildWithAI_DNV.ipynb</span>
+                        <p class="card-text mt-2">Gemini API basics: text generation, image understanding, and a simple chat session.</p>
+                        <a href="Gemini101_BuildWithAI_DNV.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">quickstarts/Audio.ipynb</span>
+                        <p class="card-text mt-2">Audio with the Gemini API: upload an audio file, use it in a prompt, and count tokens.</p>
+                        <a href="quickstarts/Audio.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Story_Writing.ipynb</span>
+                        <p class="card-text mt-2">Chain prompts to guide Gemini through story writing: premise → outline → final narrative.</p>
+                        <a href="Story_Writing.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">structured_data_extraction.ipynb</span>
+                        <p class="card-text mt-2">Extract structured data from a story using natural-language prompts and function calling.</p>
+                        <a href="structured_data_extraction.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">Video_Prompt.ipynb</span>
+                        <p class="card-text mt-2">Describe video content with Gemini by extracting frames for a <code>GenerateContent</code> request.</p>
+                        <a href="Video_Prompt.ipynb" class="nb-link">View Notebook →</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ADK demo app -->
+        <h2 class="section-title mt-5">🤖 Demo Apps</h2>
+        <p class="section-sub">Runnable Python demos.</p>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card notebook-card">
+                    <div class="card-body">
+                        <span class="file-chip">ADK/</span>
+                        <p class="card-text mt-2">Multi-agent trip-planner demo on the Agent Development Kit: router agent plus Sequential, Loop, and Parallel workflow agents, with CLI and Streamlit frontends.</p>
+                        <a href="ADK/index.html" class="nb-link">View ADK Showcase →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Built by <a href="https://www.linkedin.com/in/rabimba-karanjai">Rabimba Karanjai</a> • Google Developer Expert (AI/ML) •
+        <a href="https://github.com/rabimba/GDE-ML-Artifacts">github.com/rabimba/GDE-ML-Artifacts</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
