@@ -10,7 +10,7 @@
 
 | File | Purpose |
 | :--- | :--- |
-| [`Command_and_Control_Gemini_MCP_Workshop.pptx`](./Command_and_Control_Gemini_MCP_Workshop.pptx) | **32-Slide Editable PowerPoint / Google Slides Deck** built directly on the Google Cloud Labs *Coffee Agent* master theme, with high-res Codelab screenshots, architecture diagram, scannable QR codes, and **full speaker notes embedded in every slide**. |
+| [`Command_and_Control_Gemini_MCP_Workshop.pptx`](./Command_and_Control_Gemini_MCP_Workshop.pptx) | **33-Slide Editable PowerPoint / Google Slides Deck** built directly on the Google Cloud Labs *Coffee Agent* master theme, with high-res Codelab screenshots, architecture diagram, scannable QR codes, and **full speaker notes embedded in every slide**. |
 | [`index.html`](./index.html) | **Interactive Web Presentation Deck** matching the Google Cloud Labs theme, featuring live audience polls, click-to-reveal quizzes, interactive hands-on lab countdown timers, 1-click copy buttons for all prompts, an inline **Teleprompter Drawer (`S`)**, and a **Dual-Screen Synchronized Presenter Console (`P`)**. |
 | [`speaker-notes.html`](./speaker-notes.html) | **Standalone Live Speaker Console & Continuous Talk Script** (synced with `index.html` via `BroadcastChannel`, or usable standalone on a second screen, tablet, or phone). |
 | [`SPEAKER_NOTES_AND_SCRIPT.md`](./SPEAKER_NOTES_AND_SCRIPT.md) | **Complete Markdown Facilitator Runbook & Verbatim Talk Script** with minute-by-minute pacing, audience engagement cues, copy-paste commands/prompts, and Cloud Shell troubleshooting tips. |

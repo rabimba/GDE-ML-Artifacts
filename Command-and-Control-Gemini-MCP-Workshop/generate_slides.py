@@ -2,7 +2,7 @@
 """
 Generator for "Command and control: Orchestrate app development with Gemini and MCP"
 Builds:
-1. Command_and_Control_Gemini_MCP_Workshop.pptx (32 slides using Google Cloud Labs master layouts + full speaker notes)
+1. Command_and_Control_Gemini_MCP_Workshop.pptx (33 slides using Google Cloud Labs master layouts + full speaker notes)
 2. index.html (Interactive Web Presentation Deck with Dual-Screen Presenter Console [P], Teleprompter [S], Live Quizzes & Lab Timers)
 3. speaker-notes.html (Standalone continuous-scroll & mobile/tablet-friendly Speaker Notes & Script)
 4. SPEAKER_NOTES_AND_SCRIPT.md (Complete Markdown Facilitator Runbook & Verbatim Speaker Script)
@@ -19,6 +19,7 @@ from pptx.enum.shapes import MSO_SHAPE
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+CONFIDENTIAL_BADGE = True  # deck badge convention
 # The original coffee_agent_slides.pptx template lived on a Linux workstation
 # and is not present here. This deck's own output .pptx carries the same Google
 # Cloud Labs master layouts, so it doubles as the template (loaded before save).
@@ -45,11 +46,34 @@ SLIDES_DATA = [
             "\"Instead of acting as typists, today you are taking 'Command and Control'. You'll learn how to orchestrate Google Antigravity (AGY) using Gemini 3.5 Flash, ground it in live official docs with the Google Developer Knowledge MCP server, and equip it with specialized Agent Skills.\""
         ),
     },
-    # SLIDE 2
+    # SLIDE 2 — Free credits (dedicated big QR)
     {
         "num": 2,
         "module": "Module 0 • Welcome & Onboarding",
-        "time": "00:02 – 00:05 (3 min)",
+        "time": "00:02 – 00:04 (2 min)",
+        "type": "big_qr",
+        "title": "💳 Redeem Your Free Cloud Credits",
+        "url_text": "g.dev/credits/latw-mcp-010",
+        "url": "https://g.dev/credits/latw-mcp-010",
+        "qr": "qr_credits.png",
+        "wifi_ssid": "LATW Dev Network",
+        "wifi_pass": "LATWDevs2026!",
+        "desc": "Point your phone camera at the code → redeem → create or pick a project with billing enabled. We deploy to Cloud Run at the end of today's workshop, and billing must be on for that to work.",
+        "notes": (
+            "TIMING: 00:02 - 00:04 (2 mins)\n"
+            "GOAL: Everyone redeems the event credit FIRST — the Cloud Run deploy at the end needs billing enabled.\n\n"
+            "SAY THIS:\n"
+            "\"Before we touch anything technical: free credits! Point your phone camera at the big code — it opens the Google Cloud credit claim page for today's event. Sign in with the Google account you're using today, claim it, then create a new project — or pick an existing one — and make sure billing is enabled. We're deploying a real container to Cloud Run in the last sprint, and billing has to be on for that to work.\"\n\n"
+            "\"Wi-Fi details are at the bottom of the slide if anyone's connection is spotty — network LATW Dev Network, password LATWDevs2026!.\n\n"
+            "\"Hands up when you see the confirmation. The same QR is in the workshop hub on the next slide for anyone who needs a second pass.\"\n\n"
+            "FACILITATOR: Wait for most hands. Early finishers open the codelab (codelabs.developers.google.com/gemini-mcp-agy) and start Cloud Shell in the background."
+        ),
+    },
+    # SLIDE 3
+    {
+        "num": 3,
+        "module": "Module 0 • Welcome & Onboarding",
+        "time": "00:04 – 00:05 (1 min)",
         "type": "qr_hub",
         "title": "Workshop Hub & Essential Links",
         "subtitle": "Scan or open the Codelab now so you can follow along step-by-step",
@@ -84,17 +108,17 @@ SLIDES_DATA = [
             },
         ],
         "notes": (
-            "TIMING: 00:02 - 00:05 (3 mins)\n"
-            "ENGAGEMENT CUE: Pause for 30 seconds and make sure everyone scans the left QR code or types codelabs.developers.google.com/gemini-mcp-agy.\n\n"
+            "TIMING: 00:04 - 00:05 (1 min)\n"
+            "ENGAGEMENT CUE: Credits were handled on the previous big-QR slide — this hub is the backup for stragglers. Pause 30 seconds for the codelab QR.\n\n"
             "SAY THIS:\n"
             "\"First things first—grab your phones or open a browser tab and head to the link on the left card: codelabs.developers.google.com/gemini-mcp-agy. Keep this tab open throughout the session! All the prompts and JSON snippets we'll use are right there so you don't have to type long paragraphs from the projector.\"\n\n"
-            "\"Second card: your free Google Cloud credit — g.dev/credits/latw-mcp-010. Redeem it NOW, because we deploy to Cloud Run at the end and that needs billing enabled on your project.\"\n\n"
+            "\"Second card is the credits link again — g.dev/credits/latw-mcp-010 — the backup for anyone whose camera didn't catch the big QR a minute ago.\"\n\n"
             "\"Quick show of hands: who has the Codelab open on their screen right now? Awesome. Go ahead and start initializing your Google Cloud project and Cloud Shell in the background while I introduce myself and our mission.\""
         ),
     },
-    # SLIDE 3
+    # SLIDE 4
     {
-        "num": 3,
+        "num": 4,
         "module": "Module 0 • Welcome & Onboarding",
         "time": "00:05 – 00:07 (2 min)",
         "type": "speaker",
@@ -109,9 +133,9 @@ SLIDES_DATA = [
             "\"Speaking of racing: think of today's workshop like being the race engineer on the pit wall. Gemini is the engine, Antigravity is the chassis and harness, and MCP and Skills are your live telemetry. This is a super interactive workshop—if you hit a snag or have a question at any point, raise your hand or shout it out!\""
         ),
     },
-    # SLIDE 4
+    # SLIDE 5
     {
-        "num": 4,
+        "num": 5,
         "module": "Module 0 • Welcome & Onboarding",
         "time": "00:07 – 00:10 (3 min)",
         "type": "four_steps",
@@ -152,9 +176,9 @@ SLIDES_DATA = [
             "\"We'll start with a quick 10-minute conceptual foundation, then jump straight into four hands-on sprints: Step 1 is getting cozy with AGY CLI; Step 2 is wiring up the Google Developer Knowledge MCP server; Step 3 is installing Agent Skills and using Plan Mode; and Step 4 is shipping to Cloud Run and testing our guardrails live.\""
         ),
     },
-    # SLIDE 5
+    # SLIDE 6
     {
-        "num": 5,
+        "num": 6,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:10 – 00:12 (2 min)",
         "type": "section_poll",
@@ -178,9 +202,9 @@ SLIDES_DATA = [
             "\"Almost every hand in the room! And what do we usually do next? We go to the docs, copy 5,000 words of markdown, and paste it into the chat window. Today we stop doing manual copy-paste RAG. Let's look at how an orchestrated coding agent actually works.\""
         ),
     },
-    # SLIDE 6
+    # SLIDE 7
     {
-        "num": 6,
+        "num": 7,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:12 – 00:14 (2 min)",
         "type": "agent_triad",
@@ -200,9 +224,9 @@ SLIDES_DATA = [
             "3. On the left, Tools & Knowledge—specifically the Model Context Protocol (MCP) and Agent Skills.\""
         ),
     },
-    # SLIDE 7
+    # SLIDE 8
     {
-        "num": 7,
+        "num": 8,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:14 – 00:15 (1 min)",
         "type": "objectives_card",
@@ -237,9 +261,9 @@ SLIDES_DATA = [
             "And fourth, orchestrating a production deployment to Google Cloud Run with automated acceptance testing.\""
         ),
     },
-    # SLIDE 8
+    # SLIDE 9
     {
-        "num": 8,
+        "num": 9,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:15 – 00:17 (2 min)",
         "type": "arch_split",
@@ -274,9 +298,9 @@ SLIDES_DATA = [
             "In Tier 2 at the bottom is the application `agy` builds for us: the Cat Delivery System running on Cloud Run! Inside that single container, FastAPI serves a static Lit & Vite chat frontend and runs a backend agent built with the Antigravity SDK. That root agent uses Gemini 3.5 Flash to chat with the user, enforce our hilarious business rule—ABSOLUTELY NO DOGS, steer dog requests to cats, though capybaras are allowed—and calls Gemini 3.1 Flash Image (Nano Banana 2) to generate custom cat pictures.\""
         ),
     },
-    # SLIDE 9
+    # SLIDE 10
     {
-        "num": 9,
+        "num": 10,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:17 – 00:18 (1 min)",
         "type": "three_tech",
@@ -305,9 +329,9 @@ SLIDES_DATA = [
             "\"So our toolkit comes down to three pillars: Google Antigravity (both the CLI and the Python SDK), Open Context Standards (Model Context Protocol and Agent Skills), and Google Cloud's serverless AI stack (Gemini 3.5 Flash, Nano Banana 2, and Cloud Run).\""
         ),
     },
-    # SLIDE 10
+    # SLIDE 11
     {
-        "num": 10,
+        "num": 11,
         "module": "Module 1 • Concepts & Architecture",
         "time": "00:18 – 00:20 (2 min)",
         "type": "two_cards_quiz",
@@ -363,9 +387,9 @@ SLIDES_DATA = [
             "\"So pop quiz for the room: if you have a 15-page team architecture guide and you don't want it burning 20,000 tokens on every turn, which one do you use? Shout it out! ... Exactly: an Agent Skill!\""
         ),
     },
-    # SLIDE 11
+    # SLIDE 12
     {
-        "num": 11,
+        "num": 12,
         "module": "Module 2 • Lab Step 1: Hello Antigravity CLI",
         "time": "00:20 – 00:21 (1 min)",
         "type": "lab_divider",
@@ -378,9 +402,9 @@ SLIDES_DATA = [
             "\"Theory time is over—time to get our hands on the keyboard! Everyone switch over to your Google Cloud Console tab and Codelab Step 2 & 3.\""
         ),
     },
-    # SLIDE 12
+    # SLIDE 13
     {
-        "num": 12,
+        "num": 13,
         "module": "Module 2 • Lab Step 1: Hello Antigravity CLI",
         "time": "00:21 – 00:24 (3 min)",
         "type": "code_split",
@@ -417,9 +441,9 @@ SLIDES_DATA = [
             "\"Once your terminal is open, run `mkdir -p ~/hello-agy && cd ~/hello-agy` and type `agy`!\""
         ),
     },
-    # SLIDE 13
+    # SLIDE 14
     {
-        "num": 13,
+        "num": 14,
         "module": "Module 2 • Lab Step 1: Hello Antigravity CLI",
         "time": "00:24 – 00:27 (3 min)",
         "type": "stepper_split",
@@ -453,9 +477,9 @@ SLIDES_DATA = [
             "3. Next, paste your Google Cloud Project ID, and when it asks for Google Cloud Location, select `global`. Why `global`? Because frontier preview endpoints like Gemini 3.5 and Gemini 3.1 Flash Image route through the global endpoint on Vertex AI.\""
         ),
     },
-    # SLIDE 14
+    # SLIDE 15
     {
-        "num": 14,
+        "num": 15,
         "module": "Module 2 • Lab Step 1: Hello Antigravity CLI",
         "time": "00:27 – 00:30 (3 min)",
         "type": "two_cards_code",
@@ -508,9 +532,9 @@ SLIDES_DATA = [
             "\"Once you see the ASCII cat and trivia fact on your screen, ask `Explain the code you generated please`, and then press `Ctrl+D` twice to exit back to the terminal. Raise your hand once you've got your ASCII cat fact!\""
         ),
     },
-    # SLIDE 15
+    # SLIDE 16
     {
-        "num": 15,
+        "num": 16,
         "module": "Module 3 • Lab Step 2: Developer Knowledge MCP",
         "time": "00:30 – 00:33 (3 min)",
         "type": "code_split",
@@ -562,9 +586,9 @@ SLIDES_DATA = [
             "- And `GEMINI.md` holds global rules you want enforced everywhere.\""
         ),
     },
-    # SLIDE 16
+    # SLIDE 17
     {
-        "num": 16,
+        "num": 17,
         "module": "Module 3 • Lab Step 2: Developer Knowledge MCP",
         "time": "00:33 – 00:37 (4 min)",
         "type": "code_split",
@@ -621,9 +645,9 @@ SLIDES_DATA = [
             "Finally, launch `agy` and type `/mcp`. You should see `google-developer-knowledge` listed and connected!\""
         ),
     },
-    # SLIDE 17
+    # SLIDE 18
     {
-        "num": 17,
+        "num": 18,
         "module": "Module 3 • Lab Step 2: Developer Knowledge MCP",
         "time": "00:37 – 00:40 (3 min)",
         "type": "code_split",
@@ -664,9 +688,9 @@ SLIDES_DATA = [
             "Let's watch what happens when we tell `agy` to use the `google-developer-knowledge` MCP server! Run the commands on the right to create `~/nano-banana-kitten`, run `uv init`, launch `agy`, and paste that prompt.\""
         ),
     },
-    # SLIDE 18
+    # SLIDE 19
     {
-        "num": 18,
+        "num": 19,
         "module": "Module 3 • Lab Step 2: Developer Knowledge MCP",
         "time": "00:40 – 00:45 (5 min)",
         "type": "checkpoint_visual",
@@ -700,9 +724,9 @@ SLIDES_DATA = [
             "\"Once it finishes, click on the generated `.png` file in your Cloud Shell Editor explorer to see your kitten! Give me a thumbs up or raise your hand when your kitten is on screen!\""
         ),
     },
-    # SLIDE 19
+    # SLIDE 20
     {
-        "num": 19,
+        "num": 20,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:45 – 00:47 (2 min)",
         "type": "two_cards_quiz",
@@ -757,9 +781,9 @@ SLIDES_DATA = [
             "2. On the right, we'll use `agy plugin install` to install the Google Chrome team's `modern-web-guidance` plugin.\""
         ),
     },
-    # SLIDE 20
+    # SLIDE 21
     {
-        "num": 20,
+        "num": 21,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:47 – 00:50 (3 min)",
         "type": "code_split",
@@ -810,9 +834,9 @@ SLIDES_DATA = [
             "Then launch `agy` and type `/skills`. You'll see a menu just like the screenshot on the right showing both skills ready for progressive activation!\""
         ),
     },
-    # SLIDE 21
+    # SLIDE 22
     {
-        "num": 21,
+        "num": 22,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:50 – 00:52 (2 min)",
         "type": "code_split",
@@ -851,9 +875,9 @@ SLIDES_DATA = [
             "FACILITATOR NOTE: The codelab page still shows the old `/planning` command—if an attendee pastes `/planning` and it fails, that's why. The live command is `/plan`. Same for screenshots showing the old name."
         ),
     },
-    # SLIDE 22
+    # SLIDE 23
     {
-        "num": 22,
+        "num": 23,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:52 – 00:55 (3 min)",
         "type": "code_split",
@@ -897,9 +921,9 @@ SLIDES_DATA = [
             "- Third, explicit architectural TODOs: backend serves the static frontend, define the frontend-backend contract first, and use Google Cloud Project auth.\""
         ),
     },
-    # SLIDE 23
+    # SLIDE 24
     {
-        "num": 23,
+        "num": 24,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:55 – 00:57 (2 min)",
         "type": "checkpoint_visual",
@@ -931,9 +955,9 @@ SLIDES_DATA = [
             "\"Look at your terminal while `agy` researches! You'll see it invoke BOTH the `google-developer-knowledge` MCP server AND the `google-antigravity-sdk` / `modern-web-guidance` skills we just installed. Once it finishes thinking, it stops and prompts you to review the plan—and notice the bottom-right corner says `1 artifact`!\""
         ),
     },
-    # SLIDE 24
+    # SLIDE 25
     {
-        "num": 24,
+        "num": 25,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:57 – 00:59 (2 min)",
         "type": "four_steps",
@@ -977,9 +1001,9 @@ SLIDES_DATA = [
             "- When you're ready, press `ESC` and then `Y` (or Approve) to unleash Antigravity to build the entire app!\""
         ),
     },
-    # SLIDE 25
+    # SLIDE 26
     {
-        "num": 25,
+        "num": 26,
         "module": "Module 4 • Lab Step 3: Agent Skills & /plan Mode",
         "time": "00:59 – 01:02 (3 min)",
         "type": "two_cards_code",
@@ -1043,9 +1067,9 @@ SLIDES_DATA = [
             "- And when it finishes, it generates `walkthrough.md` summarizing everything it built and verified!\""
         ),
     },
-    # SLIDE 26
+    # SLIDE 27
     {
-        "num": 26,
+        "num": 27,
         "module": "Module 5 • Lab Step 4: Cloud Run Deployment & Verification",
         "time": "01:02 – 01:06 (4 min)",
         "type": "stepper_split",
@@ -1081,9 +1105,9 @@ SLIDES_DATA = [
             "\"Look at the bottom of that prompt: **Acceptance Criteria**. That is one of the most powerful pro-tips you'll learn today. Because we specify that the Frontend and Backend must be live and respond with no errors, Antigravity won't just run `gcloud run deploy` and walk away—it will actually test and audit the live Cloud Run endpoint, and if a port or Dockerfile path needs fixing, it will self-heal and redeploy automatically!\""
         ),
     },
-    # SLIDE 27
+    # SLIDE 28
     {
-        "num": 27,
+        "num": 28,
         "module": "Module 5 • Lab Step 4: Cloud Run Deployment & Verification",
         "time": "01:06 – 01:10 (4 min)",
         "type": "verification_cards",
@@ -1122,9 +1146,9 @@ SLIDES_DATA = [
             "3. Third, test the secret loophole from our prompt: ask for a capybara! Because we told `agy` 'P.S.: capybaras are allowed', the agent happily delivers a capybara!\""
         ),
     },
-    # SLIDE 28
+    # SLIDE 29
     {
-        "num": 28,
+        "num": 29,
         "module": "Module 6 • Playbook, Troubleshooting & Wrap-Up",
         "time": "01:10 – 01:12 (2 min)",
         "type": "four_steps",
@@ -1169,9 +1193,9 @@ SLIDES_DATA = [
             "4. Ship and audit with explicit Acceptance Criteria.\""
         ),
     },
-    # SLIDE 29
+    # SLIDE 30
     {
-        "num": 29,
+        "num": 30,
         "module": "Module 6 • Bonus Reference & Cheat Sheet",
         "time": "Reference Slide (1/2)",
         "type": "two_cards_code",
@@ -1224,9 +1248,9 @@ SLIDES_DATA = [
             "\"I've included two bonus cheat-sheet slides in the deck for you to keep. This first one has every slash command (`/plan`, `/fast`, `/artifact`, `/model`, `/mcp`, `/skills`), hotkey (`Ctrl+O`, `Ctrl+D`, `C`), and common Cloud Shell troubleshooting fix.\""
         ),
     },
-    # SLIDE 30
+    # SLIDE 31
     {
-        "num": 30,
+        "num": 31,
         "module": "Module 6 • Bonus Reference & Cheat Sheet",
         "time": "Reference Slide (2/2)",
         "type": "two_cards_code",
@@ -1279,9 +1303,9 @@ SLIDES_DATA = [
             "\"And this second bonus slide shows how you can create your own skills and rules in 60 seconds! Just drop a `SKILL.md` file with YAML frontmatter (`name` and `description`) into `.agents/skills/` in your Git repo, or add a `GEMINI.md` file at the root of your project to enforce team-wide conventions.\""
         ),
     },
-    # SLIDE 31
+    # SLIDE 32
     {
-        "num": 31,
+        "num": 32,
         "module": "Module 6 • Closing",
         "time": "01:12 – 01:13 (1 min)",
         "type": "cover",
@@ -1295,9 +1319,9 @@ SLIDES_DATA = [
             "\"Give yourselves a huge round of applause! You have officially mastered Command and Control with Gemini, MCP, and Google Antigravity.\""
         ),
     },
-    # SLIDE 32
+    # SLIDE 33
     {
-        "num": 32,
+        "num": 33,
         "module": "Module 6 • Closing & Q&A",
         "time": "01:13 – 01:15 (2 min)",
         "type": "thank_you",
@@ -1499,6 +1523,18 @@ def build_pptx(output_path):
             add_textbox(slide, 0.50, 1.39, 2.65, 0.28, sdata.get("badge", "Workshop"), font_size=11, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
             add_textbox(slide, 0.45, 1.85, 5.10, 2.10, sdata["title"], font_size=28, bold=True, color=(32, 33, 36))
             add_textbox(slide, 0.45, 4.05, 5.00, 0.85, sdata["subtitle"], font_size=13, bold=False, color=(95, 99, 104))
+
+        elif stype == "big_qr":
+            slide = prs.slides.add_slide(layout_qr)
+            clear_slide_shapes(slide)
+            add_textbox(slide, 0.50, 0.40, 9.00, 0.58, sdata["title"], font_size=28, bold=True, color=(32, 33, 36), align=PP_ALIGN.CENTER)
+            add_rounded_box(slide, 3.42, 1.08, 3.16, 2.88, fill_rgb=(255, 255, 255), line_rgb=(218, 220, 224), line_pt=1.5, radius=0.03)
+            add_image_fit(slide, sdata["qr"], 3.56, 1.22, 2.88, 2.60)
+            add_textbox(slide, 0.50, 4.04, 9.00, 0.40, sdata["url_text"], font_size=20, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
+            add_textbox(slide, 1.30, 4.48, 7.40, 0.55, sdata["desc"], font_size=10, bold=False, color=(95, 99, 104), align=PP_ALIGN.CENTER)
+            if sdata.get("wifi_ssid"):
+                add_rounded_box(slide, 2.75, 5.12, 4.50, 0.34, fill_rgb=(241, 243, 244), line_rgb=(218, 220, 224), line_pt=1, radius=0.5)
+                add_textbox(slide, 2.80, 5.17, 4.40, 0.24, f"Wi-Fi: {sdata['wifi_ssid']}    •    Password: {sdata['wifi_pass']}", font_size=10, bold=True, color=(32, 33, 36), align=PP_ALIGN.CENTER)
 
         elif stype == "qr_hub":
             slide = prs.slides.add_slide(layout_qr)
@@ -1763,6 +1799,32 @@ def render_slide_inner_html(s):
           <div class="cover-right">
             <img src="assets/bg_cover_layers.png" alt="Google Cloud Layers"/>
           </div>
+        </div>
+        """
+
+    if stype == "big_qr":
+        badge = 'Proprietary + Confidential' if CONFIDENTIAL_BADGE else 'Google Developer Expert'
+        wifi_html = ""
+        if s.get("wifi_ssid"):
+            wifi_html = f"""
+            <div class="wifi-chip">Wi-Fi: <strong>{html.escape(s['wifi_ssid'])}</strong> &nbsp;·&nbsp; Password: <code>{html.escape(s['wifi_pass'])}</code></div>"""
+        return f"""
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">{html.escape(s['module'])} • {html.escape(s['time'])}</span>
+            <span class="prop-badge">{badge}</span>
+          </div>
+          <h2 class="center-title">{html.escape(s['title'])}</h2>
+          <div class="big-qr-wrap">
+            <a href="{html.escape(s['url'])}" target="_blank" class="big-qr-card">
+              <img src="assets/{html.escape(s['qr'])}" alt="Credit redemption QR code"/>
+            </a>
+            <a href="{html.escape(s['url'])}" target="_blank" class="big-qr-link">{html.escape(s['url_text'])}</a>
+            <p class="big-qr-desc">{html.escape(s['desc'])}</p>
+            {wifi_html}
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
         </div>
         """
 
@@ -2466,6 +2528,31 @@ def build_html_deck(output_path):
     .qr-card p {{ font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }}
     .qr-img {{ width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }}
 
+    /* Big dedicated QR slide (credits redemption) */
+    .big-qr-wrap {{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%; }}
+    .big-qr-card {{
+      background: #fff; border: 2px solid var(--g-border); border-radius: 20px;
+      padding: 1.6%; box-shadow: 0 10px 30px rgba(32,33,36,.12);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }}
+    .big-qr-card:hover {{ transform: scale(1.02); border-color: var(--g-blue); box-shadow: 0 16px 40px rgba(26,115,232,.22); }}
+    .big-qr-card img {{ display: block; width: min(40vh, 340px); height: auto; aspect-ratio: 1; }}
+    .big-qr-link {{
+      font-size: clamp(1.25rem, 2.6vw, 1.9rem); font-weight: 700; color: var(--g-blue);
+      text-decoration: none; letter-spacing: -0.01em;
+    }}
+    .big-qr-link:hover {{ text-decoration: underline; }}
+    .big-qr-desc {{ max-width: 74%; text-align: center; color: var(--g-gray); font-size: 0.95rem; line-height: 1.55; }}
+
+    .wifi-chip {{
+      background: #F1F3F4; border: 1.5px solid var(--g-border); border-radius: 999px;
+      padding: 8px 22px; font-size: 0.95rem; color: var(--g-dark); font-weight: 500;
+    }}
+    .wifi-chip code {{
+      font-family: 'Roboto Mono', monospace; background: #fff; border: 1px solid var(--g-border);
+      border-radius: 6px; padding: 2px 10px; font-weight: 700; color: var(--g-blue-dark);
+    }}
+
     /* Speaker & Thank You Slide */
     .slide-speaker {{ padding: 0; flex-direction: row; align-items: center; }}
     .speaker-fan-bg {{ position: absolute; left: 0; top: 0; width: 48%; height: 100%; z-index: 1; }}
@@ -2915,7 +3002,7 @@ def build_html_deck(output_path):
   <!-- All-Slides Overview Grid Modal -->
   <div id="grid-modal">
     <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
-      <h2>All 32 Workshop Slides — Click Any Slide to Jump</h2>
+      <h2>All Workshop Slides — Click Any Slide to Jump</h2>
       <button class="bar-btn" onclick="toggleGrid()">✕ Close (ESC)</button>
     </div>
     <div class="grid-cards" id="grid-cards-container"></div>
@@ -3212,7 +3299,7 @@ def build_speaker_notes_html(output_path):
   </div>
 
   <div class="container">
-    <h2 style="margin-bottom:14px; color:#8AB4F8;">All 32 Slides — Continuous Speaker Script &amp; Copy-Paste Prompts</h2>
+    <h2 style="margin-bottom:14px; color:#8AB4F8;">All Slides — Continuous Speaker Script &amp; Copy-Paste Prompts</h2>
     {''.join(notes_cards_html)}
   </div>
 
@@ -3290,12 +3377,12 @@ def build_markdown_runbook(output_path):
         "   - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!",
         "   - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.",
         "   - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).",
-        "   - Press **`G`** for the 32-slide grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.",
+        "   - Press **`G`** for the all-slides grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.",
         "2. **Option B — Google Slides / PowerPoint Presenter View**:",
         "   - Upload `Command_and_Control_Gemini_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.",
         "   - Every slide has the complete speaker notes embedded in the native Speaker Notes pane.",
         "3. **Option C — Tablet / Phone Companion**:",
-        "   - Open `speaker-notes.html` or this `SPEAKER_NOTES_AND_SCRIPT.md` file to scroll through all 32 slides' verbatim notes and copy-paste prompts.",
+        "   - Open `speaker-notes.html` or this `SPEAKER_NOTES_AND_SCRIPT.md` file to scroll through every slide's verbatim notes and copy-paste prompts.",
         "",
         "---",
         "",
@@ -3303,13 +3390,13 @@ def build_markdown_runbook(output_path):
         "",
         "| Clock Time | Duration | Module | Slides | Interactive Element / Checkpoint |",
         "| :--- | :--- | :--- | :--- | :--- |",
-        "| **00:00 – 00:10** | 10 min | **Module 0: Welcome & Onboarding** | Slides 1–4 | Scan Codelab QR + Start Cloud Shell |",
-        "| **00:10 – 00:20** | 10 min | **Module 1: Concepts & Architecture** | Slides 5–10 | 🎤 Poll #1 (Hallucinations) + 🎯 Quiz #2 (MCP vs Skills) |",
-        "| **00:20 – 00:30** | 10 min | **Module 2: Lab Step 1 — Hello AGY CLI** | Slides 11–14 | ✋ Checkpoint #1: `cat-trivia.js` ASCII Cat (3m timer) |",
-        "| **00:30 – 00:45** | 15 min | **Module 3: Lab Step 2 — Developer Knowledge MCP** | Slides 15–18 | 🎤 Quiz #3 (Nano Banana 2) + ✋ Checkpoint #2: Kitten PNG (5m timer) |",
-        "| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/plan` Mode** | Slides 19–25 | 🎯 Quiz #4 (`/fast` vs `/plan`) + ✋ Checkpoint #3: `/artifact` Review |",
-        "| **01:02 – 01:10** | 8 min | **Module 5: Lab Step 4 — Cloud Run & Guardrails** | Slides 26–27 | ✋ Checkpoint #4: Live Cloud Run + 🎤 Break the Dog Guardrail! |",
-        "| **01:10 – 01:15** | 5 min | **Module 6: Playbook, Cheat Sheet & Q&A** | Slides 28–32 | 4-Step Playbook Recap + Open Q&A |",
+        "| **00:00 – 00:10** | 10 min | **Module 0: Welcome & Onboarding** | Slides 1–5 | Redeem credits (big QR) + Scan Codelab QR + Start Cloud Shell |",
+        "| **00:10 – 00:20** | 10 min | **Module 1: Concepts & Architecture** | Slides 6–11 | 🎤 Poll #1 (Hallucinations) + 🎯 Quiz #2 (MCP vs Skills) |",
+        "| **00:20 – 00:30** | 10 min | **Module 2: Lab Step 1 — Hello AGY CLI** | Slides 12–15 | ✋ Checkpoint #1: `cat-trivia.js` ASCII Cat (3m timer) |",
+        "| **00:30 – 00:45** | 15 min | **Module 3: Lab Step 2 — Developer Knowledge MCP** | Slides 16–19 | 🎤 Quiz #3 (Nano Banana 2) + ✋ Checkpoint #2: Kitten PNG (5m timer) |",
+        "| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/plan` Mode** | Slides 20–26 | 🎯 Quiz #4 (`/fast` vs `/plan`) + ✋ Checkpoint #3: `/artifact` Review |",
+        "| **01:02 – 01:10** | 8 min | **Module 5: Lab Step 4 — Cloud Run & Guardrails** | Slides 27–28 | ✋ Checkpoint #4: Live Cloud Run + 🎤 Break the Dog Guardrail! |",
+        "| **01:10 – 01:15** | 5 min | **Module 6: Playbook, Cheat Sheet & Q&A** | Slides 29–33 | 4-Step Playbook Recap + Open Q&A |",
         "",
         "---",
         "",

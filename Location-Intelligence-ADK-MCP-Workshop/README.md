@@ -19,7 +19,7 @@ The running scenario: *"Help a friend open a high-end sourdough bakery in Los An
 
 | File | Purpose |
 | :--- | :--- |
-| [`Location_Intelligence_ADK_MCP_Workshop.pptx`](./Location_Intelligence_ADK_MCP_Workshop.pptx) | **38-Slide Editable PowerPoint / Google Slides Deck** on the Google Cloud Labs master theme, with codelab screenshots, the demo GIF still, scannable QR codes, and **full speaker notes embedded in every slide**. |
+| [`Location_Intelligence_ADK_MCP_Workshop.pptx`](./Location_Intelligence_ADK_MCP_Workshop.pptx) | **39-Slide Editable PowerPoint / Google Slides Deck** on the Google Cloud Labs master theme, with codelab screenshots, the demo GIF still, scannable QR codes, and **full speaker notes embedded in every slide**. |
 | [`index.html`](./index.html) | **Interactive Web Presentation Deck** matching the Google Cloud Labs theme, with live polls, click-to-reveal quizzes, hands-on lab countdown timers, 1-click copy buttons for every command/prompt, an inline **Teleprompter Drawer (`S`)**, and a **Dual-Screen Synchronized Presenter Console (`P`)**. |
 | [`speaker-notes.html`](./speaker-notes.html) | **Standalone Live Speaker Console & Continuous Talk Script** (synced with `index.html` via `BroadcastChannel`, or usable standalone on a second screen, tablet, or phone). |
 | [`SPEAKER_NOTES_AND_SCRIPT.md`](./SPEAKER_NOTES_AND_SCRIPT.md) | **Complete Markdown Facilitator Runbook & Verbatim Talk Script** with minute-by-minute pacing, engagement cues, copy-paste commands/prompts, and the 6-point troubleshooting table. |
@@ -49,14 +49,14 @@ cd Location-Intelligence-ADK-MCP-Workshop
 
 | Time | Module | Slides | Hands-on beat |
 | :--- | :--- | :--- | :--- |
-| 00:00–00:06 | Welcome & Start Engines | 1–5 | Redeem credits, kick off both setup scripts in the background |
-| 00:06–00:26 | Concepts (Agent → ADK → MCP → Tools) | 6–20 | Poll, quiz, guardrails |
-| 00:26–00:36 | Lab A: Setup | 21–25 | ✋ CP1: `mcp_bakery` dataset live |
-| 00:36–00:52 | Lab B: Run the Agent | 26–32 | ✋ CP2 macro SQL · ✋ CP3 Maps · bonus breaks |
-| 00:52–01:03 | Troubleshoot, Cleanup, Playbook | 32–36 | Flexible buffer + cleanup + 4 takeaways |
-| 01:03–01:15 | Closing & Q&A | 37–38 | Open Q&A + live troubleshooting |
+| 00:00–00:08 | Welcome & Start Engines | 1–6 | Redeem credits (big QR), kick off both setup scripts in the background |
+| 00:08–00:28 | Concepts (Agent → ADK → MCP → Tools) | 7–21 | Poll, quiz, guardrails |
+| 00:28–00:38 | Lab A: Setup | 22–26 | ✋ CP1: `mcp_bakery` dataset live |
+| 00:38–00:54 | Lab B: Run the Agent | 27–32 | ✋ CP2 macro SQL · ✋ CP3 Maps · bonus breaks |
+| 00:54–01:05 | Troubleshoot, Cleanup, Playbook | 33–37 | Flexible buffer + cleanup + 4 takeaways |
+| 01:05–01:15 | Closing & Q&A | 38–39 | Open Q&A + live troubleshooting |
 
-The talk deliberately front-loads setup (slide 5) so the multi-minute BigQuery provisioning runs while the concepts are explained.
+The talk deliberately front-loads setup (slide 6) so the multi-minute BigQuery provisioning runs while the concepts are explained.
 
 ---
 
@@ -86,6 +86,6 @@ This regenerates the `.pptx`, `index.html`, `speaker-notes.html`, and `SPEAKER_N
 
 ## ⚠️ Before you present
 
-1. **Credits QR is wired** — slide 3's middle card uses the real event link `g.dev/credits/latw-bigquery-100` (QR: `assets/qr_credits.png`). If you get a fresh code for a future event, regenerate the QR and re-run the generator.
+1. **Credits QR is wired** — slide 4's middle card uses the real event link `g.dev/credits/latw-bigquery-100` (QR: `assets/qr_credits.png`). If you get a fresh code for a future event, regenerate the QR and re-run the generator.
 2. **Do one full dry-run** of the codelab in a fresh project and record a backup video of the five prompts — live MCP + BigQuery + Cloud Shell has three separate failure surfaces.
-3. The codelab's own architecture image labels the model "Gemini 3 Pro", but `agent.py` uses `gemini-3.5-flash`. Slide 18's speaker notes call this out if an attendee asks.
+3. The codelab's own architecture image labels the model "Gemini 3 Pro", but `agent.py` uses `gemini-3.5-flash`. Slide 19's speaker notes call this out if an attendee asks.

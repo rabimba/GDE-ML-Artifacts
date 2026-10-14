@@ -27,12 +27,12 @@
 
 | Clock Time | Duration | Module | Slides | Interactive Element / Checkpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| **00:00 – 00:06** | 6 min | **Module 0: Welcome & Start Engines** | Slides 1–5 | Demo GIF + Scan QR + kick off setup scripts |
-| **00:06 – 00:26** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 6–20 | 🎤 Poll + 🎯 Quiz + guardrails |
-| **00:26 – 00:36** | 10 min | **Module 2: Lab A — Setup** | Slides 21–25 | ✋ Checkpoint #1: `mcp_bakery` dataset (3m timer) |
-| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–31 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |
-| **00:52 – 01:03** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 32–36 | Troubleshooting buffer + cleanup + recap |
-| **01:03 – 01:15** | 12 min | **Closing & Q&A** | Slides 37–38 | Open Q&A + live troubleshooting + cheat sheet |
+| **00:00 – 00:08** | 8 min | **Module 0: Welcome & Start Engines** | Slides 1–6 | Redeem credits (big QR) + Demo GIF + Scan QR + kick off setup scripts |
+| **00:08 – 00:28** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 7–21 | 🎤 Poll + 🎯 Quiz + guardrails |
+| **00:28 – 00:38** | 10 min | **Module 2: Lab A — Setup** | Slides 22–26 | ✋ Checkpoint #1: `mcp_bakery` dataset (2m timer) |
+| **00:38 – 00:54** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 27–32 | ✋ CP #2 macro SQL (3m) + ✋ CP #3 Maps (3m) + bonus |
+| **00:54 – 01:05** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 33–37 | Troubleshooting buffer + cleanup + recap |
+| **01:05 – 01:15** | 10 min | **Closing & Q&A** | Slides 38–39 | Open Q&A + live troubleshooting + cheat sheet |
 
 ---
 
@@ -55,13 +55,34 @@ SAY THIS:
 
 ---
 
-### Slide 2: This is what you'll have running in about 40 minutes
+### Slide 2: 💳 Redeem Your Free Cloud Credits
 - **Module**: Module 0 • Welcome
-- **Pacing**: `00:02 – 00:03 (1 min)`
+- **Pacing**: `00:02 – 00:04 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:02 - 00:03 (1 min)
+TIMING: 00:02 - 00:04 (2 mins)
+GOAL: 100% of the room redeems the event credit BEFORE anything else — billing is a hard requirement for both services today.
+
+SAY THIS:
+"Before we touch anything technical: free credits! Point your phone camera at the big code — it opens the Google Cloud credit claim page for today's event. Sign in with the Google account you're using today, claim it, then create a new project — or pick an existing one — and make sure billing is enabled. BigQuery and Maps Grounding Lite are both pay-as-you-go, and this credit covers today's lab many times over."
+
+"Wi-Fi details are at the bottom of the slide if anyone's connection is spotty — network LATW Dev Network, password LATWDevs2026!.
+
+"Hands up when you see the confirmation. If anything hiccups, the same QR is in the links hub in two slides, and I'll put it back up during Q&A."
+
+FACILITATOR: Do not advance until most hands are up. Early finishers can open the codelab tab (QR on the hub slide) and activate Cloud Shell in the background.
+```
+
+---
+
+### Slide 3: This is what you'll have running in about 40 minutes
+- **Module**: Module 0 • Welcome
+- **Pacing**: `00:04 – 00:05 (1 min)`
+
+#### 🎙️ Speaker Notes:
+```text
+TIMING: 00:04 - 00:05 (1 min)
 GOAL: Hook — show the finished product before any explanation.
 
 SAY THIS:
@@ -72,41 +93,41 @@ SAY THIS:
 
 ---
 
-### Slide 3: Workshop Hub — scan these now
-- **Module**: Module 0 • Welcome
-- **Pacing**: `00:03 – 00:04 (1 min)`
-
-#### 🎙️ Speaker Notes:
-```text
-TIMING: 00:03 - 00:04 (1 min)
-ENGAGEMENT CUE: 'Phones out — scan the left QR for the codelab. That page has every command and every prompt, so you never have to type from the projector.'
-
-SAY THIS:
-"Three links matter today. Left: the codelab — keep it open all session, it's your source of truth. Middle: your free Google Cloud credit — g.dev/credits/latw-bigquery-100 — redeem it now and create a project with billing on, because both services we use are pay-as-you-go. Right: my GitHub, where this deck and the full speaker script live if you want to rerun this workshop for your own GDG chapter."
-```
-
----
-
-### Slide 4: Rabimba Karanjai
-- **Module**: Module 0 • Welcome
-- **Pacing**: `00:04 – 00:05 (1 min)`
-
-#### 🎙️ Speaker Notes:
-```text
-TIMING: 00:04 - 00:05 (1 min)
-SAY THIS:
-"Quick intro — I'm Rabimba Karanjai, a Google Developer Expert in AI/ML, and by day an ML Scientist at PayPal where I build and break agentic systems. This is a hands-on room: if something fails — and with live APIs something always hiccups — shout it out. Debugging together is part of the workshop."
-```
-
----
-
-### Slide 5: Start your engines — setup runs while I talk
+### Slide 4: Workshop Hub — scan these now
 - **Module**: Module 0 • Welcome
 - **Pacing**: `00:05 – 00:06 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
 TIMING: 00:05 - 00:06 (1 min)
+ENGAGEMENT CUE: 'Phones out — scan the left QR for the codelab. That page has every command and every prompt, so you never have to type from the projector.'
+
+SAY THIS:
+"Three links matter today. Left: the codelab — keep it open all session, it's your source of truth. Middle: the credits link again — if the big QR two slides back didn't scan for you, grab g.dev/credits/latw-bigquery-100 here; billing is required for both services today. Right: my GitHub, where this deck and the full speaker script live if you want to rerun this workshop for your own GDG chapter."
+```
+
+---
+
+### Slide 5: Rabimba Karanjai
+- **Module**: Module 0 • Welcome
+- **Pacing**: `00:06 – 00:07 (1 min)`
+
+#### 🎙️ Speaker Notes:
+```text
+TIMING: 00:06 - 00:07 (1 min)
+SAY THIS:
+"Quick intro — I'm Rabimba Karanjai, a Google Developer Expert in AI/ML, and by day an ML Scientist at PayPal where I build and break agentic systems. This is a hands-on room: if something fails — and with live APIs something always hiccups — shout it out. Debugging together is part of the workshop."
+```
+
+---
+
+### Slide 6: Start your engines — setup runs while I talk
+- **Module**: Module 0 • Welcome
+- **Pacing**: `00:07 – 00:08 (1 min)`
+
+#### 🎙️ Speaker Notes:
+```text
+TIMING: 00:07 - 00:08 (1 min)
 GOAL: Fire-and-forget provisioning so nobody waits on BigQuery loads later.
 
 SAY THIS:
@@ -134,13 +155,13 @@ cd mcp/examples/launchmybakery
 
 ---
 
-### Slide 6: Your friend is opening a sourdough bakery in Los Angeles. Where?
+### Slide 7: Your friend is opening a sourdough bakery in Los Angeles. Where?
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:06 – 00:08 (2 min)`
+- **Pacing**: `00:08 – 00:10 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:06 - 00:08 (2 mins)
+TIMING: 00:08 - 00:10 (2 mins)
 GOAL: Frame the business problem; let the audience discover why a bare LLM fails.
 
 SAY THIS:
@@ -151,13 +172,13 @@ SAY THIS:
 
 ---
 
-### Slide 7: Two data worlds, one question
+### Slide 8: Two data worlds, one question
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:08 – 00:09 (1 min)`
+- **Pacing**: `00:10 – 00:11 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:08 - 00:09 (1 min)
+TIMING: 00:10 - 00:11 (1 min)
 SAY THIS:
 "Look at the two columns. On the left, the private numbers every business guards: census demographics, what competitors charge for a loaf, your own sales history. That lives in BigQuery. On the right, public real-world facts that change daily: is there already a bakery on that block, how long is the drive to Restaurant Depot, will it rain on opening day. That lives in Google Maps."
 
@@ -166,13 +187,13 @@ SAY THIS:
 
 ---
 
-### Slide 8: What makes an LLM an Agent?
+### Slide 9: What makes an LLM an Agent?
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:09 – 00:11 (2 min)`
+- **Pacing**: `00:11 – 00:13 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:09 - 00:11 (2 mins)
+TIMING: 00:11 - 00:13 (2 mins)
 GOAL: Demystify 'agent' in four reveals. In the web deck each press of → reveals the next block.
 
 SAY THIS (per reveal):
@@ -183,26 +204,26 @@ SAY THIS (per reveal):
 
 ---
 
-### Slide 9: The three pillars we'll use today
+### Slide 10: The three pillars we'll use today
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:11 – 00:12 (1 min)`
+- **Pacing**: `00:13 – 00:14 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:11 - 00:12 (1 min)
+TIMING: 00:13 - 00:14 (1 min)
 SAY THIS:
 "Three pillars. Gemini 3.5 Flash is the brain — we run it on Vertex AI so it's authenticated and billed through your Cloud project, which that setup script already switched on. ADK is the framework — you describe the agent in a few lines of Python and it handles the loop, tool dispatch, and a debug UI. And MCP is the connective tissue — the open protocol that lets ADK talk to BigQuery and Maps without us writing a single API wrapper. Next three slides take each in turn."
 ```
 
 ---
 
-### Slide 10: An ADK agent in ~15 lines
+### Slide 11: An ADK agent in ~15 lines
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:12 – 00:13 (1 min)`
+- **Pacing**: `00:14 – 00:15 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:12 - 00:13 (1 min)
+TIMING: 00:14 - 00:15 (1 min)
 SAY THIS:
 "This is genuinely the whole agent — about fifteen lines. An LlmAgent needs three things: a model, an instruction, and tools. Read the instruction like a job description: it tells the agent which dataset it's allowed to touch — mcp_bakery and nothing else — which project to bill queries to, and to always include a Maps link when it talks about places."
 
@@ -234,13 +255,13 @@ root_agent = LlmAgent(
 
 ---
 
-### Slide 11: MCP: from N×M integrations to N+M
+### Slide 12: MCP: from N×M integrations to N+M
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:13 – 00:15 (2 min)`
+- **Pacing**: `00:15 – 00:17 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:13 - 00:15 (2 mins)
+TIMING: 00:15 - 00:17 (2 mins)
 GOAL: The 'why' of MCP — the integration math.
 
 SAY THIS:
@@ -253,13 +274,13 @@ KEY VOCAB on this slide: Host = the app the user talks to (ADK web UI). Client =
 
 ---
 
-### Slide 12: MCP anatomy: Host, Client, Server
+### Slide 13: MCP anatomy: Host, Client, Server
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:15 – 00:16 (1 min)`
+- **Pacing**: `00:17 – 00:18 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:15 - 00:16 (1 min)
+TIMING: 00:17 - 00:18 (1 min)
 SAY THIS:
 "Three roles. The Host is the app you talk to — ADK's web UI. Inside it, a Client maintains one dedicated connection per server. The Server is where the tools live. And the transport is how bytes move: stdio for a server running as a subprocess on your laptop, or Streamable HTTP for a remote server."
 
@@ -268,13 +289,13 @@ SAY THIS:
 
 ---
 
-### Slide 13: Google's managed, remote MCP servers
+### Slide 14: Google's managed, remote MCP servers
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:16 – 00:18 (2 min)`
+- **Pacing**: `00:18 – 00:20 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:16 - 00:18 (2 mins)
+TIMING: 00:18 - 00:20 (2 mins)
 GOAL: Position Google's managed servers as the enterprise-ready path.
 
 SAY THIS:
@@ -285,13 +306,13 @@ SAY THIS:
 
 ---
 
-### Slide 14: BigQuery MCP server — the 6 tools
+### Slide 15: BigQuery MCP server — the 6 tools
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:18 – 00:19 (1 min)`
+- **Pacing**: `00:20 – 00:21 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:18 - 00:19 (1 min)
+TIMING: 00:20 - 00:21 (1 min)
 SAY THIS:
 "What can the agent actually do in BigQuery? Six tools. It can list datasets, list tables, and read metadata — and then the two interesting ones: execute_sql runs arbitrary SQL, and execute_sql_readonly does the same with mutations blocked. Because it's full SQL, the agent can even call BigQuery's AI.FORECAST function — that's how it does the revenue projection you'll see later."
 
@@ -300,13 +321,13 @@ SAY THIS:
 
 ---
 
-### Slide 15: Maps Grounding Lite — the 5 tools
+### Slide 16: Maps Grounding Lite — the 5 tools
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:19 – 00:20 (1 min)`
+- **Pacing**: `00:21 – 00:22 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:19 - 00:20 (1 min)
+TIMING: 00:21 - 00:22 (1 min)
 SAY THIS:
 "The Maps side is called Grounding Lite — an MCP server over Google's geospatial data. Five tools. search_places finds businesses and returns an AI summary plus a Maps link for each. compute_routes gives distance and drive time — note, deliberately not turn-by-turn navigation. lookup_weather does what it says. And the two resolve tools turn fuzzy text — 'a bakery near the pier' — into stable Place IDs you can feed to other Maps APIs."
 
@@ -315,13 +336,13 @@ SAY THIS:
 
 ---
 
-### Slide 16: Two servers, two auth patterns — tools.py
+### Slide 17: Two servers, two auth patterns — tools.py
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:20 – 00:21 (1 min)`
+- **Pacing**: `00:22 – 00:23 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:20 - 00:21 (1 min)
+TIMING: 00:22 - 00:23 (1 min)
 SAY THIS:
 "Open tools.py and it's almost disappointingly simple — two functions, same pattern. Maps takes an API key in a header; the setup script created a restricted key that only works for the maps tools service. BigQuery is stricter: it's your enterprise data, so it wants OAuth. We pull a token from your Application Default Credentials and pass it as a Bearer header, plus x-goog-user-project so queries bill to your project."
 
@@ -354,13 +375,13 @@ MCPToolset(
 
 ---
 
-### Slide 17: The reasoning journey: macro → micro → money
+### Slide 18: The reasoning journey: macro → micro → money
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:21 – 00:23 (2 min)`
+- **Pacing**: `00:23 – 00:25 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:21 - 00:23 (2 mins)
+TIMING: 00:23 - 00:25 (2 mins)
 GOAL: The narrative spine of the whole workshop — memorize this funnel.
 
 SAY THIS:
@@ -371,13 +392,13 @@ SAY THIS:
 
 ---
 
-### Slide 18: The full architecture
+### Slide 19: The full architecture
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:23 – 00:24 (1 min)`
+- **Pacing**: `00:25 – 00:26 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:23 - 00:24 (1 min)
+TIMING: 00:25 - 00:26 (1 min)
 SAY THIS:
 "Everything we just covered, one diagram. User talks to the ADK web UI. The agent — Gemini 3.5 Flash on Vertex AI — reads the question and the instruction, decides it needs data, and the MCPToolset fires a signed HTTP call. BigQuery interprets the schema and runs SQL where the data lives — the rows never get shipped into the model, only the answer does. Maps grounds the same conversation in live places and routes. Then the agent fuses both into one answer."
 
@@ -388,13 +409,13 @@ NOTE: This codelab diagram says 'Gemini 3 Pro' — the actual code uses gemini-3
 
 ---
 
-### Slide 19: Concept Check & Why not just…?
+### Slide 20: Concept Check & Why not just…?
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:24 – 00:25 (1 min)`
+- **Pacing**: `00:26 – 00:27 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:24 - 00:25 (1 min)
+TIMING: 00:26 - 00:27 (1 min)
 GOAL: Lock in tool selection intuition before hands-on.
 
 SAY THIS:
@@ -405,13 +426,13 @@ SAY THIS:
 
 ---
 
-### Slide 20: Taking this to production — the guardrails that matter
+### Slide 21: Taking this to production — the guardrails that matter
 - **Module**: Module 1 • Concepts
-- **Pacing**: `00:25 – 00:26 (1 min)`
+- **Pacing**: `00:27 – 00:28 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:25 - 00:26 (1 min)
+TIMING: 00:27 - 00:28 (1 min)
 GOAL: Bridge from toy to enterprise; this is what makes it 'GDE-grade'.
 
 SAY THIS:
@@ -422,13 +443,13 @@ With that — enough theory. Let's build it.
 
 ---
 
-### Slide 21: Let's build this!
+### Slide 22: Let's build this!
 - **Module**: Module 2 • Lab A: Setup
-- **Pacing**: `00:26 – 00:27 (1 min)`
+- **Pacing**: `00:28 – 00:29 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:26 - 00:27 (1 min)
+TIMING: 00:28 - 00:29 (1 min)
 GOAL: Shift the room from listening to doing.
 
 SAY THIS:
@@ -439,13 +460,13 @@ FACILITATOR: From this point, keep the codelab page open on the projector when n
 
 ---
 
-### Slide 22: Step 1: Project, auth & the code
+### Slide 23: Step 1: Project, auth & the code
 - **Module**: Module 2 • Lab A: Setup
-- **Pacing**: `00:27 – 00:29 (2 min)`
+- **Pacing**: `00:29 – 00:31 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:27 - 00:29 (2 mins)
+TIMING: 00:29 - 00:31 (2 mins)
 GOAL: Everyone authenticated with ADC set.
 
 SAY THIS:
@@ -469,13 +490,13 @@ gcloud auth application-default login
 
 ---
 
-### Slide 23: What those two setup scripts just did
+### Slide 24: What those two setup scripts just did
 - **Module**: Module 2 • Lab A: Setup
-- **Pacing**: `00:29 – 00:31 (2 min)`
+- **Pacing**: `00:31 – 00:33 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:29 - 00:31 (2 mins)
+TIMING: 00:31 - 00:33 (2 mins)
 GOAL: Convert 'magic scripts' into understood infrastructure.
 
 SAY THIS:
@@ -486,13 +507,13 @@ CHECK: 'Everyone whose scripts finished — green check in chat / hand up. Still
 
 ---
 
-### Slide 24: ✋ Checkpoint 1: Your data is live
+### Slide 25: ✋ Checkpoint 1: Your data is live
 - **Module**: Module 2 • Lab A: Setup
-- **Pacing**: `00:31 – 00:33 (2 min)`
+- **Pacing**: `00:33 – 00:35 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:31 - 00:33 (2 mins) — START THE 2-MIN LAB TIMER.
+TIMING: 00:33 - 00:35 (2 mins) — START THE 2-MIN LAB TIMER.
 GOAL: First tangible win; everyone sees their own data.
 
 SAY THIS:
@@ -503,13 +524,13 @@ SAY THIS:
 
 ---
 
-### Slide 25: Step 2: Install ADK in a virtualenv
+### Slide 26: Step 2: Install ADK in a virtualenv
 - **Module**: Module 2 • Lab A: Setup
-- **Pacing**: `00:33 – 00:36 (3 min)`
+- **Pacing**: `00:35 – 00:38 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:33 - 00:36 (3 mins)
+TIMING: 00:35 - 00:38 (3 mins)
 SAY THIS:
 "Install time. Make a virtualenv — Cloud Shell's system Python is shared, don't pollute it. Then pip install quote google-adk bracket mcp unquote. That little [mcp] extra is what brings the MCP client; without it MCPToolset import fails. If the resolver gives you grief, the repo pins google-adk==1.28.0 as a known-good."
 
@@ -530,28 +551,28 @@ cd adk_agent/
 
 ---
 
-### Slide 26: Step 3: Read the agent you'll run
+### Slide 27: Step 3: Read the agent you'll run
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:36 – 00:38 (2 min)`
+- **Pacing**: `00:38 – 00:40 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:36 - 00:38 (2 mins)
+TIMING: 00:38 - 00:40 (2 mins)
 GOAL: Connect the concept slides to real files before running.
 
 SAY THIS:
-"Before we run anything, open it. Click 'Open Editor' in Cloud Shell and navigate into launchmybakery. Open agent.py — there's the LlmAgent from slide 10, word for word. Open tools.py — there's the API-key header and the OAuth header from slide 16. And check .env: you should see GOOGLE_GENAI_USE_VERTEXAI=1 and a MAPS_API_KEY, both written by the setup script. You're not writing code today — you're recognizing it, so that next week you can write your own."
+"Before we run anything, open it. Click 'Open Editor' in Cloud Shell and navigate into launchmybakery. Open agent.py — there's the LlmAgent from slide 11, word for word. Open tools.py — there's the API-key header and the OAuth header from slide 17. And check .env: you should see GOOGLE_GENAI_USE_VERTEXAI=1 and a MAPS_API_KEY, both written by the setup script. You're not writing code today — you're recognizing it, so that next week you can write your own."
 ```
 
 ---
 
-### Slide 27: Step 4: Launch the agent UI
+### Slide 28: Step 4: Launch the agent UI
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:38 – 00:41 (3 min)`
+- **Pacing**: `00:40 – 00:43 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:38 - 00:41 (3 mins)
+TIMING: 00:40 - 00:43 (3 mins)
 GOAL: Everyone has the ADK web UI open.
 
 SAY THIS:
@@ -573,13 +594,13 @@ adk web --allow_origins \
 
 ---
 
-### Slide 28: ✋ Checkpoint 2: First tool call (macro)
+### Slide 29: ✋ Checkpoint 2: First tool call (macro)
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:41 – 00:44 (3 min)`
+- **Pacing**: `00:43 – 00:46 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:41 - 00:44 (3 mins) — START THE 3-MIN TIMER.
+TIMING: 00:43 - 00:46 (3 mins) — START THE 3-MIN TIMER.
 GOAL: The 'wow' moment — the agent writes and runs its own SQL.
 
 SAY THIS:
@@ -590,13 +611,13 @@ SAY THIS:
 
 ---
 
-### Slide 29: ✋ Checkpoint 3: Validate on the ground (micro)
+### Slide 30: ✋ Checkpoint 3: Validate on the ground (micro)
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:44 – 00:47 (3 min)`
+- **Pacing**: `00:46 – 00:49 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:44 - 00:47 (3 mins)
+TIMING: 00:46 - 00:49 (3 mins)
 GOAL: The pivot moment — same conversation, different server, conversational memory.
 
 SAY THIS:
@@ -607,13 +628,13 @@ SAY THIS:
 
 ---
 
-### Slide 30: Your turn: run the rest of the journey
+### Slide 31: Your turn: run the rest of the journey
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:47 – 00:50 (3 min)`
+- **Pacing**: `00:49 – 00:52 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:47 - 00:50 (3 mins)
+TIMING: 00:49 - 00:52 (3 mins)
 GOAL: Self-directed exploration; make it a game.
 
 SAY THIS:
@@ -624,13 +645,13 @@ SAY THIS:
 
 ---
 
-### Slide 31: ⚡ Finished early? Break it (productively)
+### Slide 32: ⚡ Finished early? Break it (productively)
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:50 – 00:52 (2 min)`
+- **Pacing**: `00:52 – 00:54 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:50 - 00:52 (2 mins)
+TIMING: 00:52 - 00:54 (2 mins)
 GOAL: Keep fast finishers engaged while others catch up.
 
 SAY THIS:
@@ -657,13 +678,13 @@ FACILITATOR: This slide is your pressure-release valve. Keep it up while straggl
 
 ---
 
-### Slide 32: Quick fixes — the 6 ways today breaks
+### Slide 33: Quick fixes — the 6 ways today breaks
 - **Module**: Module 3 • Lab B: Run It
-- **Pacing**: `00:52 – 00:55 (3 min)`
+- **Pacing**: `00:54 – 00:57 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:52 - 00:55 (3 mins) — buffer / catch-up window.
+TIMING: 00:54 - 00:57 (3 mins) — buffer / catch-up window.
 GOAL: Clear every blocker so the room ends on a win.
 
 SAY THIS:
@@ -674,13 +695,13 @@ FACILITATOR: Use this whole block as flexible time. If the room is ahead, invite
 
 ---
 
-### Slide 33: Clean up — don't donate your credits back
+### Slide 34: Clean up — don't donate your credits back
 - **Module**: Module 4 • Wrap-Up
-- **Pacing**: `00:55 – 00:57 (2 min)`
+- **Pacing**: `00:57 – 00:59 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:55 - 00:57 (2 mins)
+TIMING: 00:57 - 00:59 (2 mins)
 GOAL: Good cloud hygiene; protect the credits we just handed out.
 
 SAY THIS:
@@ -701,13 +722,13 @@ chmod +x cleanup/cleanup_env.sh
 
 ---
 
-### Slide 34: Your Location-Intelligence Agent playbook
+### Slide 35: Your Location-Intelligence Agent playbook
 - **Module**: Module 4 • Wrap-Up
-- **Pacing**: `00:57 – 01:00 (3 min)`
+- **Pacing**: `00:59 – 01:02 (3 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:57 - 01:00 (3 mins)
+TIMING: 00:59 - 01:02 (3 mins)
 GOAL: Crystallize the four takeaways so they survive the parking lot.
 
 SAY THIS:
@@ -718,39 +739,39 @@ SAY THIS:
 
 ---
 
-### Slide 35: Where to take this next
+### Slide 36: Where to take this next
 - **Module**: Module 4 • Wrap-Up
-- **Pacing**: `01:00 – 01:02 (2 min)`
+- **Pacing**: `01:02 – 01:04 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 01:00 - 01:02 (2 mins)
+TIMING: 01:02 - 01:04 (2 mins)
 SAY THIS:
 "Three on-ramps. First, deploy it — adk web is a debug UI, so for real users containerize and push to Cloud Run or Agent Engine with a service account. Second, more servers — the google/mcp repo lists every managed server: GCE, GKE, Spanner, Developer Knowledge; the wiring you learned today is identical. Third, the real homework — point this at your own data. Write honest column descriptions, scope the instruction to your dataset, and start on execute_sql_readonly until you trust it."
 ```
 
 ---
 
-### Slide 36: Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps
+### Slide 37: Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps
 - **Module**: Module 4 • Closing
-- **Pacing**: `01:02 – 01:03 (1 min)`
+- **Pacing**: `01:04 – 01:05 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 01:02 - 01:03 (1 min)
+TIMING: 01:04 - 01:05 (1 min)
 SAY THIS:
 "Look back at the GIF from the first minute. That agent — the one that queries BigQuery, searches Maps, forecasts revenue, checks drive time — you just built it, yourself, with your own project. Not a demo I showed you. Yours."
 ```
 
 ---
 
-### Slide 37: Thank you!
+### Slide 38: Thank you!
 - **Module**: Module 4 • Closing & Q&A
-- **Pacing**: `01:03 – 01:15 (12 min)`
+- **Pacing**: `01:05 – 01:15 (10 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 01:03 - 01:15 (remaining time — Q&A).
+TIMING: 01:05 - 01:15 (remaining time — Q&A).
 SAY THIS:
 "Thank you! Everything is open: the codelab is free and stays up — take it, fork it, run this same workshop at your own GDG. Top QR is the codelab, bottom is my repo with this deck and the full speaker script. And if you want to compare notes on agents in production — the middle QR is my LinkedIn; I answer."
 
@@ -761,7 +782,7 @@ FACILITATOR: Keep the troubleshooting slide (G key) one keystroke away during Q&
 
 ---
 
-### Slide 38: Cheat sheet — every command from today
+### Slide 39: Cheat sheet — every command from today
 - **Module**: Appendix • Reference
 - **Pacing**: `Reference Slide`
 

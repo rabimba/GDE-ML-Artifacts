@@ -14,12 +14,12 @@
    - Press **`P`** to pop out the synchronized **Speaker Notes & Teleprompter Console** on your laptop screen while dragging the main slide window to the projector!
    - Press **`S`** to toggle the inline Speaker Notes drawer at the bottom of the screen.
    - The bottom control bar is hidden from the audience by default and in fullscreen. Press **`B`** to toggle it (all functions also work via hotkeys: `S`/`P`/`G`/`F`/arrows).
-   - Press **`G`** for the 32-slide grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.
+   - Press **`G`** for the all-slides grid overview, **`F`** for Fullscreen, and **`←` / `→` / `Space`** to advance slides.
 2. **Option B — Google Slides / PowerPoint Presenter View**:
    - Upload `Command_and_Control_Gemini_MCP_Workshop.pptx` to Google Slides (File → Import slides / Open) or open in PowerPoint/Keynote.
    - Every slide has the complete speaker notes embedded in the native Speaker Notes pane.
 3. **Option C — Tablet / Phone Companion**:
-   - Open `speaker-notes.html` or this `SPEAKER_NOTES_AND_SCRIPT.md` file to scroll through all 32 slides' verbatim notes and copy-paste prompts.
+   - Open `speaker-notes.html` or this `SPEAKER_NOTES_AND_SCRIPT.md` file to scroll through every slide's verbatim notes and copy-paste prompts.
 
 ---
 
@@ -27,13 +27,13 @@
 
 | Clock Time | Duration | Module | Slides | Interactive Element / Checkpoint |
 | :--- | :--- | :--- | :--- | :--- |
-| **00:00 – 00:10** | 10 min | **Module 0: Welcome & Onboarding** | Slides 1–4 | Scan Codelab QR + Start Cloud Shell |
-| **00:10 – 00:20** | 10 min | **Module 1: Concepts & Architecture** | Slides 5–10 | 🎤 Poll #1 (Hallucinations) + 🎯 Quiz #2 (MCP vs Skills) |
-| **00:20 – 00:30** | 10 min | **Module 2: Lab Step 1 — Hello AGY CLI** | Slides 11–14 | ✋ Checkpoint #1: `cat-trivia.js` ASCII Cat (3m timer) |
-| **00:30 – 00:45** | 15 min | **Module 3: Lab Step 2 — Developer Knowledge MCP** | Slides 15–18 | 🎤 Quiz #3 (Nano Banana 2) + ✋ Checkpoint #2: Kitten PNG (5m timer) |
-| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/plan` Mode** | Slides 19–25 | 🎯 Quiz #4 (`/fast` vs `/plan`) + ✋ Checkpoint #3: `/artifact` Review |
-| **01:02 – 01:10** | 8 min | **Module 5: Lab Step 4 — Cloud Run & Guardrails** | Slides 26–27 | ✋ Checkpoint #4: Live Cloud Run + 🎤 Break the Dog Guardrail! |
-| **01:10 – 01:15** | 5 min | **Module 6: Playbook, Cheat Sheet & Q&A** | Slides 28–32 | 4-Step Playbook Recap + Open Q&A |
+| **00:00 – 00:10** | 10 min | **Module 0: Welcome & Onboarding** | Slides 1–5 | Redeem credits (big QR) + Scan Codelab QR + Start Cloud Shell |
+| **00:10 – 00:20** | 10 min | **Module 1: Concepts & Architecture** | Slides 6–11 | 🎤 Poll #1 (Hallucinations) + 🎯 Quiz #2 (MCP vs Skills) |
+| **00:20 – 00:30** | 10 min | **Module 2: Lab Step 1 — Hello AGY CLI** | Slides 12–15 | ✋ Checkpoint #1: `cat-trivia.js` ASCII Cat (3m timer) |
+| **00:30 – 00:45** | 15 min | **Module 3: Lab Step 2 — Developer Knowledge MCP** | Slides 16–19 | 🎤 Quiz #3 (Nano Banana 2) + ✋ Checkpoint #2: Kitten PNG (5m timer) |
+| **00:45 – 01:02** | 17 min | **Module 4: Lab Step 3 — Skills & `/plan` Mode** | Slides 20–26 | 🎯 Quiz #4 (`/fast` vs `/plan`) + ✋ Checkpoint #3: `/artifact` Review |
+| **01:02 – 01:10** | 8 min | **Module 5: Lab Step 4 — Cloud Run & Guardrails** | Slides 27–28 | ✋ Checkpoint #4: Live Cloud Run + 🎤 Break the Dog Guardrail! |
+| **01:10 – 01:15** | 5 min | **Module 6: Playbook, Cheat Sheet & Q&A** | Slides 29–33 | 4-Step Playbook Recap + Open Q&A |
 
 ---
 
@@ -56,26 +56,47 @@ SAY THIS:
 
 ---
 
-### Slide 2: Workshop Hub & Essential Links
+### Slide 2: 💳 Redeem Your Free Cloud Credits
 - **Module**: Module 0 • Welcome & Onboarding
-- **Pacing**: `00:02 – 00:05 (3 min)`
+- **Pacing**: `00:02 – 00:04 (2 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:02 - 00:05 (3 mins)
-ENGAGEMENT CUE: Pause for 30 seconds and make sure everyone scans the left QR code or types codelabs.developers.google.com/gemini-mcp-agy.
+TIMING: 00:02 - 00:04 (2 mins)
+GOAL: Everyone redeems the event credit FIRST — the Cloud Run deploy at the end needs billing enabled.
+
+SAY THIS:
+"Before we touch anything technical: free credits! Point your phone camera at the big code — it opens the Google Cloud credit claim page for today's event. Sign in with the Google account you're using today, claim it, then create a new project — or pick an existing one — and make sure billing is enabled. We're deploying a real container to Cloud Run in the last sprint, and billing has to be on for that to work."
+
+"Wi-Fi details are at the bottom of the slide if anyone's connection is spotty — network LATW Dev Network, password LATWDevs2026!.
+
+"Hands up when you see the confirmation. The same QR is in the workshop hub on the next slide for anyone who needs a second pass."
+
+FACILITATOR: Wait for most hands. Early finishers open the codelab (codelabs.developers.google.com/gemini-mcp-agy) and start Cloud Shell in the background.
+```
+
+---
+
+### Slide 3: Workshop Hub & Essential Links
+- **Module**: Module 0 • Welcome & Onboarding
+- **Pacing**: `00:04 – 00:05 (1 min)`
+
+#### 🎙️ Speaker Notes:
+```text
+TIMING: 00:04 - 00:05 (1 min)
+ENGAGEMENT CUE: Credits were handled on the previous big-QR slide — this hub is the backup for stragglers. Pause 30 seconds for the codelab QR.
 
 SAY THIS:
 "First things first—grab your phones or open a browser tab and head to the link on the left card: codelabs.developers.google.com/gemini-mcp-agy. Keep this tab open throughout the session! All the prompts and JSON snippets we'll use are right there so you don't have to type long paragraphs from the projector."
 
-"Second card: your free Google Cloud credit — g.dev/credits/latw-mcp-010. Redeem it NOW, because we deploy to Cloud Run at the end and that needs billing enabled on your project."
+"Second card is the credits link again — g.dev/credits/latw-mcp-010 — the backup for anyone whose camera didn't catch the big QR a minute ago."
 
 "Quick show of hands: who has the Codelab open on their screen right now? Awesome. Go ahead and start initializing your Google Cloud project and Cloud Shell in the background while I introduce myself and our mission."
 ```
 
 ---
 
-### Slide 3: Rabimba Karanjai
+### Slide 4: Rabimba Karanjai
 - **Module**: Module 0 • Welcome & Onboarding
 - **Pacing**: `00:05 – 00:07 (2 min)`
 
@@ -92,7 +113,7 @@ SAY THIS:
 
 ---
 
-### Slide 4: Today's 75-Minute Mission
+### Slide 5: Today's 75-Minute Mission
 - **Module**: Module 0 • Welcome & Onboarding
 - **Pacing**: `00:07 – 00:10 (3 min)`
 
@@ -109,7 +130,7 @@ SAY THIS:
 
 ---
 
-### Slide 5: From Code Autocomplete to Command & Control
+### Slide 6: From Code Autocomplete to Command & Control
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:10 – 00:12 (2 min)`
 
@@ -127,7 +148,7 @@ SAY THIS:
 
 ---
 
-### Slide 6: Anatomy of an AI Coding Agent
+### Slide 7: Anatomy of an AI Coding Agent
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:12 – 00:14 (2 min)`
 
@@ -145,7 +166,7 @@ SAY THIS:
 
 ---
 
-### Slide 7: Objectives & Workshop Outcomes
+### Slide 8: Objectives & Workshop Outcomes
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:14 – 00:15 (1 min)`
 
@@ -164,7 +185,7 @@ And fourth, orchestrating a production deployment to Google Cloud Run with autom
 
 ---
 
-### Slide 8: Core Architecture
+### Slide 9: Core Architecture
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:15 – 00:17 (2 min)`
 
@@ -181,7 +202,7 @@ In Tier 2 at the bottom is the application `agy` builds for us: the Cat Delivery
 
 ---
 
-### Slide 9: Key Technologies & Concepts We'll Use!
+### Slide 10: Key Technologies & Concepts We'll Use!
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:17 – 00:18 (1 min)`
 
@@ -196,7 +217,7 @@ SAY THIS:
 
 ---
 
-### Slide 10: Model Context Protocol (MCP) & Agent Skills & Plugins
+### Slide 11: Model Context Protocol (MCP) & Agent Skills & Plugins
 - **Module**: Module 1 • Concepts & Architecture
 - **Pacing**: `00:18 – 00:20 (2 min)`
 
@@ -215,7 +236,7 @@ SAY THIS:
 
 ---
 
-### Slide 11: Let's build this!
+### Slide 12: Let's build this!
 - **Module**: Module 2 • Lab Step 1: Hello Antigravity CLI
 - **Pacing**: `00:20 – 00:21 (1 min)`
 
@@ -230,7 +251,7 @@ SAY THIS:
 
 ---
 
-### Slide 12: Step 1: Open Cloud Shell Editor Terminal
+### Slide 13: Step 1: Open Cloud Shell Editor Terminal
 - **Module**: Module 2 • Lab Step 1: Hello Antigravity CLI
 - **Pacing**: `00:21 – 00:24 (3 min)`
 
@@ -256,7 +277,7 @@ agy
 
 ---
 
-### Slide 13: Step 2: Authenticate Antigravity CLI
+### Slide 14: Step 2: Authenticate Antigravity CLI
 - **Module**: Module 2 • Lab Step 1: Hello Antigravity CLI
 - **Pacing**: `00:24 – 00:27 (3 min)`
 
@@ -284,7 +305,7 @@ Select Google Cloud Location: > global
 
 ---
 
-### Slide 14: ✋ Checkpoint 1: Generate & Run Cat Trivia
+### Slide 15: ✋ Checkpoint 1: Generate & Run Cat Trivia
 - **Module**: Module 2 • Lab Step 1: Hello Antigravity CLI
 - **Pacing**: `00:27 – 00:30 (3 min)`
 
@@ -312,7 +333,7 @@ Explain the code you generated please
 
 ---
 
-### Slide 15: Inside ~/.gemini: AGY Configuration Layout
+### Slide 16: Inside ~/.gemini: AGY Configuration Layout
 - **Module**: Module 3 • Lab Step 2: Developer Knowledge MCP
 - **Pacing**: `00:30 – 00:33 (3 min)`
 
@@ -348,7 +369,7 @@ SAY THIS:
 
 ---
 
-### Slide 16: Step 3: Configure Developer Knowledge MCP
+### Slide 17: Step 3: Configure Developer Knowledge MCP
 - **Module**: Module 3 • Lab Step 2: Developer Knowledge MCP
 - **Pacing**: `00:33 – 00:37 (4 min)`
 
@@ -388,7 +409,7 @@ Finally, launch `agy` and type `/mcp`. You should see `google-developer-knowledg
 
 ---
 
-### Slide 17: 🎤 The "Nano Banana 2" Challenge
+### Slide 18: 🎤 The "Nano Banana 2" Challenge
 - **Module**: Module 3 • Lab Step 2: Developer Knowledge MCP
 - **Pacing**: `00:37 – 00:40 (3 min)`
 
@@ -419,7 +440,7 @@ Write a script that uses Nano Banana 2 through Vertex AI to generate a picture o
 
 ---
 
-### Slide 18: ✋ Checkpoint 2: Inspect Thinking (Ctrl+O) & Kitten Output
+### Slide 19: ✋ Checkpoint 2: Inspect Thinking (Ctrl+O) & Kitten Output
 - **Module**: Module 3 • Lab Step 2: Developer Knowledge MCP
 - **Pacing**: `00:40 – 00:45 (5 min)`
 
@@ -436,7 +457,7 @@ SAY THIS:
 
 ---
 
-### Slide 19: Installing Skills via Skills CLI & Installing Antigravity Plugins
+### Slide 20: Installing Skills via Skills CLI & Installing Antigravity Plugins
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:45 – 00:47 (2 min)`
 
@@ -453,7 +474,7 @@ SAY THIS:
 
 ---
 
-### Slide 20: Step 4: Install Skills & Plugins for Cat Delivery
+### Slide 21: Step 4: Install Skills & Plugins for Cat Delivery
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:47 – 00:50 (3 min)`
 
@@ -490,7 +511,7 @@ agy
 
 ---
 
-### Slide 21: 🎯 Operating Modes (/fast vs /plan) & /model
+### Slide 22: 🎯 Operating Modes (/fast vs /plan) & /model
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:50 – 00:52 (2 min)`
 
@@ -520,7 +541,7 @@ FACILITATOR NOTE: The codelab page still shows the old `/planning` command—if 
 
 ---
 
-### Slide 22: Step 5: Generate the Implementation Plan
+### Slide 23: Step 5: Generate the Implementation Plan
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:52 – 00:55 (3 min)`
 
@@ -554,7 +575,7 @@ TODO:
 
 ---
 
-### Slide 23: Under the Hood: Autonomous Research Phase
+### Slide 24: Under the Hood: Autonomous Research Phase
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:55 – 00:57 (2 min)`
 
@@ -569,7 +590,7 @@ SAY THIS:
 
 ---
 
-### Slide 24: Human-in-the-Loop Review with /artifact
+### Slide 25: Human-in-the-Loop Review with /artifact
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:57 – 00:59 (2 min)`
 
@@ -588,7 +609,7 @@ SAY THIS:
 
 ---
 
-### Slide 25: ✋ Checkpoint 3: Autonomous Implementation & Artifacts
+### Slide 26: ✋ Checkpoint 3: Autonomous Implementation & Artifacts
 - **Module**: Module 4 • Lab Step 3: Agent Skills & /plan Mode
 - **Pacing**: `00:59 – 01:02 (3 min)`
 
@@ -625,7 +646,7 @@ cat-delivery/
 
 ---
 
-### Slide 26: Step 6: Deploy to Cloud Run in /fast Mode
+### Slide 27: Step 6: Deploy to Cloud Run in /fast Mode
 - **Module**: Module 5 • Lab Step 4: Cloud Run Deployment & Verification
 - **Pacing**: `01:02 – 01:06 (4 min)`
 
@@ -659,7 +680,7 @@ Acceptance Criteria
 
 ---
 
-### Slide 27: ✋ Checkpoint 4: Live "Break the Guardrail" Challenge!
+### Slide 28: ✋ Checkpoint 4: Live "Break the Guardrail" Challenge!
 - **Module**: Module 5 • Lab Step 4: Cloud Run Deployment & Verification
 - **Pacing**: `01:06 – 01:10 (4 min)`
 
@@ -678,7 +699,7 @@ Let's run three verification tests together:
 
 ---
 
-### Slide 28: Your Agentic Orchestration Playbook
+### Slide 29: Your Agentic Orchestration Playbook
 - **Module**: Module 6 • Playbook, Troubleshooting & Wrap-Up
 - **Pacing**: `01:10 – 01:12 (2 min)`
 
@@ -698,7 +719,7 @@ When you go back to work on Monday, remember this 4-step Command & Control playb
 
 ---
 
-### Slide 29: Quick Reference: AGY CLI Commands & Shortcuts
+### Slide 30: Quick Reference: AGY CLI Commands & Shortcuts
 - **Module**: Module 6 • Bonus Reference & Cheat Sheet
 - **Pacing**: `Reference Slide (1/2)`
 
@@ -734,7 +755,7 @@ Ctrl + D x2 # Exit AGY CLI cleanly back to bash
 
 ---
 
-### Slide 30: Going Further: Authoring Your Own Skill & Rules
+### Slide 31: Going Further: Authoring Your Own Skill & Rules
 - **Module**: Module 6 • Bonus Reference & Cheat Sheet
 - **Pacing**: `Reference Slide (2/2)`
 
@@ -771,7 +792,7 @@ description: >-
 
 ---
 
-### Slide 31: Command and control: Orchestrate app development with Gemini and MCP
+### Slide 32: Command and control: Orchestrate app development with Gemini and MCP
 - **Module**: Module 6 • Closing
 - **Pacing**: `01:12 – 01:13 (1 min)`
 
@@ -786,7 +807,7 @@ SAY THIS:
 
 ---
 
-### Slide 32: Thank you!
+### Slide 33: Thank you!
 - **Module**: Module 6 • Closing & Q&A
 - **Pacing**: `01:13 – 01:15 (2 min)`
 

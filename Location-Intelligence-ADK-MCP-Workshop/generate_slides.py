@@ -21,6 +21,7 @@ from pptx.enum.shapes import MSO_SHAPE
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+CONFIDENTIAL_BADGE = False  # deck badge convention
 # The Command-and-Control deck's output pptx doubles as our Google Cloud Labs
 # master-layout template (CUSTOM_6_1_3_3_1, TITLE_AND_BODY_1, CUSTOM_6_1_3_2_1_1_4,
 # CUSTOM_6_1_3_2_1_1_3_1_1_1_1_1_2_1). The original coffee_agent_slides.pptx lived
@@ -32,11 +33,11 @@ REF_PPTX = os.path.join(
 )
 
 # ---------------------------------------------------------------------------
-# COMPLETE 38-SLIDE DATA & VERBATIM SPEAKER NOTES
+# COMPLETE 39-SLIDE DATA & VERBATIM SPEAKER NOTES
 # ---------------------------------------------------------------------------
 SLIDES_DATA = [
     # =====================================================================
-    # MODULE 0 — WELCOME & ONBOARDING (00:00 – 00:06)
+    # MODULE 0 — WELCOME & ONBOARDING (00:00 – 00:08)
     # =====================================================================
     # SLIDE 1 — Cover
     {
@@ -55,11 +56,34 @@ SLIDES_DATA = [
             "\"The best part? You won't write any BigQuery or Maps API boilerplate. Two Google-managed MCP servers hand the agent its tools over a single open protocol. You'll build the whole thing yourself in this room.\""
         ),
     },
-    # SLIDE 2 — What you'll build (demo GIF)
+    # SLIDE 2 — Free credits (dedicated big QR)
     {
         "num": 2,
         "module": "Module 0 • Welcome",
-        "time": "00:02 – 00:03 (1 min)",
+        "time": "00:02 – 00:04 (2 min)",
+        "type": "big_qr",
+        "title": "💳 Redeem Your Free Cloud Credits",
+        "url_text": "g.dev/credits/latw-bigquery-100",
+        "url": "https://g.dev/credits/latw-bigquery-100",
+        "qr": "qr_credits.png",
+        "wifi_ssid": "LATW Dev Network",
+        "wifi_pass": "LATWDevs2026!",
+        "desc": "Point your phone camera at the code → redeem → create or pick a project with billing enabled. BigQuery and Maps Grounding Lite are pay-as-you-go; today's lab fits inside these credits many times over.",
+        "notes": (
+            "TIMING: 00:02 - 00:04 (2 mins)\n"
+            "GOAL: 100% of the room redeems the event credit BEFORE anything else — billing is a hard requirement for both services today.\n\n"
+            "SAY THIS:\n"
+            "\"Before we touch anything technical: free credits! Point your phone camera at the big code — it opens the Google Cloud credit claim page for today's event. Sign in with the Google account you're using today, claim it, then create a new project — or pick an existing one — and make sure billing is enabled. BigQuery and Maps Grounding Lite are both pay-as-you-go, and this credit covers today's lab many times over.\"\n\n"
+            "\"Wi-Fi details are at the bottom of the slide if anyone's connection is spotty — network LATW Dev Network, password LATWDevs2026!.\n\n"
+            "\"Hands up when you see the confirmation. If anything hiccups, the same QR is in the links hub in two slides, and I'll put it back up during Q&A.\"\n\n"
+            "FACILITATOR: Do not advance until most hands are up. Early finishers can open the codelab tab (QR on the hub slide) and activate Cloud Shell in the background."
+        ),
+    },
+    # SLIDE 3 — What you'll build (demo GIF)
+    {
+        "num": 3,
+        "module": "Module 0 • Welcome",
+        "time": "00:04 – 00:05 (1 min)",
         "type": "hero_media",
         "title": "This is what you'll have running in about 40 minutes",
         "subtitle": "One Gemini agent • Two managed MCP servers • Zero hand-written API clients",
@@ -67,18 +91,18 @@ SLIDES_DATA = [
         "image_still": "adk_bq_maps_mcp_still.png",
         "caption": "Live demo: an ADK agent chains BigQuery SQL with Google Maps lookups (source: Google Cloud announcement, Dec 10 2025).",
         "notes": (
-            "TIMING: 00:02 - 00:03 (1 min)\n"
+            "TIMING: 00:04 - 00:05 (1 min)\n"
             "GOAL: Hook — show the finished product before any explanation.\n\n"
             "SAY THIS:\n"
             "\"Before any slides: here is the exact agent you'll build. Watch the bottom — the user asks 'which zip code has the highest morning foot traffic', the agent writes SQL and runs it in BigQuery. Then 'is that area saturated with bakeries' — it switches to Google Maps and searches Places. One conversation, two totally different data worlds, joined by one agent.\"\n\n"
             "\"Keep this picture in your head. Every concept I explain for the next 20 minutes maps to something you just saw.\""
         ),
     },
-    # SLIDE 3 — QR hub
+    # SLIDE 4 — QR hub
     {
-        "num": 3,
+        "num": 4,
         "module": "Module 0 • Welcome",
-        "time": "00:03 – 00:04 (1 min)",
+        "time": "00:05 – 00:06 (1 min)",
         "type": "qr_hub",
         "title": "Workshop Hub — scan these now",
         "subtitle": "Everything you need is one QR away; the codelab has all commands and prompts",
@@ -106,32 +130,32 @@ SLIDES_DATA = [
             },
         ],
         "notes": (
-            "TIMING: 00:03 - 00:04 (1 min)\n"
+            "TIMING: 00:05 - 00:06 (1 min)\n"
             "ENGAGEMENT CUE: 'Phones out — scan the left QR for the codelab. That page has every command and every prompt, so you never have to type from the projector.'\n\n"
             "SAY THIS:\n"
-            "\"Three links matter today. Left: the codelab — keep it open all session, it's your source of truth. Middle: your free Google Cloud credit — g.dev/credits/latw-bigquery-100 — redeem it now and create a project with billing on, because both services we use are pay-as-you-go. Right: my GitHub, where this deck and the full speaker script live if you want to rerun this workshop for your own GDG chapter.\""
+            "\"Three links matter today. Left: the codelab — keep it open all session, it's your source of truth. Middle: the credits link again — if the big QR two slides back didn't scan for you, grab g.dev/credits/latw-bigquery-100 here; billing is required for both services today. Right: my GitHub, where this deck and the full speaker script live if you want to rerun this workshop for your own GDG chapter.\""
         ),
     },
-    # SLIDE 4 — Speaker
+    # SLIDE 5 — Speaker
     {
-        "num": 4,
+        "num": 5,
         "module": "Module 0 • Welcome",
-        "time": "00:04 – 00:05 (1 min)",
+        "time": "00:06 – 00:07 (1 min)",
         "type": "speaker",
         "title": "Rabimba\nKaranjai",
         "subtitle": "Google Developer Expert (AI & ML)\nML Scientist - PayPal",
         "photo": "ref_slide4_pic2.jpg",
         "notes": (
-            "TIMING: 00:04 - 00:05 (1 min)\n"
+            "TIMING: 00:06 - 00:07 (1 min)\n"
             "SAY THIS:\n"
             "\"Quick intro — I'm Rabimba Karanjai, a Google Developer Expert in AI/ML, and by day an ML Scientist at PayPal where I build and break agentic systems. This is a hands-on room: if something fails — and with live APIs something always hiccups — shout it out. Debugging together is part of the workshop.\""
         ),
     },
-    # SLIDE 5 — Start your engines (parallel setup)
+    # SLIDE 6 — Start your engines (parallel setup)
     {
-        "num": 5,
+        "num": 6,
         "module": "Module 0 • Welcome",
-        "time": "00:05 – 00:06 (1 min)",
+        "time": "00:07 – 00:08 (1 min)",
         "type": "stepper_split",
         "title": "Start your engines — setup runs while I talk",
         "callout_badge": "DO THIS NOW",
@@ -156,7 +180,7 @@ SLIDES_DATA = [
             "./setup/setup_bigquery.sh"
         ),
         "notes": (
-            "TIMING: 00:05 - 00:06 (1 min)\n"
+            "TIMING: 00:07 - 00:08 (1 min)\n"
             "GOAL: Fire-and-forget provisioning so nobody waits on BigQuery loads later.\n\n"
             "SAY THIS:\n"
             "\"Here's my favorite workshop trick: the slowest part of today is provisioning APIs and loading BigQuery tables — and it needs zero attention. So start it NOW, in the background. Activate Cloud Shell from the Cloud Console top bar, paste these commands, and let them run in a corner.\"\n\n"
@@ -165,13 +189,13 @@ SLIDES_DATA = [
         ),
     },
     # =====================================================================
-    # MODULE 1 — CONCEPTS (00:06 – 00:25)
+    # MODULE 1 — CONCEPTS (00:08 – 00:28)
     # =====================================================================
-    # SLIDE 6 — Poll: the problem
+    # SLIDE 7 — Poll: the problem
     {
-        "num": 6,
+        "num": 7,
         "module": "Module 1 • Concepts",
-        "time": "00:06 – 00:08 (2 min)",
+        "time": "00:08 – 00:10 (2 min)",
         "type": "section_poll",
         "icon": "icon_maps.png",
         "title": "Your friend is opening a sourdough\nbakery in Los Angeles. Where?",
@@ -186,18 +210,18 @@ SLIDES_DATA = [
             "answer": "C alone hallucinates — a model can't know current foot traffic or which bakeries exist. The winning move is D: data + the real world, joined by an agent. Today we build exactly that.",
         },
         "notes": (
-            "TIMING: 00:06 - 00:08 (2 mins)\n"
+            "TIMING: 00:08 - 00:10 (2 mins)\n"
             "GOAL: Frame the business problem; let the audience discover why a bare LLM fails.\n\n"
             "SAY THIS:\n"
             "\"A friend wants to open a high-end sourdough bakery in LA. Wrong zip code = bankruptcy. So — how do you pick? Show of hands for A... B... C? Someone always says 'just ask ChatGPT.' Here's the trap: a language model has no idea what foot traffic looks like in 90403 this morning, or that three new bakeries opened there last month. It will confidently invent an answer. That's not intelligence, that's a hallucination with a business plan.\"\n\n"
             "\"Click D on screen. Real foot-traffic data lives in a database. Real competitors live on a map. Today's agent queries BOTH, then reasons over the combined evidence.\""
         ),
     },
-    # SLIDE 7 — Two worlds (split)
+    # SLIDE 8 — Two worlds (split)
     {
-        "num": 7,
+        "num": 8,
         "module": "Module 1 • Concepts",
-        "time": "00:08 – 00:09 (1 min)",
+        "time": "00:10 – 00:11 (1 min)",
         "type": "split_worlds",
         "title": "Two data worlds, one question",
         "left": {
@@ -224,17 +248,17 @@ SLIDES_DATA = [
         },
         "bridge": "An agent must reason across BOTH to answer 'where should I open?'",
         "notes": (
-            "TIMING: 00:08 - 00:09 (1 min)\n"
+            "TIMING: 00:10 - 00:11 (1 min)\n"
             "SAY THIS:\n"
             "\"Look at the two columns. On the left, the private numbers every business guards: census demographics, what competitors charge for a loaf, your own sales history. That lives in BigQuery. On the right, public real-world facts that change daily: is there already a bakery on that block, how long is the drive to Restaurant Depot, will it rain on opening day. That lives in Google Maps.\"\n\n"
             "\"No single system answers both. The whole point of today is the bridge at the bottom — one agent that treats both as just... tools.\""
         ),
     },
-    # SLIDE 8 — What is an agent (build)
+    # SLIDE 9 — What is an agent (build)
     {
-        "num": 8,
+        "num": 9,
         "module": "Module 1 • Concepts",
-        "time": "00:09 – 00:11 (2 min)",
+        "time": "00:11 – 00:13 (2 min)",
         "type": "diagram_build",
         "title": "What makes an LLM an Agent?",
         "subtitle": "Build the definition up piece by piece — press → to reveal each part",
@@ -246,18 +270,18 @@ SLIDES_DATA = [
         ],
         "summary": "Agent = Model + Instructions + Tools, running in a Reason-Act-Observe loop",
         "notes": (
-            "TIMING: 00:09 - 00:11 (2 mins)\n"
+            "TIMING: 00:11 - 00:13 (2 mins)\n"
             "GOAL: Demystify 'agent' in four reveals. In the web deck each press of → reveals the next block.\n\n"
             "SAY THIS (per reveal):\n"
             "\"First: a model. Gemini 3.5 Flash — a brain that predicts text. Powerful, but it can only talk. [→] Give it instructions — a job description: 'you are a location-intelligence analyst; combine BigQuery and Maps.' [→] Give it tools — actual capabilities: run SQL, search places, compute a route. [→] And wrap it in a loop: the model reasons about what to do, calls a tool, observes the result, and reasons again.\"\n\n"
             "\"That loop is the whole magic trick. An agent isn't a bigger model — it's a model with hands and a while-loop.\""
         ),
     },
-    # SLIDE 9 — The stack (three tech)
+    # SLIDE 10 — The stack (three tech)
     {
-        "num": 9,
+        "num": 10,
         "module": "Module 1 • Concepts",
-        "time": "00:11 – 00:12 (1 min)",
+        "time": "00:13 – 00:14 (1 min)",
         "type": "three_tech",
         "title": "The three pillars we'll use today",
         "cols": [
@@ -278,16 +302,16 @@ SLIDES_DATA = [
             },
         ],
         "notes": (
-            "TIMING: 00:11 - 00:12 (1 min)\n"
+            "TIMING: 00:13 - 00:14 (1 min)\n"
             "SAY THIS:\n"
             "\"Three pillars. Gemini 3.5 Flash is the brain — we run it on Vertex AI so it's authenticated and billed through your Cloud project, which that setup script already switched on. ADK is the framework — you describe the agent in a few lines of Python and it handles the loop, tool dispatch, and a debug UI. And MCP is the connective tissue — the open protocol that lets ADK talk to BigQuery and Maps without us writing a single API wrapper. Next three slides take each in turn.\""
         ),
     },
-    # SLIDE 10 — ADK anatomy (code focus)
+    # SLIDE 11 — ADK anatomy (code focus)
     {
-        "num": 10,
+        "num": 11,
         "module": "Module 1 • Concepts",
-        "time": "00:12 – 00:13 (1 min)",
+        "time": "00:14 – 00:15 (1 min)",
         "type": "code_focus",
         "title": "An ADK agent in ~15 lines",
         "subtitle": "adk_agent/mcp_bakery_app/agent.py — the entire agent definition",
@@ -319,17 +343,17 @@ SLIDES_DATA = [
             ("tools", "Two MCP toolsets = every tool from both servers"),
         ],
         "notes": (
-            "TIMING: 00:12 - 00:13 (1 min)\n"
+            "TIMING: 00:14 - 00:15 (1 min)\n"
             "SAY THIS:\n"
             "\"This is genuinely the whole agent — about fifteen lines. An LlmAgent needs three things: a model, an instruction, and tools. Read the instruction like a job description: it tells the agent which dataset it's allowed to touch — mcp_bakery and nothing else — which project to bill queries to, and to always include a Maps link when it talks about places.\"\n\n"
             "\"The instruction is your strongest control surface. In the bonus section you'll edit it live and watch the agent's behavior change.\""
         ),
     },
-    # SLIDE 11 — MCP: why (N x M -> N + M)
+    # SLIDE 12 — MCP: why (N x M -> N + M)
     {
-        "num": 11,
+        "num": 12,
         "module": "Module 1 • Concepts",
-        "time": "00:13 – 00:15 (2 min)",
+        "time": "00:15 – 00:17 (2 min)",
         "type": "nxm",
         "title": "MCP: from N×M integrations to N+M",
         "subtitle": "The 'USB-C for AI' — Anthropic's open standard, adopted across the industry",
@@ -338,7 +362,7 @@ SLIDES_DATA = [
         "agents": ["ADK Agent", "Gemini CLI", "Any MCP client"],
         "servers": ["BigQuery", "Google Maps", "Your API?"],
         "notes": (
-            "TIMING: 00:13 - 00:15 (2 mins)\n"
+            "TIMING: 00:15 - 00:17 (2 mins)\n"
             "GOAL: The 'why' of MCP — the integration math.\n\n"
             "SAY THIS:\n"
             "\"Before MCP, wiring an agent to a data source meant a bespoke adapter: read the API docs, hand-write a client, hand-write the tool schema, pray about auth. Three agents times three data sources is nine brittle adapters.\"\n\n"
@@ -346,11 +370,11 @@ SLIDES_DATA = [
             "KEY VOCAB on this slide: Host = the app the user talks to (ADK web UI). Client = the connection inside the host. Server = the thing exposing tools (BigQuery, Maps)."
         ),
     },
-    # SLIDE 12 — MCP roles & transport (build)
+    # SLIDE 13 — MCP roles & transport (build)
     {
-        "num": 12,
+        "num": 13,
         "module": "Module 1 • Concepts",
-        "time": "00:15 – 00:16 (1 min)",
+        "time": "00:17 – 00:18 (1 min)",
         "type": "diagram_build",
         "title": "MCP anatomy: Host, Client, Server",
         "subtitle": "And the transport that carries it — today that's Streamable HTTP",
@@ -362,17 +386,17 @@ SLIDES_DATA = [
         ],
         "summary": "Our agent never runs BigQuery or Maps code — it calls remote tools over HTTP",
         "notes": (
-            "TIMING: 00:15 - 00:16 (1 min)\n"
+            "TIMING: 00:17 - 00:18 (1 min)\n"
             "SAY THIS:\n"
             "\"Three roles. The Host is the app you talk to — ADK's web UI. Inside it, a Client maintains one dedicated connection per server. The Server is where the tools live. And the transport is how bytes move: stdio for a server running as a subprocess on your laptop, or Streamable HTTP for a remote server.\"\n\n"
             "\"Today both our servers are remote and Google-hosted, so it's Streamable HTTP with an auth header. That's why you don't install BigQuery or Maps SDKs at all — you saw the repo: no BigQuery client code, no Places client code. Just two URLs.\""
         ),
     },
-    # SLIDE 13 — Google-managed remote MCP servers (arch)
+    # SLIDE 14 — Google-managed remote MCP servers (arch)
     {
-        "num": 13,
+        "num": 14,
         "module": "Module 1 • Concepts",
-        "time": "00:16 – 00:18 (2 min)",
+        "time": "00:18 – 00:20 (2 min)",
         "type": "arch_split",
         "title": "Google's managed, remote MCP servers",
         "subtitle": "Announced Dec 10, 2025 — Google's API infrastructure now speaks MCP",
@@ -386,18 +410,18 @@ SLIDES_DATA = [
         ],
         "image": "repo_architecture.png",
         "notes": (
-            "TIMING: 00:16 - 00:18 (2 mins)\n"
+            "TIMING: 00:18 - 00:20 (2 mins)\n"
             "GOAL: Position Google's managed servers as the enterprise-ready path.\n\n"
             "SAY THIS:\n"
             "\"Last December, Google announced that its API infrastructure itself now speaks MCP. Instead of installing some community server and babysitting it, you point at a managed endpoint: bigquery.googleapis.com/mcp, mapstools.googleapis.com/mcp. Same URL everywhere on Earth.\"\n\n"
             "\"Two things to notice. First, MCP is opt-in per project — that's why setup_env.sh ran 'gcloud beta services mcp enable' for both services. Second, it's governed like the rest of Google Cloud: there's a dedicated IAM role — roles/mcp.toolUser — every tool call lands in audit logs, and Model Armor can screen for prompt injection. That governance story is exactly why enterprises can actually deploy this.\""
         ),
     },
-    # SLIDE 14 — BigQuery MCP tool catalog
+    # SLIDE 15 — BigQuery MCP tool catalog
     {
-        "num": 14,
+        "num": 15,
         "module": "Module 1 • Concepts",
-        "time": "00:18 – 00:19 (1 min)",
+        "time": "00:20 – 00:21 (1 min)",
         "type": "tool_catalog",
         "title": "BigQuery MCP server — the 6 tools",
         "subtitle": "The agent discovers these itself; column descriptions become its documentation",
@@ -413,17 +437,17 @@ SLIDES_DATA = [
         ],
         "callout": "The agent reads get_table_info output to write its own SQL. Rich column descriptions in setup_bigquery.sh = a better agent. Your schema docs ARE the prompt.",
         "notes": (
-            "TIMING: 00:18 - 00:19 (1 min)\n"
+            "TIMING: 00:20 - 00:21 (1 min)\n"
             "SAY THIS:\n"
             "\"What can the agent actually do in BigQuery? Six tools. It can list datasets, list tables, and read metadata — and then the two interesting ones: execute_sql runs arbitrary SQL, and execute_sql_readonly does the same with mutations blocked. Because it's full SQL, the agent can even call BigQuery's AI.FORECAST function — that's how it does the revenue projection you'll see later.\"\n\n"
             "\"Here's the subtle part — watch get_table_info. When the agent needs to write SQL, it first asks the server for the table schema, and the server returns the column descriptions that the setup script wrote: 'foot_traffic_index — index of estimated foot traffic based on commercial density.' The agent uses that text to decide which column to query. So your schema documentation literally becomes part of the prompt. Good descriptions, smarter agent.\""
         ),
     },
-    # SLIDE 15 — Maps Grounding Lite tool catalog
+    # SLIDE 16 — Maps Grounding Lite tool catalog
     {
-        "num": 15,
+        "num": 16,
         "module": "Module 1 • Concepts",
-        "time": "00:19 – 00:20 (1 min)",
+        "time": "00:21 – 00:22 (1 min)",
         "type": "tool_catalog",
         "title": "Maps Grounding Lite — the 5 tools",
         "subtitle": "Trusted geospatial grounding with required Google Maps attribution",
@@ -438,17 +462,17 @@ SLIDES_DATA = [
         ],
         "callout": "Grounding Lite returns distance & duration — NOT turn-by-turn directions. Every grounded answer must show its Google Maps source link (the agent is instructed to include it).",
         "notes": (
-            "TIMING: 00:19 - 00:20 (1 min)\n"
+            "TIMING: 00:21 - 00:22 (1 min)\n"
             "SAY THIS:\n"
             "\"The Maps side is called Grounding Lite — an MCP server over Google's geospatial data. Five tools. search_places finds businesses and returns an AI summary plus a Maps link for each. compute_routes gives distance and drive time — note, deliberately not turn-by-turn navigation. lookup_weather does what it says. And the two resolve tools turn fuzzy text — 'a bakery near the pier' — into stable Place IDs you can feed to other Maps APIs.\"\n\n"
             "\"One rule matters: attribution. When the agent's answer is grounded in Maps, the Google Maps source link must be shown. Remember our agent instruction said 'include a hyperlink to an interactive map'? That line is doing attribution compliance.\""
         ),
     },
-    # SLIDE 16 — Two auth patterns (code split, tools.py)
+    # SLIDE 17 — Two auth patterns (code split, tools.py)
     {
-        "num": 16,
+        "num": 17,
         "module": "Module 1 • Concepts",
-        "time": "00:20 – 00:21 (1 min)",
+        "time": "00:22 – 00:23 (1 min)",
         "type": "code_split",
         "title": "Two servers, two auth patterns — tools.py",
         "subtitle": "Same MCPToolset, different credentials",
@@ -481,17 +505,17 @@ SLIDES_DATA = [
             "    timeout=30.0, sse_read_timeout=300.0))"
         ),
         "notes": (
-            "TIMING: 00:20 - 00:21 (1 min)\n"
+            "TIMING: 00:22 - 00:23 (1 min)\n"
             "SAY THIS:\n"
             "\"Open tools.py and it's almost disappointingly simple — two functions, same pattern. Maps takes an API key in a header; the setup script created a restricted key that only works for the maps tools service. BigQuery is stricter: it's your enterprise data, so it wants OAuth. We pull a token from your Application Default Credentials and pass it as a Bearer header, plus x-goog-user-project so queries bill to your project.\"\n\n"
             "\"Now the one operational gotcha of the whole day — star this. That OAuth token lives about 60 minutes, and ADK does not refresh it for you. If your agent suddenly starts failing late in the workshop, re-run gcloud auth application-default login. Write it down.\""
         ),
     },
-    # SLIDE 17 — Macro -> micro journey (storyboard)
+    # SLIDE 18 — Macro -> micro journey (storyboard)
     {
-        "num": 17,
+        "num": 18,
         "module": "Module 1 • Concepts",
-        "time": "00:21 – 00:23 (2 min)",
+        "time": "00:23 – 00:25 (2 min)",
         "type": "journey_storyboard",
         "title": "The reasoning journey: macro → micro → money",
         "subtitle": "Watch how one conversation walks down the decision funnel, switching tools",
@@ -503,18 +527,18 @@ SLIDES_DATA = [
             ("Q5", "Is Restaurant Depot < 30 min away?", "Maps • compute_routes", "→ logistics check", "green"),
         ],
         "notes": (
-            "TIMING: 00:21 - 00:23 (2 mins)\n"
+            "TIMING: 00:23 - 00:25 (2 mins)\n"
             "GOAL: The narrative spine of the whole workshop — memorize this funnel.\n\n"
             "SAY THIS:\n"
             "\"Here's the entire workshop as five questions. Notice the rhythm — it zooms from the whole city down to a loading dock. Question one is MACRO: across all of LA, where's the morning foot traffic? That's a BigQuery aggregate — the agent writes SQL, scans the foot_traffic table, and lands on zip 90403, Santa Monica. Question two goes MICRO: is that zip already crawling with bakeries? No database knows that — that's a live Maps search. Three: pricing — back to BigQuery, max price for a sourdough loaf, and Erewhon tops out around $18.50. Four: money — forecast December revenue off your best store using BigQuery's AI.FORECAST. Five: logistics — a compute_routes call to confirm the supplier run is under 30 minutes.\"\n\n"
             "\"Blue rows are BigQuery, green rows are Maps. The agent is choosing the right tool for each question with no router, no if-statements — the instruction plus the model's reasoning does it.\""
         ),
     },
-    # SLIDE 18 — Full architecture (codelab diagram)
+    # SLIDE 19 — Full architecture (codelab diagram)
     {
-        "num": 18,
+        "num": 19,
         "module": "Module 1 • Concepts",
-        "time": "00:23 – 00:24 (1 min)",
+        "time": "00:25 – 00:26 (1 min)",
         "type": "arch_split",
         "title": "The full architecture",
         "subtitle": "Everything on one slide — this is your 'you are here' map for the lab",
@@ -529,18 +553,18 @@ SLIDES_DATA = [
         ],
         "image": "codelab_architecture.png",
         "notes": (
-            "TIMING: 00:23 - 00:24 (1 min)\n"
+            "TIMING: 00:25 - 00:26 (1 min)\n"
             "SAY THIS:\n"
             "\"Everything we just covered, one diagram. User talks to the ADK web UI. The agent — Gemini 3.5 Flash on Vertex AI — reads the question and the instruction, decides it needs data, and the MCPToolset fires a signed HTTP call. BigQuery interprets the schema and runs SQL where the data lives — the rows never get shipped into the model, only the answer does. Maps grounds the same conversation in live places and routes. Then the agent fuses both into one answer.\"\n\n"
             "\"Screenshot this slide. In the lab, whenever you're lost, find yourself on this map.\"\n\n"
             "NOTE: This codelab diagram says 'Gemini 3 Pro' — the actual code uses gemini-3.5-flash. If a sharp attendee asks, confirm: model ID is set in agent.py and swappable."
         ),
     },
-    # SLIDE 19 — Quiz
+    # SLIDE 20 — Quiz
     {
-        "num": 19,
+        "num": 20,
         "module": "Module 1 • Concepts",
-        "time": "00:24 – 00:25 (1 min)",
+        "time": "00:26 – 00:27 (1 min)",
         "type": "two_cards_quiz",
         "left_card": {
             "color": "blue",
@@ -567,18 +591,18 @@ SLIDES_DATA = [
             "answer": "Rule of thumb: facts that live in your warehouse → BigQuery tool. Facts about the physical world right now → Maps tool. The agent learns the tools exist from the toolsets, not from you hard-coding the path.",
         },
         "notes": (
-            "TIMING: 00:24 - 00:25 (1 min)\n"
+            "TIMING: 00:26 - 00:27 (1 min)\n"
             "GOAL: Lock in tool selection intuition before hands-on.\n\n"
             "SAY THIS:\n"
             "\"Sixty-second check. Weather at the site? Maps lookup_weather. December revenue forecast? BigQuery execute_sql calling AI.FORECAST. How does the agent know what columns exist? It calls list_table_ids and get_table_info first.\"\n\n"
             "\"And the right column kills the three things people always try instead: pasting CSVs into the prompt — stale and ungoverned; curling the Maps API — you're back to hand-rolled auth and parsing; fine-tuning — which teaches a model style, not today's facts. When in doubt: warehouse facts, BigQuery; real-world right-now, Maps.\""
         ),
     },
-    # SLIDE 20 — Production guardrails
+    # SLIDE 21 — Production guardrails
     {
-        "num": 20,
+        "num": 21,
         "module": "Module 1 • Concepts",
-        "time": "00:25 – 00:26 (1 min)",
+        "time": "00:27 – 00:28 (1 min)",
         "type": "objectives_card",
         "title": "Taking this to production — the guardrails that matter",
         "intro": "The demo uses your personal credentials for speed. Before this pattern ships, layer on:",
@@ -591,7 +615,7 @@ SLIDES_DATA = [
             ("Watch the logs", "every MCP tool call lands in Cloud Audit Logs — alert on anomalies"),
         ],
         "notes": (
-            "TIMING: 00:25 - 00:26 (1 min)\n"
+            "TIMING: 00:27 - 00:28 (1 min)\n"
             "GOAL: Bridge from toy to enterprise; this is what makes it 'GDE-grade'.\n\n"
             "SAY THIS:\n"
             "\"Quick reality check — today we use YOUR credentials because it's fast. In production you tighten it: grant only the three least-privilege roles; give the agent its own service account so every call is attributable; prefer execute_sql_readonly — or a deny policy on execute_sql — so the agent physically cannot DROP a table; keep the Maps key restricted to one service; put Model Armor in front of tool output so a poisoned web result can't hijack the agent; and alert on the audit logs. That's the list a security team will ask about — now you have answers.\"\n\n"
@@ -599,29 +623,29 @@ SLIDES_DATA = [
         ),
     },
     # =====================================================================
-    # MODULE 2 — LAB A: SETUP (00:26 – 00:36)
+    # MODULE 2 — LAB A: SETUP (00:28 – 00:38)
     # =====================================================================
-    # SLIDE 21 — Lab divider
+    # SLIDE 22 — Lab divider
     {
-        "num": 21,
+        "num": 22,
         "module": "Module 2 • Lab A: Setup",
-        "time": "00:26 – 00:27 (1 min)",
+        "time": "00:28 – 00:29 (1 min)",
         "type": "lab_divider",
         "title": "Let's build this!",
         "subtitle": "Part A: finish provisioning • Part B: run the agent • Part C: the full journey",
         "notes": (
-            "TIMING: 00:26 - 00:27 (1 min)\n"
+            "TIMING: 00:28 - 00:29 (1 min)\n"
             "GOAL: Shift the room from listening to doing.\n\n"
             "SAY THIS:\n"
             "\"Concepts done. From here it's all hands-on — three parts. Part A, we finish setup and verify the data landed. Part B, we boot the agent and say hello. Part C, the fun part: the full five-question business journey. If you started the scripts at the beginning, you're already ahead. Let's check on them.\"\n\n"
             "FACILITATOR: From this point, keep the codelab page open on the projector when not on a slide — attendees should mirror you."
         ),
     },
-    # SLIDE 22 — Catch-up: project + auth
+    # SLIDE 23 — Catch-up: project + auth
     {
-        "num": 22,
+        "num": 23,
         "module": "Module 2 • Lab A: Setup",
-        "time": "00:27 – 00:29 (2 min)",
+        "time": "00:29 – 00:31 (2 min)",
         "type": "code_split",
         "title": "Step 1: Project, auth & the code",
         "subtitle": "If you did the 'engines' step, just verify — else run it now",
@@ -644,18 +668,18 @@ SLIDES_DATA = [
         ),
         "screenshot": "codelab_activate_cloudshell.png",
         "notes": (
-            "TIMING: 00:27 - 00:29 (2 mins)\n"
+            "TIMING: 00:29 - 00:31 (2 mins)\n"
             "GOAL: Everyone authenticated with ADC set.\n\n"
             "SAY THIS:\n"
             "\"Step one. Three checks. gcloud auth list — your account should say ACTIVE. Then export PROJECT_ID so every later command knows your project. And the important one: gcloud auth application-default login. That creates Application Default Credentials on this machine — remember, the BigQuery toolset turns that into the OAuth bearer token. Skip this and the agent fails at query time, not at startup, which confuses everyone.\"\n\n"
             "WALK THE ROOM: the #1 failure here is people not having billing enabled because they skipped the credit redemption. Ask for a show of hands: 'Who sees their account as ACTIVE?'"
         ),
     },
-    # SLIDE 23 — What the setup scripts do (diagram)
+    # SLIDE 24 — What the setup scripts do (diagram)
     {
-        "num": 23,
+        "num": 24,
         "module": "Module 2 • Lab A: Setup",
-        "time": "00:29 – 00:31 (2 min)",
+        "time": "00:31 – 00:33 (2 min)",
         "type": "diagram_build",
         "title": "What those two setup scripts just did",
         "subtitle": "Press → to walk through the provisioning you kicked off at minute 5",
@@ -667,18 +691,18 @@ SLIDES_DATA = [
         ],
         "summary": "Result: a governed dataset + a restricted key + MCP endpoints switched on",
         "notes": (
-            "TIMING: 00:29 - 00:31 (2 mins)\n"
+            "TIMING: 00:31 - 00:33 (2 mins)\n"
             "GOAL: Convert 'magic scripts' into understood infrastructure.\n\n"
             "SAY THIS:\n"
             "\"So what did you actually run? setup_env.sh did two things — it enabled the four APIs, AND it flipped on the MCP endpoints themselves with gcloud beta services mcp enable; remember, MCP is opt-in. Then it minted a Maps API key locked to just the maps-tools service and dropped your .env. setup_bigquery.sh staged the four CSVs into a bucket, then created the mcp_bakery dataset with four tables. And here's that detail again: every column got an OPTIONS description. Those descriptions are what get_table_info will feed the agent so it can write sensible SQL.\"\n\n"
             "CHECK: 'Everyone whose scripts finished — green check in chat / hand up. Still running? Fine, keep going, it'll catch up.'"
         ),
     },
-    # SLIDE 24 — Checkpoint 1: verify dataset
+    # SLIDE 25 — Checkpoint 1: verify dataset
     {
-        "num": 24,
+        "num": 25,
         "module": "Module 2 • Lab A: Setup",
-        "time": "00:31 – 00:33 (2 min)",
+        "time": "00:33 – 00:35 (2 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 1: Your data is live",
         "timer_seconds": 120,
@@ -691,18 +715,18 @@ SLIDES_DATA = [
         "screenshot": "codelab_bigquery_console.jpeg",
         "caption": "BigQuery console: mcp_bakery dataset with its 4 tables",
         "notes": (
-            "TIMING: 00:31 - 00:33 (2 mins) — START THE 2-MIN LAB TIMER.\n"
+            "TIMING: 00:33 - 00:35 (2 mins) — START THE 2-MIN LAB TIMER.\n"
             "GOAL: First tangible win; everyone sees their own data.\n\n"
             "SAY THIS:\n"
             "\"First checkpoint — make it real. Open the BigQuery console. You should see a dataset called mcp_bakery with four tables: demographics, bakery_prices, sales_history_weekly, foot_traffic. Click into foot_traffic and find the morning score column — that's the exact column the agent is about to query for question one.\"\n\n"
             "\"If mcp_bakery isn't there, nine times out of ten the PROJECT_ID export didn't stick — echo it, re-run the script. Hands up when you see the four tables!\""
         ),
     },
-    # SLIDE 25 — Install ADK
+    # SLIDE 26 — Install ADK
     {
-        "num": 25,
+        "num": 26,
         "module": "Module 2 • Lab A: Setup",
-        "time": "00:33 – 00:36 (3 min)",
+        "time": "00:35 – 00:38 (3 min)",
         "type": "code_split",
         "title": "Step 2: Install ADK in a virtualenv",
         "subtitle": "google-adk[mcp] — the [mcp] extra brings the MCP client",
@@ -723,20 +747,20 @@ SLIDES_DATA = [
             "cd adk_agent/"
         ),
         "notes": (
-            "TIMING: 00:33 - 00:36 (3 mins)\n"
+            "TIMING: 00:35 - 00:38 (3 mins)\n"
             "SAY THIS:\n"
             "\"Install time. Make a virtualenv — Cloud Shell's system Python is shared, don't pollute it. Then pip install quote google-adk bracket mcp unquote. That little [mcp] extra is what brings the MCP client; without it MCPToolset import fails. If the resolver gives you grief, the repo pins google-adk==1.28.0 as a known-good.\"\n\n"
             "\"Then cd into adk_agent. Important: adk web discovers agent apps by scanning the CURRENT directory, so where you run it from matters. If the UI later shows an empty dropdown, you're in the wrong folder.\""
         ),
     },
     # =====================================================================
-    # MODULE 3 — LAB B: RUN THE AGENT (00:36 – 00:55)
+    # MODULE 3 — LAB B: RUN THE AGENT (00:38 – 00:57)
     # =====================================================================
-    # SLIDE 26 — Inspect the code
+    # SLIDE 27 — Inspect the code
     {
-        "num": 26,
+        "num": 27,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:36 – 00:38 (2 min)",
+        "time": "00:38 – 00:40 (2 min)",
         "type": "checkpoint_visual",
         "title": "Step 3: Read the agent you'll run",
         "bullets": [
@@ -748,17 +772,17 @@ SLIDES_DATA = [
         "screenshot": "codelab_open_editor.png",
         "caption": "Cloud Shell Editor showing the launchmybakery layout",
         "notes": (
-            "TIMING: 00:36 - 00:38 (2 mins)\n"
+            "TIMING: 00:38 - 00:40 (2 mins)\n"
             "GOAL: Connect the concept slides to real files before running.\n\n"
             "SAY THIS:\n"
-            "\"Before we run anything, open it. Click 'Open Editor' in Cloud Shell and navigate into launchmybakery. Open agent.py — there's the LlmAgent from slide 10, word for word. Open tools.py — there's the API-key header and the OAuth header from slide 16. And check .env: you should see GOOGLE_GENAI_USE_VERTEXAI=1 and a MAPS_API_KEY, both written by the setup script. You're not writing code today — you're recognizing it, so that next week you can write your own.\""
+            "\"Before we run anything, open it. Click 'Open Editor' in Cloud Shell and navigate into launchmybakery. Open agent.py — there's the LlmAgent from slide 11, word for word. Open tools.py — there's the API-key header and the OAuth header from slide 17. And check .env: you should see GOOGLE_GENAI_USE_VERTEXAI=1 and a MAPS_API_KEY, both written by the setup script. You're not writing code today — you're recognizing it, so that next week you can write your own.\""
         ),
     },
-    # SLIDE 27 — Run adk web
+    # SLIDE 28 — Run adk web
     {
-        "num": 27,
+        "num": 28,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:38 – 00:41 (3 min)",
+        "time": "00:40 – 00:43 (3 min)",
         "type": "code_split",
         "title": "Step 4: Launch the agent UI",
         "subtitle": "adk web + Cloud Shell Web Preview on port 8000",
@@ -780,18 +804,18 @@ SLIDES_DATA = [
         ),
         "screenshot": "codelab_open_adk_ui.png",
         "notes": (
-            "TIMING: 00:38 - 00:41 (3 mins)\n"
+            "TIMING: 00:40 - 00:43 (3 mins)\n"
             "GOAL: Everyone has the ADK web UI open.\n\n"
             "SAY THIS:\n"
             "\"Launch it. From inside adk_agent, run adk web with allow_origins set to the cloudshell.dev regex — that flag exists because you're reaching the server through Cloud Shell's web proxy, and without it the WebSocket gets rejected. When you see 'Uvicorn running on 127.0.0.1:8000', click Web Preview in the top right, change the port to 8000, and preview.\"\n\n"
             "\"A chat UI opens. Top-left dropdown: pick mcp_bakery_app. If that dropdown is empty, stop — you're in the wrong directory. Ctrl-C, cd adk_agent, rerun. This trips up half the room every time.\""
         ),
     },
-    # SLIDE 28 — Checkpoint 2: first query (macro)
+    # SLIDE 29 — Checkpoint 2: first query (macro)
     {
-        "num": 28,
+        "num": 29,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:41 – 00:44 (3 min)",
+        "time": "00:43 – 00:46 (3 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 2: First tool call (macro)",
         "timer_seconds": 180,
@@ -804,18 +828,18 @@ SLIDES_DATA = [
         "screenshot": "codelab_adk_macro.png",
         "caption": "ADK web: execute_sql finds the top morning-traffic zip",
         "notes": (
-            "TIMING: 00:41 - 00:44 (3 mins) — START THE 3-MIN TIMER.\n"
+            "TIMING: 00:43 - 00:46 (3 mins) — START THE 3-MIN TIMER.\n"
             "GOAL: The 'wow' moment — the agent writes and runs its own SQL.\n\n"
             "SAY THIS:\n"
             "\"First real question — copy it from the codelab, don't type it: 'I want to open a bakery in Los Angeles. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer — open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 — Santa Monica — floats to the top.\"\n\n"
             "\"You just watched a model turn English into SQL, run it against governed data, and reason over the result. If you got an auth error instead — say it with me — 60-minute token; re-run gcloud auth application-default login.\""
         ),
     },
-    # SLIDE 29 — Checkpoint: micro validation (Maps)
+    # SLIDE 30 — Checkpoint: micro validation (Maps)
     {
-        "num": 29,
+        "num": 30,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:44 – 00:47 (3 min)",
+        "time": "00:46 – 00:49 (3 min)",
         "type": "checkpoint_visual",
         "title": "✋ Checkpoint 3: Validate on the ground (micro)",
         "timer_seconds": 180,
@@ -828,18 +852,18 @@ SLIDES_DATA = [
         "screenshot": "codelab_adk_micro.png",
         "caption": "ADK web: Maps search_places scans 90403 for bakeries",
         "notes": (
-            "TIMING: 00:44 - 00:47 (3 mins)\n"
+            "TIMING: 00:46 - 00:49 (3 mins)\n"
             "GOAL: The pivot moment — same conversation, different server, conversational memory.\n\n"
             "SAY THIS:\n"
             "\"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Can you search for Bakeries in that zip code to see if it's saturated?' Two things to notice. First, you never repeated the zip — the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps.\"\n\n"
             "\"Same thread, two data worlds. And when the answer comes back with a Maps link — click it. That link isn't decoration, it's the attribution requirement we talked about, and the agent included it because the instruction told it to.\""
         ),
     },
-    # SLIDE 30 — The full journey (challenge round)
+    # SLIDE 31 — The full journey (challenge round)
     {
-        "num": 30,
+        "num": 31,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:47 – 00:50 (3 min)",
+        "time": "00:49 – 00:52 (3 min)",
         "type": "journey_storyboard",
         "title": "Your turn: run the rest of the journey",
         "subtitle": "Three more prompts — predict the tool before you run each (answers in the codelab)",
@@ -850,18 +874,18 @@ SLIDES_DATA = [
             ("★", "Chain them yourself — one thread, all five", "both servers", "full business case", "yellow"),
         ],
         "notes": (
-            "TIMING: 00:47 - 00:50 (3 mins)\n"
+            "TIMING: 00:49 - 00:52 (3 mins)\n"
             "GOAL: Self-directed exploration; make it a game.\n\n"
             "SAY THIS:\n"
             "\"Three more, and I want you to play a game: before you run each one, call the tool out loud. Pricing — 'max price for a Sourdough Loaf in LA Metro' — which server? BigQuery; Erewhon's at about eighteen-fifty, so our premium price lands around fifteen-to-eighteen. Forecasting — 'take my best store, forecast December, multiply by eighteen' — that's execute_sql running AI.FORECAST. Logistics — 'closest Restaurant Depot under thirty minutes' — Maps compute_routes.\"\n\n"
             "\"Run them in the SAME chat thread. The agent will carry context across all five. By the end you'll have a zip code, a saturation read, a price point, a revenue forecast, and a supply-chain check — a whole mini business case, in one conversation. GO.\""
         ),
     },
-    # SLIDE 31 — Bonus challenges
+    # SLIDE 32 — Bonus challenges
     {
-        "num": 31,
+        "num": 32,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:50 – 00:52 (2 min)",
+        "time": "00:52 – 00:54 (2 min)",
         "type": "two_cards_code",
         "title": "⚡ Finished early? Break it (productively)",
         "left_card": {
@@ -897,18 +921,18 @@ SLIDES_DATA = [
             ],
         },
         "notes": (
-            "TIMING: 00:50 - 00:52 (2 mins)\n"
+            "TIMING: 00:52 - 00:54 (2 mins)\n"
             "GOAL: Keep fast finishers engaged while others catch up.\n\n"
             "SAY THIS:\n"
             "\"If you're done, don't sit idle — break it, productively. Two challenges. One: edit the instruction in agent.py — say 'position the brand as budget-friendly' — save, let adk web hot-reload, and re-ask the pricing question. One sentence changes the whole recommendation; that's prompt-as-control-surface. Two: ask about the weather on opening day. You never wrote a weather tool — lookup_weather was just there in the Maps server. That's the power of a tool catalog.\"\n\n"
             "FACILITATOR: This slide is your pressure-release valve. Keep it up while stragglers finish Checkpoint 3."
         ),
     },
-    # SLIDE 32 — Troubleshooting
+    # SLIDE 33 — Troubleshooting
     {
-        "num": 32,
+        "num": 33,
         "module": "Module 3 • Lab B: Run It",
-        "time": "00:52 – 00:55 (3 min)",
+        "time": "00:54 – 00:57 (3 min)",
         "type": "objectives_card",
         "title": "Quick fixes — the 6 ways today breaks",
         "intro": "Hit a wall? It's almost certainly one of these:",
@@ -921,7 +945,7 @@ SLIDES_DATA = [
             ("Billing errors", "project has no billing → redeem the event credit and re-attach"),
         ],
         "notes": (
-            "TIMING: 00:52 - 00:55 (3 mins) — buffer / catch-up window.\n"
+            "TIMING: 00:54 - 00:57 (3 mins) — buffer / catch-up window.\n"
             "GOAL: Clear every blocker so the room ends on a win.\n\n"
             "SAY THIS:\n"
             "\"This is the slide to photograph. Every failure today is one of these six. Auth error after working fine? 60-minute token — re-login. 403 that says not enabled? The MCP endpoint flag from setup_env. Empty dropdown? Wrong directory. Web preview won't load? You dropped the allow_origins flag. Maps failing but BigQuery fine? Check the key in .env. Anything about billing? You need the credit redeemed.\"\n\n"
@@ -929,13 +953,13 @@ SLIDES_DATA = [
         ),
     },
     # =====================================================================
-    # MODULE 4 — WRAP-UP (00:55 – 01:15)  [flexible buffer built in]
+    # MODULE 4 — WRAP-UP (00:57 – 01:15)  [flexible buffer built in]
     # =====================================================================
-    # SLIDE 33 — Cleanup
+    # SLIDE 34 — Cleanup
     {
-        "num": 33,
+        "num": 34,
         "module": "Module 4 • Wrap-Up",
-        "time": "00:55 – 00:57 (2 min)",
+        "time": "00:57 – 00:59 (2 min)",
         "type": "code_split",
         "title": "Clean up — don't donate your credits back",
         "subtitle": "One script deletes the dataset, bucket, and API key",
@@ -956,17 +980,17 @@ SLIDES_DATA = [
             "#  the staging bucket, and the API key."
         ),
         "notes": (
-            "TIMING: 00:55 - 00:57 (2 mins)\n"
+            "TIMING: 00:57 - 00:59 (2 mins)\n"
             "GOAL: Good cloud hygiene; protect the credits we just handed out.\n\n"
             "SAY THIS:\n"
             "\"Last responsible step: clean up. Ctrl+C to stop the server, then run cleanup_env.sh from the repo root. It deletes the mcp_bakery dataset, the staging bucket, and that API key. Your project stays, so if you want to run this again — or demo it to your team on Monday — the setup scripts recreate everything in about four minutes. Don't be the person who burns their credits on a forgotten BigQuery table.\""
         ),
     },
-    # SLIDE 34 — Playbook recap
+    # SLIDE 35 — Playbook recap
     {
-        "num": 34,
+        "num": 35,
         "module": "Module 4 • Wrap-Up",
-        "time": "00:57 – 01:00 (3 min)",
+        "time": "00:59 – 01:02 (3 min)",
         "type": "four_steps",
         "title": "Your Location-Intelligence Agent playbook",
         "subtitle": "The four ideas to take with you",
@@ -978,18 +1002,18 @@ SLIDES_DATA = [
             {"num": "4", "title": "Govern by\ndefault", "body": "Managed MCP servers bring IAM, audit logs, read-only SQL, and Model Armor. Ship with guardrails.", "highlight": False},
         ],
         "notes": (
-            "TIMING: 00:57 - 01:00 (3 mins)\n"
+            "TIMING: 00:59 - 01:02 (3 mins)\n"
             "GOAL: Crystallize the four takeaways so they survive the parking lot.\n\n"
             "SAY THIS:\n"
             "\"If you remember four things. One: ground, don't guess — a bare model invents foot-traffic numbers; a grounded one queries them. Two: one agent, many tools — you never wrote a BigQuery or Maps client; two MCP toolsets gave one agent both worlds. Three: your schema is the prompt — the agent read our column descriptions to write its own SQL, so documenting your data is now an AI feature, not busywork. Four: govern by default — managed servers mean IAM, audit logs, read-only SQL and Model Armor come along for free.\"\n\n"
             "\"Ground, tools, schema, governance. Say it back to me on the way out.\""
         ),
     },
-    # SLIDE 35 — What's next
+    # SLIDE 36 — What's next
     {
-        "num": 35,
+        "num": 36,
         "module": "Module 4 • Wrap-Up",
-        "time": "01:00 – 01:02 (2 min)",
+        "time": "01:02 – 01:04 (2 min)",
         "type": "three_tech",
         "title": "Where to take this next",
         "cols": [
@@ -1010,31 +1034,31 @@ SLIDES_DATA = [
             },
         ],
         "notes": (
-            "TIMING: 01:00 - 01:02 (2 mins)\n"
+            "TIMING: 01:02 - 01:04 (2 mins)\n"
             "SAY THIS:\n"
             "\"Three on-ramps. First, deploy it — adk web is a debug UI, so for real users containerize and push to Cloud Run or Agent Engine with a service account. Second, more servers — the google/mcp repo lists every managed server: GCE, GKE, Spanner, Developer Knowledge; the wiring you learned today is identical. Third, the real homework — point this at your own data. Write honest column descriptions, scope the instruction to your dataset, and start on execute_sql_readonly until you trust it.\""
         ),
     },
-    # SLIDE 36 — Closing cover reprise
+    # SLIDE 37 — Closing cover reprise
     {
-        "num": 36,
+        "num": 37,
         "module": "Module 4 • Closing",
-        "time": "01:02 – 01:03 (1 min)",
+        "time": "01:04 – 01:05 (1 min)",
         "type": "cover",
         "title": "Build a Location Intelligence\nADK Agent with MCP servers\nfor BigQuery and Google Maps",
         "subtitle": "You built it: one grounded agent over your data and the real world",
         "badge": "Mission Complete 🎉",
         "notes": (
-            "TIMING: 01:02 - 01:03 (1 min)\n"
+            "TIMING: 01:04 - 01:05 (1 min)\n"
             "SAY THIS:\n"
             "\"Look back at the GIF from the first minute. That agent — the one that queries BigQuery, searches Maps, forecasts revenue, checks drive time — you just built it, yourself, with your own project. Not a demo I showed you. Yours.\""
         ),
     },
-    # SLIDE 37 — Thank you / Q&A
+    # SLIDE 38 — Thank you / Q&A
     {
-        "num": 37,
+        "num": 38,
         "module": "Module 4 • Closing & Q&A",
-        "time": "01:03 – 01:15 (12 min)",
+        "time": "01:05 – 01:15 (10 min)",
         "type": "thank_you",
         "title": "Thank you!",
         "subtitle": "Questions & live troubleshooting.\nThe codelab stays free — take it, fork it, teach it.",
@@ -1045,7 +1069,7 @@ SLIDES_DATA = [
         "qr_bottom": "qr_rabimba_github.png",
         "qr_bottom_label": "Slides & Runbook\nGDE-ML-Artifacts",
         "notes": (
-            "TIMING: 01:03 - 01:15 (remaining time — Q&A).\n"
+            "TIMING: 01:05 - 01:15 (remaining time — Q&A).\n"
             "SAY THIS:\n"
             "\"Thank you! Everything is open: the codelab is free and stays up — take it, fork it, run this same workshop at your own GDG. Top QR is the codelab, bottom is my repo with this deck and the full speaker script. And if you want to compare notes on agents in production — the middle QR is my LinkedIn; I answer.\"\n\n"
             "\"The rest of our time is yours — questions, and if anyone's still fighting a red error, bring it up now and we'll fix it live.\"\n\n"
@@ -1055,9 +1079,9 @@ SLIDES_DATA = [
     # =====================================================================
     # REFERENCE (untimed, not presented)
     # =====================================================================
-    # SLIDE 38 — Cheat sheet
+    # SLIDE 39 — Cheat sheet
     {
-        "num": 38,
+        "num": 39,
         "module": "Appendix • Reference",
         "time": "Reference Slide",
         "type": "two_cards_code",
@@ -1296,6 +1320,18 @@ def build_pptx(output_path):
             add_textbox(slide, 0.50, 1.39, 2.65, 0.28, sdata.get("badge", "Workshop"), font_size=11, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
             add_textbox(slide, 0.45, 1.85, 5.10, 2.10, sdata["title"], font_size=28, bold=True, color=(32, 33, 36))
             add_textbox(slide, 0.45, 4.05, 5.00, 0.85, sdata["subtitle"], font_size=13, bold=False, color=(95, 99, 104))
+
+        elif stype == "big_qr":
+            slide = prs.slides.add_slide(layout_qr)
+            clear_slide_shapes(slide)
+            add_textbox(slide, 0.50, 0.40, 9.00, 0.58, sdata["title"], font_size=28, bold=True, color=(32, 33, 36), align=PP_ALIGN.CENTER)
+            add_rounded_box(slide, 3.42, 1.08, 3.16, 2.88, fill_rgb=(255, 255, 255), line_rgb=(218, 220, 224), line_pt=1.5, radius=0.03)
+            add_image_fit(slide, sdata["qr"], 3.56, 1.22, 2.88, 2.60)
+            add_textbox(slide, 0.50, 4.04, 9.00, 0.40, sdata["url_text"], font_size=20, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
+            add_textbox(slide, 1.30, 4.48, 7.40, 0.55, sdata["desc"], font_size=10, bold=False, color=(95, 99, 104), align=PP_ALIGN.CENTER)
+            if sdata.get("wifi_ssid"):
+                add_rounded_box(slide, 2.75, 5.12, 4.50, 0.34, fill_rgb=(241, 243, 244), line_rgb=(218, 220, 224), line_pt=1, radius=0.5)
+                add_textbox(slide, 2.80, 5.17, 4.40, 0.24, f"Wi-Fi: {sdata['wifi_ssid']}    •    Password: {sdata['wifi_pass']}", font_size=10, bold=True, color=(32, 33, 36), align=PP_ALIGN.CENTER)
 
         elif stype == "qr_hub":
             slide = prs.slides.add_slide(layout_qr)
@@ -1668,6 +1704,32 @@ def render_slide_inner_html(s):
           <div class="cover-right">
             <img src="assets/bg_cover_layers_cropped.png" alt="Google Cloud Layers"/>
           </div>
+        </div>
+        """
+
+    if stype == "big_qr":
+        badge = 'Proprietary + Confidential' if CONFIDENTIAL_BADGE else 'Google Developer Expert'
+        wifi_html = ""
+        if s.get("wifi_ssid"):
+            wifi_html = f"""
+            <div class="wifi-chip">Wi-Fi: <strong>{html.escape(s['wifi_ssid'])}</strong> &nbsp;·&nbsp; Password: <code>{html.escape(s['wifi_pass'])}</code></div>"""
+        return f"""
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">{html.escape(s['module'])} • {html.escape(s['time'])}</span>
+            <span class="prop-badge">{badge}</span>
+          </div>
+          <h2 class="center-title">{html.escape(s['title'])}</h2>
+          <div class="big-qr-wrap">
+            <a href="{html.escape(s['url'])}" target="_blank" class="big-qr-card">
+              <img src="assets/{html.escape(s['qr'])}" alt="Credit redemption QR code"/>
+            </a>
+            <a href="{html.escape(s['url'])}" target="_blank" class="big-qr-link">{html.escape(s['url_text'])}</a>
+            <p class="big-qr-desc">{html.escape(s['desc'])}</p>
+            {wifi_html}
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
         </div>
         """
 
@@ -2558,6 +2620,31 @@ def build_html_deck(output_path):
     .qr-link {{ font-size: 0.84rem; color: var(--g-blue); font-weight: 600; text-decoration: underline; margin-bottom: 6px; word-break: break-all; }}
     .qr-card p {{ font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }}
     .qr-img {{ width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }}
+
+    /* Big dedicated QR slide (credits redemption) */
+    .big-qr-wrap {{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%; }}
+    .big-qr-card {{
+      background: #fff; border: 2px solid var(--g-border); border-radius: 20px;
+      padding: 1.6%; box-shadow: 0 10px 30px rgba(32,33,36,.12);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }}
+    .big-qr-card:hover {{ transform: scale(1.02); border-color: var(--g-blue); box-shadow: 0 16px 40px rgba(26,115,232,.22); }}
+    .big-qr-card img {{ display: block; width: min(40vh, 340px); height: auto; aspect-ratio: 1; }}
+    .big-qr-link {{
+      font-size: clamp(1.25rem, 2.6vw, 1.9rem); font-weight: 700; color: var(--g-blue);
+      text-decoration: none; letter-spacing: -0.01em;
+    }}
+    .big-qr-link:hover {{ text-decoration: underline; }}
+    .big-qr-desc {{ max-width: 74%; text-align: center; color: var(--g-gray); font-size: 0.95rem; line-height: 1.55; }}
+
+    .wifi-chip {{
+      background: #F1F3F4; border: 1.5px solid var(--g-border); border-radius: 999px;
+      padding: 8px 22px; font-size: 0.95rem; color: var(--g-dark); font-weight: 500;
+    }}
+    .wifi-chip code {{
+      font-family: 'Roboto Mono', monospace; background: #fff; border: 1px solid var(--g-border);
+      border-radius: 6px; padding: 2px 10px; font-weight: 700; color: var(--g-blue-dark);
+    }}
 
     /* Speaker & Thank You Slide */
     .slide-speaker {{ padding: 0; flex-direction: row; align-items: center; }}
@@ -3494,12 +3581,12 @@ def build_markdown_runbook(output_path):
         "",
         "| Clock Time | Duration | Module | Slides | Interactive Element / Checkpoint |",
         "| :--- | :--- | :--- | :--- | :--- |",
-        "| **00:00 – 00:06** | 6 min | **Module 0: Welcome & Start Engines** | Slides 1–5 | Demo GIF + Scan QR + kick off setup scripts |",
-        "| **00:06 – 00:26** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 6–20 | 🎤 Poll + 🎯 Quiz + guardrails |",
-        "| **00:26 – 00:36** | 10 min | **Module 2: Lab A — Setup** | Slides 21–25 | ✋ Checkpoint #1: `mcp_bakery` dataset (3m timer) |",
-        "| **00:36 – 00:52** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 26–31 | ✋ CP #2 macro SQL (5m) + ✋ CP #3 Maps (5m) + bonus |",
-        "| **00:52 – 01:03** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 32–36 | Troubleshooting buffer + cleanup + recap |",
-        "| **01:03 – 01:15** | 12 min | **Closing & Q&A** | Slides 37–38 | Open Q&A + live troubleshooting + cheat sheet |",
+        "| **00:00 – 00:08** | 8 min | **Module 0: Welcome & Start Engines** | Slides 1–6 | Redeem credits (big QR) + Demo GIF + Scan QR + kick off setup scripts |",
+        "| **00:08 – 00:28** | 20 min | **Module 1: Concepts (Agent / ADK / MCP / Tools)** | Slides 7–21 | 🎤 Poll + 🎯 Quiz + guardrails |",
+        "| **00:28 – 00:38** | 10 min | **Module 2: Lab A — Setup** | Slides 22–26 | ✋ Checkpoint #1: `mcp_bakery` dataset (2m timer) |",
+        "| **00:38 – 00:54** | 16 min | **Module 3: Lab B — Run the Agent** | Slides 27–32 | ✋ CP #2 macro SQL (3m) + ✋ CP #3 Maps (3m) + bonus |",
+        "| **00:54 – 01:05** | 11 min | **Module 4: Troubleshoot, Cleanup, Playbook** | Slides 33–37 | Troubleshooting buffer + cleanup + recap |",
+        "| **01:05 – 01:15** | 10 min | **Closing & Q&A** | Slides 38–39 | Open Q&A + live troubleshooting + cheat sheet |",
         "",
         "---",
         "",
