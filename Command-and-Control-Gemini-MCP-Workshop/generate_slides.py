@@ -19,7 +19,10 @@ from pptx.enum.shapes import MSO_SHAPE
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
-REF_PPTX = "/home/rabimba/.gemini/antigravity-cli/brain/631d0684-bfc9-4fa0-af51-b386e00dd702/scratch/coffee_agent_slides.pptx"
+# The original coffee_agent_slides.pptx template lived on a Linux workstation
+# and is not present here. This deck's own output .pptx carries the same Google
+# Cloud Labs master layouts, so it doubles as the template (loaded before save).
+REF_PPTX = os.path.join(BASE_DIR, "Command_and_Control_Gemini_MCP_Workshop.pptx")
 
 # ---------------------------------------------------------------------------
 # COMPLETE 32-SLIDE DATA & VERBATIM SPEAKER NOTES
@@ -59,14 +62,21 @@ SLIDES_DATA = [
                 "qr": "qr_codelab.png",
             },
             {
-                "title": "2. Google Antigravity Docs",
+                "title": "2. Free Credits (redeem first!)",
+                "url_text": "g.dev/credits/latw-mcp-010",
+                "url": "https://g.dev/credits/latw-mcp-010",
+                "desc": "Today's lab deploys to Cloud Run — redeem your event credit, then create a project with billing on.",
+                "qr": "qr_credits.png",
+            },
+            {
+                "title": "3. Google Antigravity Docs",
                 "url_text": "antigravity.google/docs",
                 "url": "https://antigravity.google/docs",
                 "desc": "Official documentation for AGY CLI, IDE, MCP servers, Skills, Plugins, and Hooks.",
                 "qr": "qr_agy_docs.png",
             },
             {
-                "title": "3. Slides, Runbook & GDE Artifacts",
+                "title": "4. Slides, Runbook & GDE Artifacts",
                 "url_text": "github.com/rabimba/GDE-ML-Artifacts",
                 "url": "https://github.com/rabimba/GDE-ML-Artifacts",
                 "desc": "Today's slides, copy-paste prompt sheet, and Antigravity SDK reference code.",
@@ -78,6 +88,7 @@ SLIDES_DATA = [
             "ENGAGEMENT CUE: Pause for 30 seconds and make sure everyone scans the left QR code or types codelabs.developers.google.com/gemini-mcp-agy.\n\n"
             "SAY THIS:\n"
             "\"First things first—grab your phones or open a browser tab and head to the link on the left card: codelabs.developers.google.com/gemini-mcp-agy. Keep this tab open throughout the session! All the prompts and JSON snippets we'll use are right there so you don't have to type long paragraphs from the projector.\"\n\n"
+            "\"Second card: your free Google Cloud credit — g.dev/credits/latw-mcp-010. Redeem it NOW, because we deploy to Cloud Run at the end and that needs billing enabled on your project.\"\n\n"
             "\"Quick show of hands: who has the Codelab open on their screen right now? Awesome. Go ahead and start initializing your Google Cloud project and Cloud Shell in the background while I introduce myself and our mission.\""
         ),
     },
@@ -1289,14 +1300,16 @@ SLIDES_DATA = [
         "title": "Thank you!",
         "subtitle": "Questions, Feedback & Let's Connect!\nRabimba Karanjai • GDE AI/ML • @rabimba",
         "qr_top": "qr_codelab.png",
-        "qr_top_label": "Workshop Codelab: codelabs.developers.google.com/gemini-mcp-agy",
+        "qr_top_label": "Workshop Codelab\ngemini-mcp-agy",
+        "qr_mid": "qr_linkedin.png",
+        "qr_mid_label": "Connect on LinkedIn\nin/rabimba-karanjai",
         "qr_bottom": "qr_rabimba_github.png",
-        "qr_bottom_label": "Slides & Artifacts: github.com/rabimba/GDE-ML-Artifacts",
+        "qr_bottom_label": "Slides & Artifacts\nGDE-ML-Artifacts",
         "notes": (
             "TIMING: 01:13 - 01:15 (2 mins + Open Q&A)\n"
             "GOAL: Share final QR codes and open the floor for Q&A.\n\n"
             "SAY THIS:\n"
-            "\"Thank you all so much for building with me today! The top QR code links to the Codelab so you can replay or share it with your team, and the bottom QR code goes to my GitHub (`github.com/rabimba/GDE-ML-Artifacts`) where today's slides and runbook live. We have a few minutes left—what questions do you have?\""
+            "\"Thank you all so much for building with me today! The top QR code links to the Codelab so you can replay or share it with your team, and the bottom QR code goes to my GitHub (`github.com/rabimba/GDE-ML-Artifacts`) where today's slides and runbook live. And the middle QR is my LinkedIn—if you take this pattern back to your team, I'd genuinely love to hear how it goes. We have a few minutes left—what questions do you have?\""
         ),
     },
 ]
@@ -1488,13 +1501,18 @@ def build_pptx(output_path):
             clear_slide_shapes(slide)
             add_textbox(slide, 0.50, 0.45, 9.00, 0.55, sdata["title"], font_size=28, bold=True, color=(32, 33, 36), align=PP_ALIGN.CENTER)
             add_textbox(slide, 0.50, 1.00, 9.00, 0.35, sdata["subtitle"], font_size=13, bold=False, color=(95, 99, 104), align=PP_ALIGN.CENTER)
+            ncards = len(sdata["cards"])
+            # 3 cards -> roomy layout; 4 cards -> compact layout (credits card added)
+            cw = 2.80 if ncards <= 3 else 2.16
+            step = 3.05 if ncards <= 3 else 2.31
+            qrsz = 1.90 if ncards <= 3 else 1.35
             for idx, c in enumerate(sdata["cards"]):
-                cx = 0.55 + idx * 3.05
-                add_rounded_box(slide, cx, 1.50, 2.80, 3.70, fill_rgb=(248, 249, 250), line_rgb=(218, 220, 224), line_pt=1.2, radius=0.04)
-                add_textbox(slide, cx + 0.14, 1.64, 2.52, 0.45, c["title"], font_size=13, bold=True, color=(32, 33, 36))
-                add_textbox(slide, cx + 0.14, 2.08, 2.52, 0.36, c["url_text"], font_size=9.5, bold=True, color=(26, 115, 232))
-                add_textbox(slide, cx + 0.14, 2.45, 2.52, 0.65, c["desc"], font_size=9.5, bold=False, color=(95, 99, 104))
-                add_image_fit(slide, c["qr"], cx + 0.45, 3.15, 1.90, 1.90)
+                cx = 0.55 + idx * step
+                add_rounded_box(slide, cx, 1.50, cw, 3.70, fill_rgb=(248, 249, 250), line_rgb=(218, 220, 224), line_pt=1.2, radius=0.04)
+                add_textbox(slide, cx + 0.12, 1.64, cw - 0.24, 0.45, c["title"], font_size=13 if ncards <= 3 else 11.5, bold=True, color=(32, 33, 36))
+                add_textbox(slide, cx + 0.12, 2.08, cw - 0.24, 0.36, c["url_text"], font_size=9.5 if ncards <= 3 else 8.5, bold=True, color=(26, 115, 232))
+                add_textbox(slide, cx + 0.12, 2.45, cw - 0.24, 0.90, c["desc"], font_size=9.5 if ncards <= 3 else 8.2, bold=False, color=(95, 99, 104))
+                add_image_fit(slide, c["qr"], cx + (cw - qrsz) / 2.0, 5.05 - qrsz, qrsz, qrsz)
 
         elif stype == "speaker":
             slide = prs.slides.add_slide(layout_speaker)
@@ -1508,10 +1526,20 @@ def build_pptx(output_path):
             clear_slide_shapes(slide)
             add_textbox(slide, 4.80, 1.85, 3.30, 1.10, sdata["title"], font_size=44, bold=True, color=(32, 33, 36))
             add_textbox(slide, 4.80, 2.95, 3.30, 1.10, sdata["subtitle"], font_size=14, bold=False, color=(60, 64, 67))
-            add_image_fit(slide, sdata["qr_top"], 8.15, 0.45, 1.45, 1.45)
-            add_textbox(slide, 7.60, 1.92, 2.25, 0.45, "Workshop Codelab\ngemini-mcp-agy", font_size=8.5, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
-            add_image_fit(slide, sdata["qr_bottom"], 8.15, 3.35, 1.45, 1.45)
-            add_textbox(slide, 7.60, 4.82, 2.25, 0.45, "Slides & Runbook\nGDE-ML-Artifacts", font_size=8.5, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
+            # Data-driven QR stack: 2 QRs (legacy roomy) or 3 QRs (with LinkedIn)
+            qrs = [(sdata["qr_top"], sdata["qr_top_label"])]
+            if sdata.get("qr_mid"):
+                qrs.append((sdata["qr_mid"], sdata["qr_mid_label"]))
+            qrs.append((sdata["qr_bottom"], sdata["qr_bottom_label"]))
+            if len(qrs) == 2:
+                geom = [(8.15, 0.45, 1.45, 1.92), (8.15, 3.35, 1.45, 4.82)]
+                fsz = 8.5
+            else:
+                geom = [(8.25, 0.28, 1.22, 1.52), (8.25, 2.02, 1.22, 3.26), (8.25, 3.76, 1.22, 5.00)]
+                fsz = 8
+            for (qimg, qlabel), (qx, qy, qs, ly) in zip(qrs, geom):
+                add_image_fit(slide, qimg, qx, qy, qs, qs)
+                add_textbox(slide, 7.70, ly, 2.35, 0.45, qlabel, font_size=fsz, bold=True, color=(26, 115, 232), align=PP_ALIGN.CENTER)
 
         elif stype == "section_poll":
             slide = prs.slides.add_slide(layout_content)
@@ -1787,6 +1815,14 @@ def render_slide_inner_html(s):
         """
 
     if stype == "thank_you":
+        mid_html = ""
+        if s.get("qr_mid"):
+            mid_html = f"""
+              <div class="ty-qr-box">
+                <img src="assets/{html.escape(s['qr_mid'])}" alt="LinkedIn QR"/>
+                <span>{html.escape(s['qr_mid_label'])}</span>
+              </div>
+            """
         return f"""
         <div class="slide-canvas slide-speaker">
           <div class="speaker-fan-bg">
@@ -1804,6 +1840,7 @@ def render_slide_inner_html(s):
                 <img src="assets/{html.escape(s['qr_top'])}" alt="Codelab QR"/>
                 <span>{html.escape(s['qr_top_label'])}</span>
               </div>
+              {mid_html}
               <div class="ty-qr-box">
                 <img src="assets/{html.escape(s['qr_bottom'])}" alt="GitHub QR"/>
                 <span>{html.escape(s['qr_bottom_label'])}</span>
@@ -2395,8 +2432,8 @@ def build_html_deck(output_path):
     .center-subtitle {{ text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }}
     .qr-grid {{
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 2.2%;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.6%;
       flex: 1;
       margin-bottom: 3.5%;
     }}

@@ -67,6 +67,8 @@ ENGAGEMENT CUE: Pause for 30 seconds and make sure everyone scans the left QR co
 SAY THIS:
 "First things first—grab your phones or open a browser tab and head to the link on the left card: codelabs.developers.google.com/gemini-mcp-agy. Keep this tab open throughout the session! All the prompts and JSON snippets we'll use are right there so you don't have to type long paragraphs from the projector."
 
+"Second card: your free Google Cloud credit — g.dev/credits/latw-mcp-010. Redeem it NOW, because we deploy to Cloud Run at the end and that needs billing enabled on your project."
+
 "Quick show of hands: who has the Codelab open on their screen right now? Awesome. Go ahead and start initializing your Google Cloud project and Cloud Shell in the background while I introduce myself and our mission."
 ```
 
@@ -788,7 +790,7 @@ TIMING: 01:13 - 01:15 (2 mins + Open Q&A)
 GOAL: Share final QR codes and open the floor for Q&A.
 
 SAY THIS:
-"Thank you all so much for building with me today! The top QR code links to the Codelab so you can replay or share it with your team, and the bottom QR code goes to my GitHub (`github.com/rabimba/GDE-ML-Artifacts`) where today's slides and runbook live. We have a few minutes left—what questions do you have?"
+"Thank you all so much for building with me today! The top QR code links to the Codelab so you can replay or share it with your team, and the bottom QR code goes to my GitHub (`github.com/rabimba/GDE-ML-Artifacts`) where today's slides and runbook live. And the middle QR is my LinkedIn—if you take this pattern back to your team, I'd genuinely love to hear how it goes. We have a few minutes left—what questions do you have?"
 ```
 
 ---
