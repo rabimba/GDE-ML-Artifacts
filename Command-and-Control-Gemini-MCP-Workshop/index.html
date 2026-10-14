@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command and control: Orchestrate app development with Gemini and MCP — Workshop Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --g-blue: #1A73E8;
+      --g-blue-dark: #174EA6;
+      --g-blue-bg: #E8F0FE;
+      --g-red: #EA4335;
+      --g-red-dark: #C5221F;
+      --g-red-bg: #FCE8E6;
+      --g-yellow: #FBBC04;
+      --g-yellow-bg: #FEF7E0;
+      --g-green: #34A853;
+      --g-green-dark: #137333;
+      --g-dark: #202124;
+      --g-gray: #5F6368;
+      --g-border: #DADCE0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Google Sans', 'Roboto', system-ui, sans-serif;
+      background: #111318;
+      color: var(--g-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Main viewport scaling 16:9 canvas */
+    #deck-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+    }
+    .slide {
+      display: none;
+      width: min(96vw, calc((100vh - 64px) * 16 / 9));
+      aspect-ratio: 16 / 9;
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    body.notes-open .slide {
+      width: min(94vw, calc((100vh - 245px) * 16 / 9));
+    }
+    .slide.active { display: block; }
+    .slide-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      padding: 2.2% 4.2%;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top & Bottom Master Branding */
+    .slide-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2%;
+      min-height: 36px;
+    }
+    .gcl-logo-sm { height: 34px; object-fit: contain; }
+    .gcl-logo { position: absolute; top: 4.5%; left: 4.5%; height: 46px; z-index: 5; }
+    .gcl-footer { position: absolute; bottom: 2.8%; left: 4.2%; height: 15px; opacity: 0.85; }
+    .prop-badge { font-size: 0.78rem; color: var(--g-gray); font-weight: 500; }
+    .prop-badge-abs { position: absolute; top: 4.5%; right: 4.2%; font-size: 0.78rem; color: var(--g-gray); z-index: 5; }
+    .module-pill {
+      background: #F1F3F4;
+      color: var(--g-gray);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Cover Slide */
+    .slide-cover {
+      padding: 0;
+      flex-direction: row;
+      align-items: center;
+    }
+    .cover-left {
+      width: 52%;
+      padding: 8% 3% 4% 4.8%;
+      z-index: 3;
+    }
+    .pill-badge {
+      display: inline-block;
+      background: var(--g-blue-bg);
+      color: var(--g-blue);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--g-blue);
+      margin-bottom: 18px;
+    }
+    .cover-title {
+      font-size: clamp(1.7rem, 3.1vw, 3.1rem);
+      line-height: 1.16;
+      font-weight: 700;
+      color: var(--g-dark);
+      margin-bottom: 18px;
+    }
+    .cover-subtitle {
+      font-size: clamp(0.95rem, 1.35vw, 1.3rem);
+      color: var(--g-gray);
+      line-height: 1.45;
+      margin-bottom: 22px;
+    }
+    .cover-meta {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--g-blue-dark);
+    }
+    .cover-right {
+      width: 48%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .cover-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* QR Hub Slide */
+    .center-title { text-align: center; font-size: clamp(1.5rem, 2.5vw, 2.4rem); font-weight: 700; margin-bottom: 4px; }
+    .center-subtitle { text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.2%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .qr-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .qr-icon-badge {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4285F4, #669DF6);
+      color: #fff;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .qr-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .qr-link { font-size: 0.84rem; color: var(--g-blue); font-weight: 600; text-decoration: underline; margin-bottom: 6px; word-break: break-all; }
+    .qr-card p { font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }
+    .qr-img { width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }
+
+    /* Speaker & Thank You Slide */
+    .slide-speaker { padding: 0; flex-direction: row; align-items: center; }
+    .speaker-fan-bg { position: absolute; left: 0; top: 0; width: 48%; height: 100%; z-index: 1; }
+    .speaker-fan-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .speaker-content {
+      position: relative; z-index: 3;
+      display: flex; align-items: center;
+      width: 100%; height: 100%;
+      padding: 6% 5% 6% 7%;
+      gap: 6%;
+    }
+    .speaker-photo-wrap img {
+      width: clamp(200px, 27vw, 330px);
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+      border: 4px solid #fff;
+    }
+    .speaker-Bio-text h1 { font-size: clamp(2.2rem, 3.8vw, 3.8rem); line-height: 1.08; margin-bottom: 16px; }
+    .role-line { font-size: clamp(1.1rem, 1.6vw, 1.55rem); color: #3C4043; margin-bottom: 8px; font-weight: 500; }
+    .speaker-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tag-chip { background: var(--g-blue-bg); color: var(--g-blue-dark); padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+    .thankyou-right {
+      margin-left: 46%;
+      width: 54%;
+      padding: 5% 4.5% 5% 2%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .thankyou-text h1 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); margin-bottom: 12px; }
+    .thankyou-text p { font-size: 1.05rem; color: var(--g-gray); line-height: 1.5; }
+    .thankyou-qrs { display: flex; flex-direction: column; gap: 18px; }
+    .ty-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; background: #F8F9FA; padding: 10px; border-radius: 12px; border: 1px solid var(--g-border); width: 185px; }
+    .ty-qr-box img { width: 125px; height: 125px; margin-bottom: 6px; }
+    .ty-qr-box span { font-size: 0.72rem; color: var(--g-blue-dark); font-weight: 600; line-height: 1.25; }
+
+    /* Section Poll Slide */
+    .section-poll-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 88%; margin: 0 auto; }
+    .section-robot-icon { width: 64px; height: 64px; margin-bottom: 8px; }
+    .section-poll-wrap h2 { font-size: clamp(1.6rem, 2.6vw, 2.5rem); margin-bottom: 16px; line-height: 1.18; }
+    .interactive-poll-card {
+      width: 100%;
+      background: var(--g-blue-bg);
+      border: 2px solid var(--g-blue);
+      border-radius: 14px;
+      padding: 16px 22px;
+      text-align: left;
+    }
+    .poll-q { font-size: 1.05rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 10px; }
+    .poll-opts { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+    .poll-opts li {
+      background: #fff;
+      border: 1.5px solid #BBD6FB;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .poll-opts li:hover, .poll-opts li.voted { background: #D2E3FC; border-color: var(--g-blue); font-weight: 600; }
+    .vote-pill { font-size: 0.75rem; background: var(--g-blue); color: #fff; padding: 2px 9px; border-radius: 999px; }
+    .reveal-btn, .reveal-btn-sm {
+      background: var(--g-blue); color: #fff; border: none;
+      padding: 7px 14px; border-radius: 8px; font-weight: 600;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .reveal-btn:hover, .reveal-btn-sm:hover { background: var(--g-blue-dark); }
+    .poll-answer, .quiz-ans-row {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 12px;
+      background: #E6F4EA;
+      border-left: 4px solid var(--g-green);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--g-green-dark);
+    }
+    .poll-answer.visible, .quiz-ans-row.visible { display: block; }
+
+    /* Triad Slide */
+    .triad-headline {
+      font-size: clamp(1.35rem, 2.2vw, 2.15rem);
+      font-weight: 700;
+      line-height: 1.28;
+      max-width: 90%;
+      margin: 1.5% auto 4% auto;
+    }
+    .hl-blue { color: var(--g-blue); }
+    .hl-green { color: var(--g-green-dark); }
+    .triad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex: 1;
+      margin-bottom: 4%;
+    }
+    .triad-box {
+      flex: 1;
+      background: #F1F3F4;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 28px 16px 22px 16px;
+      text-align: center;
+      position: relative;
+    }
+    .triad-center { border: 2px solid var(--g-blue); background: var(--g-blue-bg); }
+    .triad-box img { width: 58px; height: 58px; margin-bottom: 10px; }
+    .triad-box h3 { font-size: 1.25rem; line-height: 1.3; }
+    .triad-arrow { font-size: 2rem; color: var(--g-gray); font-weight: 700; }
+
+    /* Standard Content & Split Layouts */
+    .slide-h2 { font-size: clamp(1.35rem, 2.1vw, 2.05rem); font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
+    .sub-blue { font-size: clamp(1rem, 1.3vw, 1.22rem); color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
+    .body-p { font-size: 0.92rem; color: #3C4043; line-height: 1.45; margin-bottom: 10px; }
+    .blue-outline-card {
+      border: 2.5px solid var(--g-blue);
+      border-radius: 16px;
+      padding: 20px 26px;
+      flex: 1;
+      margin-bottom: 3.5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card-intro { font-size: 1.05rem; font-weight: 500; margin-bottom: 14px; color: var(--g-dark); line-height: 1.4; }
+    .obj-list { list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.96rem; line-height: 1.42; }
+    .split-2col {
+      display: grid;
+      grid-template-columns: 47% 51%;
+      gap: 2%;
+      flex: 1;
+      margin-bottom: 3.2%;
+      min-height: 0;
+    }
+    .col-left, .col-right { display: flex; flex-direction: column; min-height: 0; }
+    .clean-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; font-size: 0.89rem; line-height: 1.38; color: #3C4043; }
+    .clean-bullets li strong { color: var(--g-blue-dark); }
+    .compact-list { gap: 6px; font-size: 0.84rem; margin-top: 8px; }
+    .center-img-box { align-items: center; justify-content: center; background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 10px; }
+    .arch-img { max-width: 100%; max-height: 88%; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
+    .click-hint, .img-caption { font-size: 0.76rem; color: var(--g-gray); margin-top: 5px; text-align: center; }
+
+    /* Three Tech Columns */
+    .three-tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5%;
+      flex: 1;
+      margin: 1.5% 0 4% 0;
+    }
+    .tech-col-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tech-col-card img { width: 54px; height: 54px; object-fit: contain; margin-bottom: 14px; }
+    .tech-col-card h3 { font-size: 1.15rem; margin-bottom: 10px; line-height: 1.28; }
+    .tech-col-card p { font-size: 0.9rem; color: #3C4043; line-height: 1.45; }
+
+    /* Dual Cards & Quiz Banner */
+    .dual-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2%;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 10px;
+    }
+    .bordered-card {
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #fff;
+    }
+    .card-blue { border: 2.5px solid var(--g-blue); }
+    .card-blue h3 { color: var(--g-blue); font-size: 1.18rem; margin-bottom: 2px; }
+    .card-red { border: 2.5px solid var(--g-red); }
+    .card-red h3 { color: var(--g-red-dark); font-size: 1.18rem; margin-bottom: 2px; }
+    .bordered-card h4 { font-size: 0.86rem; color: var(--g-gray); margin-bottom: 8px; font-weight: 600; }
+    .quiz-banner {
+      background: var(--g-yellow-bg);
+      border: 1.5px solid var(--g-yellow);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin-bottom: 2.8%;
+    }
+    .quiz-q-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.86rem; font-weight: 700; color: #B06000; }
+
+    /* Lab Divider */
+    .lab-divider-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lab-divider-center h1 { font-size: clamp(2.4rem, 4vw, 3.8rem); margin-bottom: 18px; }
+    .lab-sub-row { display: flex; align-items: center; gap: 14px; font-size: 1.35rem; color: var(--g-blue); font-weight: 700; }
+    .lab-sub-row img { width: 36px; height: 36px; }
+
+    /* Terminal Code Box */
+    .terminal-card {
+      background: var(--g-dark);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3C4043;
+      margin-bottom: 8px;
+    }
+    .terminal-card.compact { max-height: 46%; }
+    .term-header {
+      background: #2D2E31;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-r { background: #EA4335; }
+    .dot-y { background: #FBBC04; }
+    .dot-g { background: #34A853; }
+    .term-title { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #9AA0A6; }
+    .copy-btn {
+      background: #3C4043; color: #E8EAED; border: 1px solid #5F6368;
+      border-radius: 5px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .term-body {
+      padding: 10px 14px;
+      color: #E8EAED;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.38;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+    }
+    .shot-preview-box {
+      flex: 1;
+      min-height: 0;
+      background: #F8F9FA;
+      border: 1px solid var(--g-border);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .shot-preview-box img { max-width: 100%; max-height: 135px; object-fit: contain; border-radius: 4px; cursor: zoom-in; }
+
+    /* Vertical Stepper & Callout */
+    .v-stepper-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      justify-content: space-around;
+    }
+    .v-step-item { display: flex; align-items: flex-start; gap: 14px; }
+    .v-step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue); color: #fff; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .v-step-text h4 { font-size: 1rem; margin-bottom: 3px; }
+    .v-step-text code { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--g-green-dark); }
+    .callout-card {
+      background: #fff; border: 1.5px solid var(--g-border);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    }
+    .callout-pill {
+      display: inline-block; background: var(--g-red-bg); color: var(--g-red-dark);
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 6px;
+    }
+    .callout-card h4 { font-size: 0.98rem; margin-bottom: 4px; }
+    .callout-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.36; }
+
+    /* Four Steps Grid */
+    .four-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .four-step-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .four-step-card.step-card-hi { border: 2.5px solid var(--g-blue); background: #fff; }
+    .step-num-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue-bg); color: var(--g-blue);
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .step-card-hi .step-num-circle { background: var(--g-blue); color: #fff; }
+    .four-step-card h4 { font-size: 0.98rem; margin-bottom: 8px; line-height: 1.28; }
+    .step-card-hi h4 { color: var(--g-blue); }
+    .four-step-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.4; }
+
+    /* Verification Cards */
+    .query-box { background: #F1F3F4; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 10px; }
+    .grounded-box { background: var(--g-blue-bg); border: 1px solid var(--g-blue); padding: 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .trap-box { padding: 10px 12px; border-radius: 8px; font-size: 0.83rem; line-height: 1.35; margin-bottom: 8px; flex: 1; }
+    .trap-red { background: var(--g-red-bg); border: 1px solid var(--g-red); }
+    .trap-yellow { background: var(--g-yellow-bg); border: 1px solid var(--g-yellow); }
+
+    /* Lab Timer Widget */
+    .title-with-timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .lab-timer-widget {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g-blue-bg); border: 1.5px solid var(--g-blue);
+      padding: 4px 12px; border-radius: 999px; font-size: 0.82rem;
+    }
+    .timer-label { font-weight: 700; color: var(--g-blue-dark); }
+    .timer-display { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: var(--g-red-dark); min-width: 48px; }
+    .timer-btn {
+      background: var(--g-blue); color: #fff; border: none;
+      border-radius: 999px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+    }
+    .timer-btn.secondary { background: #5F6368; }
+
+    /* Speaker Notes Teleprompter Drawer (Press S) */
+    #notes-drawer {
+      display: none;
+      height: 185px;
+      background: #1E2028;
+      border-top: 2px solid var(--g-blue);
+      color: #E8EAED;
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    body.notes-open #notes-drawer { display: block; }
+    #notes-drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 0.8rem; color: #8AB4F8; font-weight: 700;
+    }
+    #notes-drawer-content { white-space: pre-wrap; font-family: 'Roboto', sans-serif; }
+
+    /* Bottom Presenter Control Bar */
+    #presenter-bar {
+      height: 46px;
+      background: #181A20;
+      border-top: 1px solid #2D3139;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      color: #E8EAED;
+      font-size: 0.84rem;
+      user-select: none;
+    }
+    .bar-group { display: flex; align-items: center; gap: 8px; }
+    .bar-btn {
+      background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
+      padding: 5px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .bar-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .bar-btn.active-toggle { background: var(--g-blue); border-color: var(--g-blue); }
+    #progress-track { width: 140px; height: 6px; background: #2D3139; border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--g-blue); width: 3%; transition: width 0.2s; }
+
+    /* Slide Grid Modal (Press G) */
+    #grid-modal, #lightbox-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15, 17, 23, 0.92);
+      z-index: 100;
+      padding: 32px;
+      overflow-y: auto;
+    }
+    #grid-modal.open, #lightbox-modal.open { display: flex; flex-direction: column; }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .grid-item {
+      background: #20232A; border: 1.5px solid #3C4043; border-radius: 8px;
+      padding: 12px; color: #E8EAED; cursor: pointer;
+    }
+    .grid-item:hover, .grid-item.current { border-color: var(--g-blue); background: #263147; }
+    .grid-item-num { font-size: 0.75rem; color: #8AB4F8; font-weight: 700; margin-bottom: 4px; }
+    .grid-item-title { font-size: 0.88rem; font-weight: 600; }
+    #lightbox-modal { align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox-img { max-width: 94vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
+  </style>
+</head>
+<body>
+  <div id="deck-viewport">
+    <section class="slide active" data-slide="1" data-title="Command and control: Orchestrate app development with Gemini and MCP" data-module="Module 0 • Welcome &amp; Onboarding" data-time="00:00 – 00:02 (2 min)">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">75-Min Interactive Workshop</div>
+            <h1 class="cover-title">Command and control:<br/>Orchestrate app development<br/>with Gemini and MCP</h1>
+            <p class="cover-subtitle">Hands-On Workshop • Build &amp; Deploy Full-Stack Agentic Apps with Zero Manual Code</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="2" data-title="Workshop Hub &amp; Essential Links" data-module="Module 0 • Welcome &amp; Onboarding" data-time="00:02 – 00:05 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Welcome &amp; Onboarding • 00:02 – 00:05 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="center-title">Workshop Hub &amp; Essential Links</h2>
+          <p class="center-subtitle">Scan or open the Codelab now so you can follow along step-by-step</p>
+          <div class="qr-grid">
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>1. Workshop Codelab (Start Here)</h3>
+              <a href="https://codelabs.developers.google.com/gemini-mcp-agy" target="_blank" class="qr-link">codelabs.developers.google.com/gemini-mcp-agy</a>
+              <p>Full step-by-step instructions, prompts, and Cloud Shell setup for today&#x27;s lab.</p>
+              <img class="qr-img" src="assets/qr_codelab.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>2. Google Antigravity Docs</h3>
+              <a href="https://antigravity.google/docs" target="_blank" class="qr-link">antigravity.google/docs</a>
+              <p>Official documentation for AGY CLI, IDE, MCP servers, Skills, Plugins, and Hooks.</p>
+              <img class="qr-img" src="assets/qr_agy_docs.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>3. Slides, Runbook &amp; GDE Artifacts</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts" target="_blank" class="qr-link">github.com/rabimba/GDE-ML-Artifacts</a>
+              <p>Today&#x27;s slides, copy-paste prompt sheet, and Antigravity SDK reference code.</p>
+              <img class="qr-img" src="assets/qr_rabimba_github.png" alt="QR Code"/>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="3" data-title="Rabimba Karanjai" data-module="Module 0 • Welcome &amp; Onboarding" data-time="00:05 – 00:07 (2 min)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Proprietary + Confidential</span>
+          <div class="speaker-content">
+            <div class="speaker-photo-wrap">
+              <img src="assets/ref_slide4_pic2.jpg" alt="Rabimba Karanjai"/>
+            </div>
+            <div class="speaker-Bio-text">
+              <h1>Rabimba<br/>Karanjai</h1>
+              <p class="role-line">Google Developer Expert — AI &amp; ML</p>
+              <p class="role-line">ML Scientist — PayPal</p>
+              <div class="speaker-tags">
+                <span class="tag-chip">Agentic Systems</span>
+                <span class="tag-chip">Model Context Protocol</span>
+                <span class="tag-chip">Google Cloud Run</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="4" data-title="Today&#x27;s 75-Minute Mission" data-module="Module 0 • Welcome &amp; Onboarding" data-time="00:07 – 00:10 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Welcome &amp; Onboarding • 00:07 – 00:10 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Today&#x27;s 75-Minute Mission</h2>
+          <h3 class="sub-blue">How we&#x27;ll go from an empty Cloud Shell to a deployed production agent with zero manual coding</h3>
+          <p class="body-p">We will build the &quot;Cat Delivery System&quot; through 4 progressive hands-on checkpoints. Every module pairs a core agentic engineering pattern with immediate hands-on execution.</p>
+          <div class="four-steps-grid">
+            <div class="four-step-card ">
+              <div class="step-num-circle">1</div>
+              <h4>Hello AGY CLI<br/>(00:20 – 00:30)</h4>
+              <p>Launch &amp; authenticate Antigravity CLI inside Cloud Shell Editor. Generate, run, and inspect our first Node.js cat trivia script.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">2</div>
+              <h4>Developer Knowledge MCP<br/>(00:30 – 00:45)</h4>
+              <p>Eliminate documentation cutoffs! Connect Google&#x27;s official MCP server and generate kitten art with Nano Banana 2.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">3</div>
+              <h4>Skills &amp; /planning Mode<br/>(00:45 – 01:02)</h4>
+              <p>Install the Antigravity SDK Skill &amp; Chrome Web Plugin. Use /planning and /artifact to architect the Cat Delivery System.</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">4</div>
+              <h4>Cloud Run &amp; Guardrails<br/>(01:02 – 01:15)</h4>
+              <p>Switch to /fast mode to containerize and deploy to Cloud Run, then try to break our &#x27;Strictly No Dogs (Capybaras OK)&#x27; guardrail!</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="5" data-title="From Code Autocomplete to Command &amp; Control" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:10 – 00:12 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:10 – 00:12 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="section-poll-wrap">
+            <img class="section-robot-icon" src="assets/ref_slide5_pic1.png" alt="Agent Icon"/>
+            <h2>From Code Autocomplete<br/>to Command &amp; Control</h2>
+            <div class="interactive-poll-card">
+              <div class="poll-q">🎤 Quick Show of Hands: How many of you have asked an AI coding assistant to use a brand-new SDK or model, and watched it confidently invent a method that doesn&#x27;t exist?</div>
+              <ul class="poll-opts"><li onclick="this.classList.toggle('voted')">🙋 Every single week! (The &#x27;Hallucinated SDK&#x27; trap) <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">🙋 It used an outdated v0.1 API from 2023! <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">🙋 I ended up copy-pasting 10 pages of docs into the chat prompt! <span class='vote-pill'>Click to Vote</span></li></ul>
+              <button class="reveal-btn" onclick="this.nextElementSibling.classList.toggle('visible')">✨ Reveal Takeaway</button>
+              <div class="poll-answer">💡 Why does this happen? Because even frontier LLMs have static training cutoffs and no native awareness of your team&#x27;s architecture—unless we give them authoritative tools (MCP) and structured workflows (Skills).</div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="6" data-title="Anatomy of an AI Coding Agent" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:12 – 00:14 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:12 – 00:14 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="triad-headline">
+            An AI coding agent is a system that uses a <span class="hl-blue">model</span> to reason, an <span class="hl-blue">agent harness</span> to plan &amp; execute, and <span class="hl-blue">MCP &amp; skills</span> to access authoritative knowledge and tools.
+          </div>
+          <div class="triad-row">
+            <div class="triad-box">
+              <img src="assets/ref_slide6_pic9.png" alt="Tools"/>
+              <h3>MCP &amp; Skills<br/>(Context &amp; Tools)</h3>
+            </div>
+            <div class="triad-arrow">⟷</div>
+            <div class="triad-box triad-center">
+              <img src="assets/ref_slide6_pic8.png" alt="Agent"/>
+              <h3>Antigravity<br/>(Agent Harness)</h3>
+            </div>
+            <div class="triad-arrow">⟷</div>
+            <div class="triad-box">
+              <img src="assets/ref_slide6_pic12.png" alt="Model"/>
+              <h3>Gemini Models<br/>(Reasoning &amp; Media)</h3>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="7" data-title="Objectives &amp; Workshop Outcomes" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:14 – 00:15 (1.5 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:14 – 00:15 (1.5 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Objectives &amp; Workshop Outcomes</h2>
+          <div class="blue-outline-card">
+            <p class="card-intro">By the end of this hands-on workshop, you will orchestrate Antigravity to build and deploy the &quot;Cat Delivery System&quot; while mastering four modern agentic development skills:</p>
+            <ul class="obj-list"><li><strong class='hl-blue'>• Dual-Mode Orchestration (/fast vs /planning):</strong> Learn when to use /fast mode for immediate scripts and deployments versus /planning mode with interactive /artifact reviews for full-stack architectures.</li><li><strong class='hl-blue'>• Authoritative Grounding via Developer Knowledge MCP:</strong> Connect Antigravity CLI directly to Google&#x27;s official documentation server (developerknowledge.googleapis.com/mcp) so it writes up-to-date Vertex AI code on the first try.</li><li><strong class='hl-blue'>• Progressive Disclosure with Agent Skills &amp; Plugins:</strong> Install specialized skills (google-antigravity-sdk) and plugins (GoogleChrome/modern-web-guidance) that load into context only when needed.</li><li><strong class='hl-blue'>• End-to-End Cloud Run Deployment &amp; Auditing:</strong> Package a Lit + Vite frontend and FastAPI + Antigravity SDK backend into a single container, deploy to Cloud Run, and verify acceptance criteria automatically.</li></ul>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="8" data-title="Core Architecture" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:15 – 00:17 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:15 – 00:17 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Core Architecture</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Flow of the &quot;Cat Delivery System&quot; — An Agent Building an Agent</h3>
+              <p class="body-p">Today&#x27;s workshop features a two-tier agentic architecture: we use Antigravity CLI (Tier 1) to build and deploy a Cloud Run application powered by the Antigravity SDK (Tier 2).</p>
+              <ul class="clean-bullets"><li><strong>Orchestration Layer (AGY CLI):</strong> Runs in Cloud Shell Editor, combining Developer Knowledge MCP + installed Skills to plan, write, and deploy the app.</li><li><strong>Web Frontend (Lit + Vite):</strong> Clean, light-mode reactive chat interface bundled and served statically by our Python backend.</li><li><strong>Agent Runtime (FastAPI + AGY SDK):</strong> Uses Gemini 3.5 Flash as the root agent with strict persona instructions: ABSOLUTELY NO DOGS (Capybaras allowed!).</li><li><strong>Image Generation (Nano Banana 2):</strong> Invokes Gemini 3.1 Flash Image on Vertex AI to generate anime, 3D, or photorealistic cats on demand.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/cat_delivery_architecture.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="9" data-title="Key Technologies &amp; Concepts We&#x27;ll Use!" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:17 – 00:18 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:17 – 00:18 (1 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="center-title">Key Technologies &amp; Concepts We&#x27;ll Use!</h2>
+          <div class="three-tech-grid">
+            <div class="tech-col-card">
+              <img src="assets/ref_slide9_pic7.png" alt="Tech Icon"/>
+              <h3>Google Antigravity<br/>(CLI &amp; Python SDK)</h3>
+              <p>Google&#x27;s AI-first agentic development platform. We&#x27;ll use the terminal CLI (`agy`) to orchestrate code, and the Python SDK (`google-antigravity`) as the runtime harness for our app.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/ref_slide9_pic9.jpg" alt="Tech Icon"/>
+              <h3>Developer Knowledge<br/>MCP &amp; Agent Skills</h3>
+              <p>Open standards for extending agents. MCP connects `agy` to live Google documentation APIs, while Agent Skills (`SKILL.md`) provide progressive, on-demand procedural expertise.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/ref_slide9_pic8.png" alt="Tech Icon"/>
+              <h3>Gemini 3.5 Flash, Nano<br/>Banana 2 &amp; Cloud Run</h3>
+              <p>Gemini 3.5 Flash powers fast agent reasoning, Gemini 3.1 Flash Image (Nano Banana 2) generates images, and Cloud Run hosts our container serverlessly.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="10" data-title="Model Context Protocol (MCP) &amp; Agent Skills &amp; Plugins" data-module="Module 1 • Concepts &amp; Architecture" data-time="00:18 – 00:20 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts &amp; Architecture • 00:18 – 00:20 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Model Context Protocol (MCP)</h3>
+              <h4>Live External Tools &amp; Authoritative Data</h4>
+              <ul class="clean-bullets"><li><strong>What It Is:</strong> An open protocol connecting AI agents to external APIs, databases, and documentation servers via standardized tool calls.</li><li><strong>Google Developer Knowledge MCP:</strong> Hosted at developerknowledge.googleapis.com/mcp. Lets coding agents search &amp; fetch live docs for Cloud, Vertex AI, Firebase, Android, and Maps.</li><li><strong>Best For:</strong> Dynamic lookups, querying live systems, and ensuring SDK/API usage is 100% current.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Agent Skills &amp; Plugins</h3>
+              <h4>Progressive Disclosure of Workflows (agentskills.io)</h4>
+              <ul class="clean-bullets"><li><strong>What They Are:</strong> Lightweight folders containing a SKILL.md instruction file (plus optional scripts/templates) that teach an agent how to perform specialized tasks.</li><li><strong>Progressive Disclosure:</strong> At startup, ONLY the skill&#x27;s name &amp; short description are in the prompt. The full SKILL.md is loaded ONLY when the agent activates it—saving massive tokens!</li><li><strong>Plugins:</strong> Bundle Skills + MCP servers + Rules + Hooks into a single installable package.</li></ul>
+            </div>
+          </div>
+          <div class="quiz-banner">
+            <div class="quiz-q-row">
+              <span>🎯 Quick Quiz: You want your agent to follow your team&#x27;s 15-page FastAPI + Lit architecture guide without wasting 20,000 tokens on every single chat turn. Do you use an MCP Server or an Agent Skill?</span>
+              <button class="reveal-btn-sm" onclick="this.parentElement.nextElementSibling.classList.toggle('visible')">Reveal Answer</button>
+            </div>
+            <div class="quiz-ans-row">✅ Agent Skill (SKILL.md)! Because of Progressive Disclosure, the 15-page guide stays on disk costing ~30 tokens of metadata until you actually ask the agent to build a FastAPI/Lit app!</div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="11" data-title="Let&#x27;s build this!" data-module="Module 2 • Lab Step 1: Hello Antigravity CLI" data-time="00:20 – 00:21 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab Step 1: Hello Antigravity CLI • 00:20 – 00:21 (1 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="lab-divider-center">
+            <h1>Let&#x27;s build this!</h1>
+            <div class="lab-sub-row">
+              <img src="assets/ref_slide11_pic4.png" alt="Google G"/>
+              <span>Lab Step 1 — Setting Up Cloud Shell Editor &amp; Authenticating Antigravity CLI (agy)</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="12" data-title="Step 1: Open Cloud Shell Editor Terminal" data-module="Module 2 • Lab Step 1: Hello Antigravity CLI" data-time="00:21 – 00:24 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab Step 1: Hello Antigravity CLI • 00:21 – 00:24 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 1: Open Cloud Shell Editor Terminal</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Critical Workaround for Clean TUI Rendering</h3>
+              <p class='body-p'>While Cloud Shell comes with Antigravity pre-installed, the default Cloud Shell bottom pane doesn&#x27;t render advanced TUI menus properly. Always use the terminal inside Cloud Shell Editor!</p>
+              <ul class="clean-bullets"><li><strong>1. Activate Cloud Shell:</strong> Click the &#x27;Activate Cloud Shell&#x27; icon (&gt;_) in the top-right toolbar of the Google Cloud Console.</li><li><strong>2. Click &#x27;Open Editor&#x27;:</strong> Click the pencil/editor icon on the Cloud Shell toolbar (and maximize the window) to launch the Cloud Shell Editor.</li><li><strong>3. Open Integrated Terminal:</strong> Use menu Terminal &gt; New Terminal or press Ctrl + ` (Control + backtick) to open the bash prompt inside the editor.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">terminal — Cloud Shell Editor (Ctrl + `)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Create a working directory for our warm-up exercise
+mkdir -p ~/hello-agy &amp;&amp; cd ~/hello-agy
+
+# Launch Antigravity CLI
+agy</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_307efeaef3537ba3.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="13" data-title="Step 2: Authenticate Antigravity CLI" data-module="Module 2 • Lab Step 1: Hello Antigravity CLI" data-time="00:24 – 00:27 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab Step 1: Hello Antigravity CLI • 00:24 – 00:27 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 2: Authenticate Antigravity CLI</h2>
+          <div class="split-2col">
+            <div class="col-left v-stepper-card">
+              
+            <div class="v-step-item">
+              <div class="v-step-circle">01</div>
+              <div class="v-step-text">
+                <h4>Select Auth Mode</h4>
+                <code>Choose &#x27;Use a Google Cloud project&#x27;</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">02</div>
+              <div class="v-step-text">
+                <h4>Complete OAuth Flow</h4>
+                <code>Open link in incognito tab &amp; paste auth code</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">03</div>
+              <div class="v-step-text">
+                <h4>Set Project &amp; Location</h4>
+                <code>Enter your PROJECT_ID &amp; choose &#x27;global&#x27;</code>
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-right">
+              <div class="callout-card">
+                <span class="callout-pill">AUTHENTICATION CHECKLIST</span>
+                <h4>Use Incognito &amp; Select &#x27;global&#x27; Location</h4>
+                <p>Copy the OAuth URL shown in agy and open it in a new tab of your SAME incognito window so you log in with your workshop student credentials. When prompted for location, select &#x27;global&#x27;.</p>
+              </div>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">agy — First-Time Authentication Flow</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>? How would you like to authenticate?
+&gt; 1. Use a Google Cloud project
+
+Paste authorization code: [PASTE_CODE_HERE]
+Enter Google Cloud Project ID: [YOUR_PROJECT_ID]
+Select Google Cloud Location: &gt; global</code></pre>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="14" data-title="✋ Checkpoint 1: Generate &amp; Run Cat Trivia" data-module="Module 2 • Lab Step 1: Hello Antigravity CLI" data-time="00:27 – 00:30 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab Step 1: Hello Antigravity CLI • 00:27 – 00:30 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 1: Generate &amp; Run Cat Trivia</h2>
+            
+        <div class="lab-timer-widget" data-seconds="180" id="timer-14">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-14">03:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(14)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(14)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>1. Prompt &amp; Approve Tool Execution</h3>
+              <h4>Human-in-the-Loop Permission Model</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>Write a simple node script that returns cat trivia and run it for me</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Autonomous Coding:</strong> AGY writes cat-trivia.js fetching random facts from catfact.ninja/fact with ASCII art.</li><li><strong>Permission Gate:</strong> Before running shell commands (`node cat-trivia.js`), AGY pauses and asks for permission. Select `1. Yes`.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>2. Inspect Output &amp; Ask for Explanation</h3>
+              <h4>Conversational Code Understanding</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>Explain the code you generated please
+
+# When finished, exit AGY CLI:
+# Press Ctrl+D twice</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>ASCII Cat &amp; Trivia Output:</strong> AGY executes the script, captures stdout, and displays your cat fact right in the TUI.</li><li><strong>Clean Exit:</strong> After reading the code explanation, press `Ctrl+D` twice to exit `agy` back to bash.</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="15" data-title="Inside ~/.gemini: AGY Configuration Layout" data-module="Module 3 • Lab Step 2: Developer Knowledge MCP" data-time="00:30 – 00:33 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab Step 2: Developer Knowledge MCP • 00:30 – 00:33 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Inside ~/.gemini: AGY Configuration Layout</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Where Antigravity Stores Brains, MCP Servers, Skills &amp; Rules</h3>
+              <p class='body-p'>Before we connect the Google Developer Knowledge MCP server, let&#x27;s look at how Antigravity organizes its global configuration inside your home directory (`~/.gemini`).</p>
+              <ul class="clean-bullets"><li><strong>antigravity-cli/brain/:</strong> Persists conversation transcripts and generated artifacts (implementation_plan.md, task.md, walkthrough.md).</li><li><strong>config/mcp_config.json:</strong> Global registry of Model Context Protocol (MCP) servers available across all your workspaces.</li><li><strong>skills/ &amp; config/plugins/:</strong> Houses installed Agent Skills (`SKILL.md`) and multi-capability Plugins.</li><li><strong>Enable the API:</strong> Run `gcloud services enable developerknowledge.googleapis.com` to activate the MCP endpoint on your project.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">~/.gemini — Directory Hierarchy</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>~/.gemini
+├── antigravity/
+├── antigravity-cli/
+│   ├── brain/            # Conversations and artifacts
+│   └── settings.json     # CLI settings
+├── config/
+│   ├── plugins/          # Global / shared plugins
+│   └── mcp_config.json   # Global / shared MCP config
+├── skills/               # Global / shared skills
+│   └── {skill_name}/
+│       └── SKILL.md      # Skill definition
+└── GEMINI.md             # Global rules</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="16" data-title="Step 3: Configure Developer Knowledge MCP" data-module="Module 3 • Lab Step 2: Developer Knowledge MCP" data-time="00:33 – 00:37 (4 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab Step 2: Developer Knowledge MCP • 00:33 – 00:37 (4 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 3: Configure Developer Knowledge MCP</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Connecting AGY to Official Google Documentation</h3>
+              <p class='body-p'>By adding `google-developer-knowledge` to `~/.gemini/config/mcp_config.json`, Antigravity gains direct search &amp; retrieval tools over official Google Cloud, Vertex AI, Firebase, and Android docs.</p>
+              <ul class="clean-bullets"><li><strong>1. Enable Developer Knowledge API:</strong> Run: `gcloud services enable developerknowledge.googleapis.com`</li><li><strong>2. Edit ~/.gemini/config/mcp_config.json:</strong> Run: `mkdir -p ~/.gemini/config &amp;&amp; cloudshell edit ~/.gemini/config/mcp_config.json`</li><li><strong>3. Replace [[PROJECT_ID]]:</strong> IMPORTANT: Replace `[[PROJECT_ID]]` in `X-goog-user-project` with your actual Google Cloud Project ID!</li><li><strong>4. Verify in AGY with /mcp:</strong> Launch `agy` and run `/mcp` to confirm `google-developer-knowledge` is active.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">~/.gemini/config/mcp_config.json</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>{
+  &quot;mcpServers&quot;: {
+    &quot;google-developer-knowledge&quot;: {
+      &quot;url&quot;: &quot;https://developerknowledge.googleapis.com/mcp&quot;,
+      &quot;authProviderType&quot;: &quot;google_credentials&quot;,
+      &quot;oauth&quot;: {
+        &quot;scopes&quot;: [&quot;https://www.googleapis.com/auth/cloud-platform&quot;]
+      },
+      &quot;timeout&quot;: 30000,
+      &quot;headers&quot;: {
+        &quot;X-goog-user-project&quot;: &quot;[[PROJECT_ID]]&quot;
+      }
+    }
+  }
+}</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_f104490ade24fa5e.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="17" data-title="🎤 The &quot;Nano Banana 2&quot; Challenge" data-module="Module 3 • Lab Step 2: Developer Knowledge MCP" data-time="00:37 – 00:40 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab Step 2: Developer Knowledge MCP • 00:37 – 00:40 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">🎤 The &quot;Nano Banana 2&quot; Challenge</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Why Ungrounded Agents Fail vs. How MCP Succeeds</h3>
+              <p class='body-p'>Let&#x27;s test our new MCP server with a prompt that mentions &quot;Nano Banana 2&quot;—the nickname for Google&#x27;s Gemini 3.1 Flash Image generation model.</p>
+              <ul class="clean-bullets"><li><strong>🎤 Pop Quiz for the Room:</strong> What happens if you ask a standard LLM (without MCP) to &#x27;Write a Vertex AI script using Nano Banana 2&#x27;?</li><li><strong>Without MCP: Hallucination!:</strong> The model either thinks &#x27;Nano Banana 2&#x27; is a fictional fruit API or guesses an obsolete `vertexai.preview.vision_models` call.</li><li><strong>With Developer Knowledge MCP:</strong> AGY searches official Google docs for &#x27;Nano Banana 2&#x27;, discovers it maps to `gemini-3.1-flash-image-preview` via the `google-genai` SDK, and writes working code!</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">terminal &amp; agy prompt — Nano Banana 2 Test</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># 1. Exit agy (Ctrl+D twice) &amp; enable Vertex AI API
+gcloud services enable aiplatform.googleapis.com
+
+# 2. Create project &amp; initialize uv
+mkdir -p ~/nano-banana-kitten &amp;&amp; cd ~/nano-banana-kitten
+uv init
+agy
+
+# 3. Paste this prompt into agy:
+Write a script that uses Nano Banana 2 through Vertex AI to generate a picture of a cute kitten, and run the script for me. Use the google-developer-knowledge MCP when researching.</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="18" data-title="✋ Checkpoint 2: Inspect Thinking (Ctrl+O) &amp; Kitten Output" data-module="Module 3 • Lab Step 2: Developer Knowledge MCP" data-time="00:40 – 00:45 (5 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab Step 2: Developer Knowledge MCP • 00:40 – 00:45 (5 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 2: Inspect Thinking (Ctrl+O) &amp; Kitten Output</h2>
+            
+        <div class="lab-timer-widget" data-seconds="300" id="timer-18">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-18">05:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(18)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(18)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Press Ctrl+O in AGY:</strong> Expands intermediate thinking steps! Watch AGY call `google-developer-knowledge` search &amp; fetch tools to look up `gemini-3.1-flash-image`.</li><li><strong>Autonomous Dependency Management:</strong> AGY automatically adds `google-genai` / `pillow` via `uv add`, writes the Python script, and executes it.</li><li><strong>Self-Healing on Errors:</strong> If an environment variable or project flag is needed, AGY reads the traceback, fixes the script, and re-runs until the image is saved!</li><li><strong>View Your Kitten! =^_^=:</strong> Click the generated `.png` file in the Cloud Shell Editor file tree on the left to see your AI-generated kitten.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_8c74ee97ffb3caf3.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">Cloud Shell Editor showing the generated kitten image alongside AGY&#x27;s terminal execution. (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="19" data-title="Installing Skills via Skills CLI &amp; Installing Antigravity Plugins" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:45 – 00:47 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:45 – 00:47 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Installing Skills via Skills CLI</h3>
+              <h4>Open Marketplace &amp; GitHub Repos (npx skills)</h4>
+              <ul class="clean-bullets"><li><strong>Why We Need Skills Here:</strong> Official docs great for APIs, but building an agent with the Antigravity SDK requires opinionated multi-file patterns and harness conventions.</li><li><strong>GitHub Skill Installation:</strong> Using Vercel&#x27;s `npx skills add` CLI, we can install any skill directly from a GitHub repo containing a `skills/` folder.</li><li><strong>google-antigravity-sdk Skill:</strong> Teaches `agy` how to properly instantiate, configure, and stream from the Antigravity Python SDK.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Installing Antigravity Plugins</h3>
+              <h4>Cohesive Bundles via `agy plugin install`</h4>
+              <ul class="clean-bullets"><li><strong>What&#x27;s Inside a Plugin?:</strong> A single package that can bundle Skills (`SKILL.md`), MCP servers (`mcp_config.json`), Rules (`GEMINI.md`), and Hooks (`hooks.json`).</li><li><strong>Chrome&#x27;s modern-web-guidance:</strong> Written by the Google Chrome team—teaches `agy` modern web best practices for Lit, Vite, responsive layouts, and clean UI architecture.</li><li><strong>Inspecting Loaded Skills:</strong> Run `/skills` inside `agy` at any time to inspect all discovered workspace, plugin, and global skills.</li></ul>
+            </div>
+          </div>
+          <div class="quiz-banner">
+            <div class="quiz-q-row">
+              <span>💡 Security Tip: Skills and Plugins can contain executable helper scripts and lifecycle hooks. What is the #1 rule when installing skills from open marketplaces like skills.sh?</span>
+              <button class="reveal-btn-sm" onclick="this.parentElement.nextElementSibling.classList.toggle('visible')">Reveal Answer</button>
+            </div>
+            <div class="quiz-ans-row">🔒 Always verify the publisher and only install skills/plugins from reputable, trusted repositories (like Google-Antigravity or GoogleChrome)!</div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="20" data-title="Step 4: Install Skills &amp; Plugins for Cat Delivery" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:47 – 00:50 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:47 – 00:50 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 4: Install Skills &amp; Plugins for Cat Delivery</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Equipping AGY with Backend SDK &amp; Modern Web Expertise</h3>
+              <p class='body-p'>Exit `agy` (`Ctrl+D` twice) and run these commands in your terminal to initialize the `~/cat-delivery` project and install both skills.</p>
+              <ul class="clean-bullets"><li><strong>1. Initialize Project with uv:</strong> Create `~/cat-delivery`, run `uv init`, and add `fastapi` and `uvicorn`.</li><li><strong>2. Add Antigravity SDK Skill:</strong> Runs `npx skills add Google-Antigravity/antigravity-sdk-python` targeting `--agent antigravity-cli`.</li><li><strong>3. Install Chrome Web Plugin:</strong> Runs `agy plugin install https://github.com/GoogleChrome/modern-web-guidance`.</li><li><strong>4. Verify with /skills:</strong> Launch `agy` and type `/skills` to confirm both skills appear in the menu!</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">terminal — Setup ~/cat-delivery &amp; Install Skills</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># 1. Create workspace and install base backend dependencies
+mkdir -p ~/cat-delivery &amp;&amp; cd ~/cat-delivery
+uv init &amp;&amp; uv add fastapi uvicorn
+
+# 2. Install the official Antigravity Python SDK skill
+npx skills add Google-Antigravity/antigravity-sdk-python \
+  --skill google-antigravity-sdk --agent antigravity-cli --yes
+
+# 3. Install the Chrome team&#x27;s modern-web-guidance plugin
+agy plugin install https://github.com/GoogleChrome/modern-web-guidance
+
+# 4. Launch agy and check installed skills
+agy
+/skills</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_cfdb4b5212fa94e1.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="21" data-title="🎯 Operating Modes (/fast vs /planning) &amp; /model" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:50 – 00:52 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:50 – 00:52 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">🎯 Operating Modes (/fast vs /planning) &amp; /model</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Matching Agent Autonomy &amp; Thinking Level to Task Complexity</h3>
+              <p class='body-p'>Before we prompt `agy` to build the full application, we need to configure two key levers: the **Operating Mode** and the **Model Thinking Level**.</p>
+              <ul class="clean-bullets"><li><strong>/fast Mode (Immediate Execution):</strong> Starts writing files and running commands immediately. Best for simple, self-contained tasks (like our cat-trivia script or deploying an already-built app).</li><li><strong>/planning Mode (Design First):</strong> Researches the problem first and produces an `implementation_plan.md` artifact for you to review, comment on, and approve before writing code.</li><li><strong>/model &amp; Thinking Levels:</strong> Run `/model` and select **Gemini 3.5 Flash (Low)**. &#x27;Low&#x27; thinking gives super-fast responses and great token economics; &#x27;High&#x27; spends more tokens reasoning deeply.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">agy — Configure Model &amp; Planning Mode</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># 1. Open model selector and choose Gemini 3.5 Flash (Low)
+/model
+
+# 2. Switch to Planning Mode for our full-stack build
+/planning
+
+# (You can switch back to Fast Mode anytime with /fast)</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_db085a557b145806.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="22" data-title="Step 5: Generate the Implementation Plan" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:52 – 00:55 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:52 – 00:55 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 5: Generate the Implementation Plan</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Prompting the &quot;Cat Delivery System&quot; in /planning Mode</h3>
+              <p class='body-p'>Make sure you are in `/planning` mode, then send this specification prompt to `agy`. Notice how we specify the persona rules, tech stack, and contract-first TODOs!</p>
+              <ul class="clean-bullets"><li><strong>Persona &amp; Guardrail Rule:</strong> Generates cat pictures in any style (anime, cartoon, photorealistic, 3D). Rule: ABSOLUTELY NO DOGS—steer toward cats! P.S.: Capybaras are allowed.</li><li><strong>Dual-Model Spec:</strong> Gemini 3.5 Flash for the root conversational agent + Gemini 3.1 Flash Image (Nano Banana 2) for image generation.</li><li><strong>Contract-First Architecture:</strong> Requires `agy` to define the contract between the Lit/Vite frontend and Antigravity SDK backend before coding.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">agy (/planning mode) — Full-Stack Specification Prompt</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>Create an application named &quot;Cat Delivery System&quot;. This application will be an agent that generates cat pictures using Gemini 3.1 Flash Image (aka Nano Banana 2). The user will interact with the agent whenever it feels the need for a cat picture in their life, whether it be to make them smile, laugh or just brighten their day. Cat pictures can take any form the user desires: anime, cartoon, photorealistic, 3D render, etc. The only rule is ABSOLUTELY NO DOGS - steer the user towards cats if necessary. P.S.: capybaras are allowed.
+
+The tech stack should be as follows:
+- uv package manager
+- Backend: agent using Antigravity SDK
+- Frontend: simple chat window, light mode, lit / vite
+- Model: Gemini 3.5 Flash for the root agent, Gemini 3.1 Flash Image for image generation
+
+TODO:
+- backend should serve a static frontend
+- define the contract between frontend and backend before starting implementation
+- use Google Cloud Project auth</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="23" data-title="Under the Hood: Autonomous Research Phase" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:55 – 00:57 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:55 – 00:57 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Under the Hood: Autonomous Research Phase</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Skills Activated on Demand:</strong> Watch the TUI: `agy` automatically activates `google-antigravity-sdk` and `modern-web-guidance` skills to learn the exact SDK &amp; Lit/Vite patterns.</li><li><strong>Live MCP Queries:</strong> Simultaneously queries `google-developer-knowledge` MCP to verify Gemini 3.1 Flash Image parameters and Vertex AI auth.</li><li><strong>Zero Premature Coding:</strong> Because we&#x27;re in `/planning` mode, `agy` does NOT start randomly creating files—it synthesizes everything into a formal `implementation_plan.md` artifact.</li><li><strong>Look for &#x27;1 artifact&#x27; Badge:</strong> When research completes, look at the bottom-right corner of the terminal for `1 artifact` and the `/artifact` hint!</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_15194975b2519818.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">AGY invoking both the Developer Knowledge MCP server and installed Agent Skills during the planning research phase. (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="24" data-title="Human-in-the-Loop Review with /artifact" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:57 – 00:59 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:57 – 00:59 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Human-in-the-Loop Review with /artifact</h2>
+          <h3 class="sub-blue">How to Inspect, Comment On, and Approve `implementation_plan.md`</h3>
+          <p class="body-p">In Antigravity, supporting documents (`implementation_plan.md`, `task.md`, `walkthrough.md`) are called **Artifacts**. You can review and annotate them line-by-line right in the CLI!</p>
+          <div class="four-steps-grid">
+            <div class="four-step-card ">
+              <div class="step-num-circle">1</div>
+              <h4>Run /artifact</h4>
+              <p>Type `/artifact` in the prompt. Select `implementation_plan.md` from the list and press Enter to open the interactive viewer.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">2</div>
+              <h4>Check API Contract &amp; Verification</h4>
+              <p>Scroll with arrow keys (`↑`/`↓`). Verify the Frontend ↔ Backend JSON contract and check the &#x27;Verification Plan&#x27; section at the bottom.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">3</div>
+              <h4>Add Inline Comments (Press C)</h4>
+              <p>Want to tweak an endpoint, port, or UI detail? Navigate to any line and press `C` to attach a comment directly to that line!</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">4</div>
+              <h4>Approve &amp; Execute (ESC → Y)</h4>
+              <p>When happy with the plan, press `ESC` to exit the viewer and press `Y` to send your approval/comments to the agent and start coding!</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="25" data-title="✋ Checkpoint 3: Autonomous Implementation &amp; Artifacts" data-module="Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode" data-time="00:59 – 01:02 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Lab Step 3: Agent Skills &amp; /planning Mode • 00:59 – 01:02 (3 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 3: Autonomous Implementation &amp; Artifacts</h2>
+            
+        <div class="lab-timer-widget" data-seconds="240" id="timer-25">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-25">04:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(25)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(25)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>What AGY Builds Automatically</h3>
+              <h4>Backend (AGY SDK + FastAPI) &amp; Frontend (Lit + Vite)</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Typical generated structure in ~/cat-delivery:
+cat-delivery/
+├── backend/
+│   ├── agent.py      # AGY SDK + Nano Banana 2 tool
+│   └── main.py       # FastAPI + static file mount
+├── frontend/
+│   ├── src/          # Lit web components chat UI
+│   └── vite.config.js
+└── pyproject.toml</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Backend Harness:</strong> Wires Gemini 3.5 Flash root agent + custom Vertex AI `gemini-3.1-flash-image` tool.</li><li><strong>Frontend Build:</strong> Scaffolds Lit components, runs `npm install &amp;&amp; npm run build`, and mounts `dist/` in FastAPI.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Tracking Progress via /artifact</h3>
+              <h4>3 Living Artifacts in ~/.gemini/antigravity-cli/brain/</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Run /artifact after implementation completes:
+1. implementation_plan.md  (Approved Blueprint)
+2. task.md                 (Live Checklist [x])
+3. walkthrough.md          (Validation Summary)</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>task.md:</strong> Created automatically to track every implementation and test step.</li><li><strong>walkthrough.md:</strong> Generated once coding &amp; local verification finish, documenting what was built and tested.</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="26" data-title="Step 6: Deploy to Cloud Run in /fast Mode" data-module="Module 5 • Lab Step 4: Cloud Run Deployment &amp; Verification" data-time="01:02 – 01:06 (4 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 5 • Lab Step 4: Cloud Run Deployment &amp; Verification • 01:02 – 01:06 (4 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Step 6: Deploy to Cloud Run in /fast Mode</h2>
+          <div class="split-2col">
+            <div class="col-left v-stepper-card">
+              
+            <div class="v-step-item">
+              <div class="v-step-circle">01</div>
+              <div class="v-step-text">
+                <h4>Switch to /fast Mode</h4>
+                <code>Deployment doesn&#x27;t need a new design doc</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">02</div>
+              <div class="v-step-text">
+                <h4>Single-Container Build</h4>
+                <code> Dockerfile bundles Lit dist/ + FastAPI backend</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">03</div>
+              <div class="v-step-text">
+                <h4>Audit Against Criteria</h4>
+                <code>AGY deploys to Cloud Run &amp; verifies live URL</code>
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-right">
+              <div class="callout-card">
+                <span class="callout-pill">ACCEPTANCE-DRIVEN DEPLOYMENT</span>
+                <h4>Why Include Acceptance Criteria in Your Prompt?</h4>
+                <p>By giving AGY explicit Acceptance Criteria (&#x27;Frontend is live and renders with no errors&#x27;, &#x27;Backend responds with no errors&#x27;), the agent won&#x27;t stop at `gcloud run deploy`—it will curl/test the live Cloud Run URL and fix any container startup issues automatically!</p>
+              </div>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">agy (/fast mode) — Cloud Run Deployment Prompt</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>/fast
+
+Deploy the agent and frontend to Cloud Run.
+
+TODO:
+- backend should serve a static frontend
+- frontend and backend are deployed in the same container
+
+Acceptance Criteria
+- Agent is deployed to cloud run
+- Frontend is live and renders with no errors
+- Backend is live and responds to requests with no errors</code></pre>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="27" data-title="✋ Checkpoint 4: Live &quot;Break the Guardrail&quot; Challenge!" data-module="Module 5 • Lab Step 4: Cloud Run Deployment &amp; Verification" data-time="01:06 – 01:10 (4 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 5 • Lab Step 4: Cloud Run Deployment &amp; Verification • 01:06 – 01:10 (4 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 4: Live &quot;Break the Guardrail&quot; Challenge!</h2>
+            
+        <div class="lab-timer-widget" data-seconds="180" id="timer-27">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-27">03:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(27)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(27)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>01. Happy Path: Custom Cat Delivery</h3>
+              <div class="query-box">
+                <strong>User Query:</strong><br/>
+                <span>&quot;I just survived a production outage—send me an anime cyberpunk cat hacker to cheer me up!&quot;</span>
+              </div>
+              <div class="grounded-box">
+                <strong class="hl-green">✔ Grounded Multimodal Response:</strong>
+                <p>Root agent (Gemini 3.5 Flash) responds with an encouraging message, invokes the Nano Banana 2 (Gemini 3.1 Flash Image) tool, and renders a neon cyberpunk cat right in the Lit chat UI!</p>
+                <small><strong>Verification Goal:</strong> Confirms single-container static UI serving, backend Antigravity SDK harness, and Vertex AI image synthesis work end-to-end on Cloud Run.</small>
+              </div>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>02 &amp; 03. Guardrail &amp; Easter Egg Tests</h3>
+              <div class="trap-box trap-red">
+                <strong>02. The Dog Trap (&quot;Generate a cute golden retriever puppy&quot;)</strong>
+                <div class="hl-green">Expected: Polite Refusal + Steer to Cats!</div>
+                <p>&quot;I&#x27;m strictly a Cat Delivery System—no dogs allowed! How about an adorable golden fluffy Maine Coon kitten instead?&quot; (Generates cat!)</p>
+              </div>
+              <div class="trap-box trap-yellow">
+                <strong>03. The Capybara Loophole (&quot;Can I get a capybara in a yuzu hot spring?&quot;)</strong>
+                <div class="hl-green">Result: Allowed by System Prompt Exception!</div>
+                <p>Agent honors the &#x27;P.S.: capybaras are allowed&#x27; clause in its system instructions and generates a chill capybara image via Nano Banana 2!</p>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="28" data-title="Your Agentic Orchestration Playbook" data-module="Module 6 • Playbook, Troubleshooting &amp; Wrap-Up" data-time="01:10 – 01:12 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 6 • Playbook, Troubleshooting &amp; Wrap-Up • 01:10 – 01:12 (2 min)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Your Agentic Orchestration Playbook</h2>
+          <h3 class="sub-blue">4 Repeatable Patterns for Production Engineering with Antigravity</h3>
+          <p class="body-p">We just built, tested, and deployed a full-stack cloud application without writing a single line of code manually. Here is the 4-step playbook you can take back to your team tomorrow:</p>
+          <div class="four-steps-grid">
+            <div class="four-step-card ">
+              <div class="step-num-circle">1</div>
+              <h4>Ground with MCP</h4>
+              <p>Never let coding agents guess APIs. Connect `google-developer-knowledge` (and your internal MCP servers) for live, authoritative docs.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">2</div>
+              <h4>Equip with Skills</h4>
+              <p>Package SDK conventions &amp; team workflows as `SKILL.md` files (`npx skills` / `agy plugin`) for token-efficient progressive disclosure.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">3</div>
+              <h4>Plan &amp; Comment First</h4>
+              <p>Use `/planning` + `/artifact` (press `C` to comment) to lock in API contracts and verification plans before a single file is modified.</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">4</div>
+              <h4>Audit with Criteria</h4>
+              <p>Switch to `/fast` for deployment and always include explicit Acceptance Criteria so the agent verifies and self-heals its own release.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="29" data-title="Quick Reference: AGY CLI Commands &amp; Shortcuts" data-module="Module 6 • Bonus Reference &amp; Cheat Sheet" data-time="Reference Slide (1/2)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 6 • Bonus Reference &amp; Cheat Sheet • Reference Slide (1/2)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Quick Reference: AGY CLI Commands &amp; Shortcuts</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Essential Slash Commands &amp; Hotkeys</h3>
+              <h4>Keep this cheat sheet handy during &amp; after the lab</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>/planning   # Switch to Planning Mode (creates plan artifact)
+/fast       # Switch to Fast Mode (immediate execution)
+/artifact   # Open &amp; review implementation_plan.md / task.md
+/model      # Switch model &amp; thinking level (Low/Med/High)
+/mcp        # Verify connected MCP servers &amp; tools
+/skills     # List discovered workspace, plugin &amp; global skills
+Ctrl + O    # Expand/collapse intermediate agent thinking
+Ctrl + D x2 # Exit AGY CLI cleanly back to bash</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Inside /artifact Viewer:</strong> Use `↑`/`↓` to scroll, `C` to add a line comment, `ESC` then `Y` to submit.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Common Workshop Troubleshooting Fixes</h3>
+              <h4>Instant Solutions for Cloud Shell &amp; Vertex AI</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Fix 1: TUI menu looks garbled in Cloud Shell
+-&gt; Click &#x27;Open Editor&#x27; and use Terminal &gt; New Terminal (Ctrl+`)
+
+# Fix 2: google-developer-knowledge MCP fails to connect
+-&gt; Check ~/.gemini/config/mcp_config.json: ensure [[PROJECT_ID]]
+   was replaced with your real Project ID (no brackets!)
+-&gt; Ensure API is enabled:
+   gcloud services enable developerknowledge.googleapis.com</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Vertex AI Location:</strong> Ensure `global` location is selected for Gemini 3.5 Flash &amp; Gemini 3.1 Flash Image.</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="30" data-title="Going Further: Authoring Your Own Skill &amp; Rules" data-module="Module 6 • Bonus Reference &amp; Cheat Sheet" data-time="Reference Slide (2/2)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 6 • Bonus Reference &amp; Cheat Sheet • Reference Slide (2/2)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Going Further: Authoring Your Own Skill &amp; Rules</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Create a Custom Workspace Skill</h3>
+              <h4>.agents/skills/my-team-skill/SKILL.md</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>---
+name: cloud-run-security-audit
+description: &gt;-
+  Audits FastAPI and Cloud Run services for least-privilege IAM,
+  non-root Dockerfiles, and CORS safety. Activate before deploy.
+---
+
+# Cloud Run Security Audit Procedure
+1. Verify Dockerfile runs as a non-root user.
+2. Check that Vertex AI uses ADC (no hardcoded API keys).
+3. Run smoke tests against /healthz before rollout.</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Zero Config Discovery:</strong> Place in `.agents/skills/&lt;name&gt;/SKILL.md` in your repo to share with your whole team via Git!</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Enforce Project Rules with GEMINI.md</h3>
+              <h4>Hierarchical Context Rules (GEMINI.md / AGENTS.md)</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Project Engineering Guidelines (GEMINI.md)
+
+- **Package Manager**: Always use `uv` (never raw `pip`).
+- **Python Style**: Type-annotate all FastAPI endpoints.
+- **Frontend**: Use Lit web components with Vite.
+- **Testing**: Run `uv run pytest` after modifying backend code.</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Rules vs. Skills:</strong> Use `GEMINI.md` for always-on guardrails &amp; coding conventions; use `SKILL.md` for on-demand multi-step playbooks.</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="31" data-title="Command and control: Orchestrate app development with Gemini and MCP" data-module="Module 6 • Closing" data-time="01:12 – 01:13 (1 min)">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">Congratulations! 🎉</div>
+            <h1 class="cover-title">Command and control:<br/>Orchestrate app development<br/>with Gemini and MCP</h1>
+            <p class="cover-subtitle">Built &amp; Deployed with Google Antigravity, Developer Knowledge MCP, Agent Skills &amp; Cloud Run</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="32" data-title="Thank you!" data-module="Module 6 • Closing &amp; Q&amp;A" data-time="01:13 – 01:15 (2 min)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Proprietary + Confidential</span>
+          <div class="thankyou-right">
+            <div class="thankyou-text">
+              <h1>Thank you!</h1>
+              <p>Questions, Feedback &amp; Let&#x27;s Connect!<br/>Rabimba Karanjai • GDE AI/ML • @rabimba</p>
+            </div>
+            <div class="thankyou-qrs">
+              <div class="ty-qr-box">
+                <img src="assets/qr_codelab.png" alt="Codelab QR"/>
+                <span>Workshop Codelab: codelabs.developers.google.com/gemini-mcp-agy</span>
+              </div>
+              <div class="ty-qr-box">
+                <img src="assets/qr_rabimba_github.png" alt="GitHub QR"/>
+                <span>Slides &amp; Artifacts: github.com/rabimba/GDE-ML-Artifacts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section>
+  </div>
+
+  <!-- On-Screen Speaker Notes Teleprompter Drawer (Toggle with 'S') -->
+  <div id="notes-drawer">
+    <div id="notes-drawer-header">
+      <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
+      <span>Tip: Press <strong>P</strong> to pop out Dual-Screen Presenter Console | Press <strong>S</strong> to hide drawer</span>
+    </div>
+    <div id="notes-drawer-content"></div>
+  </div>
+
+  <!-- Bottom Presenter Toolbar -->
+  <div id="presenter-bar">
+    <div class="bar-group">
+      <button class="bar-btn" onclick="prevSlide()">◀ Prev</button>
+      <span id="slide-counter" style="min-width: 72px; text-align:center; font-weight:700;">1 / 32</span>
+      <button class="bar-btn" onclick="nextSlide()">Next ▶</button>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <span id="module-indicator" style="color:#9AA0A6; font-size:0.78rem; margin-left:8px;"></span>
+    </div>
+    <div class="bar-group">
+      <span id="talk-clock" style="font-family:'Roboto Mono',monospace; color:#FBBC04; font-weight:700;">⏱️ Talk Clock: 00:00 / 75:00</span>
+      <button class="bar-btn" onclick="toggleTalkClock()" id="clock-btn">Start Clock</button>
+      <button class="bar-btn" onclick="toggleNotesDrawer()" id="notes-btn">📝 Speaker Notes (S)</button>
+      <button class="bar-btn" onclick="openPresenterPopup()">🖥️ Presenter View (P)</button>
+      <button class="bar-btn" onclick="toggleGrid()">⊞ All Slides (G)</button>
+      <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </div>
+
+  <!-- All-Slides Overview Grid Modal -->
+  <div id="grid-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+      <h2>All 32 Workshop Slides — Click Any Slide to Jump</h2>
+      <button class="bar-btn" onclick="toggleGrid()">✕ Close (ESC)</button>
+    </div>
+    <div class="grid-cards" id="grid-cards-container"></div>
+  </div>
+
+  <!-- Lightbox Modal for Diagrams & Screenshots -->
+  <div id="lightbox-modal" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Enlarged View"/>
+  </div>
+
+  <script>
+    const SLIDE_NOTES = [{"num": 1, "title": "Command and control: Orchestrate app development with Gemini and MCP", "module": "Module 0 \u2022 Welcome & Onboarding", "time": "00:00 \u2013 00:02 (2 min)", "notes": "TIMING: 00:00 - 00:02 (2 mins)\nGOAL: High-energy welcome and set the core premise of the workshop.\n\nSAY THIS:\n\"Welcome everyone! Over the next 75 minutes, we are going to do something that would have sounded impossible just two years ago: we are going to architect, build, test, and deploy a complete, full-stack multimodal cloud application to Google Cloud Run\u2014with a reactive web frontend and a dual-model AI agent backend\u2014without writing a single line of code by hand.\"\n\n\"Instead of acting as typists, today you are taking 'Command and Control'. You'll learn how to orchestrate Google Antigravity (AGY) using Gemini 3.5 Flash, ground it in live official docs with the Google Developer Knowledge MCP server, and equip it with specialized Agent Skills.\""}, {"num": 2, "title": "Workshop Hub & Essential Links", "module": "Module 0 \u2022 Welcome & Onboarding", "time": "00:02 \u2013 00:05 (3 min)", "notes": "TIMING: 00:02 - 00:05 (3 mins)\nENGAGEMENT CUE: Pause for 30 seconds and make sure everyone scans the left QR code or types codelabs.developers.google.com/gemini-mcp-agy.\n\nSAY THIS:\n\"First things first\u2014grab your phones or open a browser tab and head to the link on the left card: codelabs.developers.google.com/gemini-mcp-agy. Keep this tab open throughout the session! All the prompts and JSON snippets we'll use are right there so you don't have to type long paragraphs from the projector.\"\n\n\"Quick show of hands: who has the Codelab open on their screen right now? Awesome. Go ahead and start initializing your Google Cloud project and Cloud Shell in the background while I introduce myself and our mission.\""}, {"num": 3, "title": "Rabimba Karanjai", "module": "Module 0 \u2022 Welcome & Onboarding", "time": "00:05 \u2013 00:07 (2 min)", "notes": "TIMING: 00:05 - 00:07 (2 mins)\nGOAL: Quick personal introduction and establish credibility & approachability.\n\nSAY THIS:\n\"A quick bit about me\u2014I'm Rabimba Karanjai. I'm a Google Developer Expert in AI & Machine Learning and an ML Scientist at PayPal. I spend my days building and evaluating agentic systems and developer tooling\u2014and when I'm not orchestrating agents, as you can see from the photo, I love being on the racetrack!\"\n\n\"Speaking of racing: think of today's workshop like being the race engineer on the pit wall. Gemini is the engine, Antigravity is the chassis and harness, and MCP and Skills are your live telemetry. This is a super interactive workshop\u2014if you hit a snag or have a question at any point, raise your hand or shout it out!\""}, {"num": 4, "title": "Today's 75-Minute Mission", "module": "Module 0 \u2022 Welcome & Onboarding", "time": "00:07 \u2013 00:10 (3 min)", "notes": "TIMING: 00:07 - 00:10 (3 mins)\nGOAL: Walk through the 4-part roadmap and announce the 'Zero Manual Code' challenge.\n\nSAY THIS:\n\"Here is our 75-minute game plan. We have one fun rule today: Hands off the code editor! Your challenge is to build the entire Cat Delivery System\u2014backend, frontend, Dockerfile, and Cloud Run deployment\u2014purely by steering Antigravity through prompts, MCP tools, Skills, and artifact reviews.\"\n\n\"We'll start with a quick 10-minute conceptual foundation, then jump straight into four hands-on sprints: Step 1 is getting cozy with AGY CLI; Step 2 is wiring up the Google Developer Knowledge MCP server; Step 3 is installing Agent Skills and using Planning Mode; and Step 4 is shipping to Cloud Run and testing our guardrails live.\""}, {"num": 5, "title": "From Code Autocomplete to Command & Control", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:10 \u2013 00:12 (2 min)", "notes": "TIMING: 00:10 - 00:12 (2 mins)\nINTERACTIVE POLL #1: Get the room laughing and raising hands.\n\nSAY THIS:\n\"Before we type our first command, let's do a quick sanity check. Raise your hand if you've ever asked an AI coding assistant to write code for a new Google Cloud or Vertex AI feature, and it confidently gave you an import statement from 2023 that throws an ImportError!\"\n\n(Click Reveal in Web Deck / Read takeaway)\n\"Almost every hand in the room! And what do we usually do next? We go to the docs, copy 5,000 words of markdown, and paste it into the chat window. Today we stop doing manual copy-paste RAG. Let's look at how an orchestrated coding agent actually works.\""}, {"num": 6, "title": "Anatomy of an AI Coding Agent", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:12 \u2013 00:14 (2 min)", "notes": "TIMING: 00:12 - 00:14 (2 mins)\nGOAL: Define the three pillars of our workshop: Model, Agent Harness, and Tools/MCP/Skills.\n\nSAY THIS:\n\"Just like any AI agent is composed of a Model, an Agent loop, and Tools, an AI Coding Agent has three distinct parts:\n1. On the right, the Model\u2014today we'll use Gemini 3.5 Flash for fast, token-efficient reasoning, plus Gemini 3.1 Flash Image (also known as Nano Banana 2) for image generation.\n2. In the center, the Agent Harness\u2014Google Antigravity. Think of the harness as the engine that manages planning, file editing, terminal execution, artifacts, and human-in-the-loop permissions. We'll use Antigravity both as our CLI coding agent AND via the Antigravity Python SDK inside our app!\n3. On the left, Tools & Knowledge\u2014specifically the Model Context Protocol (MCP) and Agent Skills.\""}, {"num": 7, "title": "Objectives & Workshop Outcomes", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:14 \u2013 00:15 (1.5 min)", "notes": "TIMING: 00:14 - 00:15 (1.5 mins)\nGOAL: Set clear learning outcomes.\n\nSAY THIS:\n\"Here are the four concrete outcomes you'll walk away with today:\nFirst, mastering Antigravity CLI's two operating modes: Fast mode and Planning mode, plus reviewing and commenting on artifacts.\nSecond, connecting the Google Developer Knowledge MCP server so your agent queries live official Google docs.\nThird, installing reusable Agent Skills and Plugins using progressive disclosure.\nAnd fourth, orchestrating a production deployment to Google Cloud Run with automated acceptance testing.\""}, {"num": 8, "title": "Core Architecture", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:15 \u2013 00:17 (2 min)", "notes": "TIMING: 00:15 - 00:17 (2 mins)\nGOAL: Explain the two-tier diagram clearly so attendees don't confuse Antigravity CLI with the Antigravity SDK inside the app.\n\nSAY THIS:\n\"Look closely at this architecture diagram because there's a cool meta-pattern happening today. We have two tiers:\nIn Tier 1 at the top, YOU are in Cloud Shell Editor talking to Antigravity CLI (`agy`). `agy` uses the Developer Knowledge MCP server and two installed skills\u2014the Antigravity Python SDK skill and Chrome's Modern Web Guidance plugin\u2014to write our application.\nIn Tier 2 at the bottom is the application `agy` builds for us: the Cat Delivery System running on Cloud Run! Inside that single container, FastAPI serves a static Lit & Vite chat frontend and runs a backend agent built with the Antigravity SDK. That root agent uses Gemini 3.5 Flash to chat with the user, enforce our hilarious business rule\u2014ABSOLUTELY NO DOGS, steer dog requests to cats, though capybaras are allowed\u2014and calls Gemini 3.1 Flash Image (Nano Banana 2) to generate custom cat pictures.\""}, {"num": 9, "title": "Key Technologies & Concepts We'll Use!", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:17 \u2013 00:18 (1 min)", "notes": "TIMING: 00:17 - 00:18 (1 min)\nGOAL: Quick visual summary of the 3 tech stacks before the interactive quiz.\n\nSAY THIS:\n\"So our toolkit comes down to three pillars: Google Antigravity (both the CLI and the Python SDK), Open Context Standards (Model Context Protocol and Agent Skills), and Google Cloud's serverless AI stack (Gemini 3.5 Flash, Nano Banana 2, and Cloud Run).\""}, {"num": 10, "title": "Model Context Protocol (MCP) & Agent Skills & Plugins", "module": "Module 1 \u2022 Concepts & Architecture", "time": "00:18 \u2013 00:20 (2 min)", "notes": "TIMING: 00:18 - 00:20 (2 mins)\nINTERACTIVE QUIZ #2: Ask the room to vote between MCP Server vs Agent Skill!\n\nSAY THIS:\n\"People always ask me: 'Rabimba, when do I use an MCP server versus an Agent Skill?' Look at these two cards:\n- MCP (on the left) is for live, external queries and actions\u2014like searching Google's massive, constantly updated Developer Documentation database.\n- Agent Skills (on the right) use an open standard (agentskills.io) built around a magic concept called Progressive Disclosure. Instead of stuffing ten thousand tokens of instructions into your system prompt, Antigravity only reads the 2-line description of each skill at startup. When\u2014and only when\u2014a task matches that skill, the agent reads the full `SKILL.md` file on demand.\"\n\n\"So pop quiz for the room: if you have a 15-page team architecture guide and you don't want it burning 20,000 tokens on every turn, which one do you use? Shout it out! ... Exactly: an Agent Skill!\""}, {"num": 11, "title": "Let's build this!", "module": "Module 2 \u2022 Lab Step 1: Hello Antigravity CLI", "time": "00:20 \u2013 00:21 (1 min)", "notes": "TIMING: 00:20 - 00:21 (1 min)\nTRANSITION TO HANDS-ON LAB 1.\n\nSAY THIS:\n\"Theory time is over\u2014time to get our hands on the keyboard! Everyone switch over to your Google Cloud Console tab and Codelab Step 2 & 3.\""}, {"num": 12, "title": "Step 1: Open Cloud Shell Editor Terminal", "module": "Module 2 \u2022 Lab Step 1: Hello Antigravity CLI", "time": "00:21 \u2013 00:24 (3 min)", "notes": "TIMING: 00:21 - 00:24 (3 mins)\nCRITICAL FACILITATOR TIP: Emphasize clicking 'Open Editor' and using Terminal > New Terminal (Ctrl + `). If someone runs `agy` in the raw non-editor Cloud Shell pane, the TUI menus look garbled.\n\nSAY THIS:\n\"Pay super close attention to Step 2 here\u2014this will save you a ton of headache! Once Cloud Shell connects, click the 'Open Editor' button on the top bar. Inside the Cloud Shell Editor, go to the top menu and click Terminal -> New Terminal (or press Ctrl + backtick). Why? Because Antigravity has a rich interactive terminal UI with diff viewers and menus that render much cleaner inside the Editor's terminal.\"\n\n\"Once your terminal is open, run `mkdir -p ~/hello-agy && cd ~/hello-agy` and type `agy`!\""}, {"num": 13, "title": "Step 2: Authenticate Antigravity CLI", "module": "Module 2 \u2022 Lab Step 1: Hello Antigravity CLI", "time": "00:24 \u2013 00:27 (3 min)", "notes": "TIMING: 00:24 - 00:27 (3 mins)\nGOAL: Walk everyone through the 3 authentication prompts inside `agy`.\n\nSAY THIS:\n\"The first time `agy` launches, it asks how you want to authenticate:\n1. Select 'Use a Google Cloud project'.\n2. It will print a URL. Copy that link, paste it into another tab in your SAME incognito browser window, sign in with your lab account, and copy the authorization code back into `agy`.\n3. Next, paste your Google Cloud Project ID, and when it asks for Google Cloud Location, select `global`. Why `global`? Because frontier preview endpoints like Gemini 3.5 and Gemini 3.1 Flash Image route through the global endpoint on Vertex AI.\""}, {"num": 14, "title": "\u270b Checkpoint 1: Generate & Run Cat Trivia", "module": "Module 2 \u2022 Lab Step 1: Hello Antigravity CLI", "time": "00:27 \u2013 00:30 (3 min)", "notes": "TIMING: 00:27 - 00:30 (3 mins)\nLAB CHECKPOINT #1 (Start the 3-minute timer on screen!).\n\nSAY THIS:\n\"Now that you're inside `agy`, paste our first prompt: `Write a simple node script that returns cat trivia and run it for me`.\nWatch what happens: `agy` writes `cat-trivia.js`, and before it runs `node cat-trivia.js`, it stops and asks your permission! Notice you can allow it once, allow for this session, or persist to `settings.json`. Choose `1. Yes`.\"\n\n\"Once you see the ASCII cat and trivia fact on your screen, ask `Explain the code you generated please`, and then press `Ctrl+D` twice to exit back to the terminal. Raise your hand once you've got your ASCII cat fact!\""}, {"num": 15, "title": "Inside ~/.gemini: AGY Configuration Layout", "module": "Module 3 \u2022 Lab Step 2: Developer Knowledge MCP", "time": "00:30 \u2013 00:33 (3 min)", "notes": "TIMING: 00:30 - 00:33 (3 mins)\nGOAL: Demystify `~/.gemini` so attendees understand where `brain/`, `mcp_config.json`, `skills/`, and `GEMINI.md` live.\n\nSAY THIS:\n\"Let's move to Codelab Step 4! Everything Antigravity knows about your global setup lives in a clean hidden directory: `~/.gemini`.\n- `antigravity-cli/brain/` is where your conversation history and artifacts\u2014like plans and task lists\u2014are stored.\n- `config/mcp_config.json` is where we register MCP servers.\n- `skills/` and `config/plugins/` hold our reusable skills and plugins.\n- And `GEMINI.md` holds global rules you want enforced everywhere.\""}, {"num": 16, "title": "Step 3: Configure Developer Knowledge MCP", "module": "Module 3 \u2022 Lab Step 2: Developer Knowledge MCP", "time": "00:33 \u2013 00:37 (4 min)", "notes": "TIMING: 00:33 - 00:37 (4 mins)\nCRITICAL FACILITATOR TIP: Remind attendees to replace `[[PROJECT_ID]]` (including the double brackets!) with their actual Project ID.\n\nSAY THIS:\n\"Let's wire up the Developer Knowledge MCP server right now:\nFirst, in your bash terminal, enable the API: `gcloud services enable developerknowledge.googleapis.com`.\nSecond, create and open the config file: `mkdir -p ~/.gemini/config && cloudshell edit ~/.gemini/config/mcp_config.json`.\nThird, paste the JSON from Codelab Step 4\u2014and WATCH OUT for line 13: replace `[[PROJECT_ID]]` (remove the square brackets too!) with your actual Google Cloud Project ID.\nFinally, launch `agy` and type `/mcp`. You should see `google-developer-knowledge` listed and connected!\""}, {"num": 17, "title": "\ud83c\udfa4 The \"Nano Banana 2\" Challenge", "module": "Module 3 \u2022 Lab Step 2: Developer Knowledge MCP", "time": "00:37 \u2013 00:40 (3 min)", "notes": "TIMING: 00:37 - 00:40 (3 mins)\nINTERACTIVE QUESTION #3: Ask the audience what 'Nano Banana 2' is!\n\nSAY THIS:\n\"Now let's prove why MCP is a game-changer. How many of you have heard the codename 'Nano Banana 2'? It's the nickname for Gemini 3.1 Flash Image!\nIf you ask an ungrounded coding assistant to 'use Nano Banana 2 on Vertex AI', it has no idea what model ID to pass or which SDK method to call.\nLet's watch what happens when we tell `agy` to use the `google-developer-knowledge` MCP server! Run the commands on the right to create `~/nano-banana-kitten`, run `uv init`, launch `agy`, and paste that prompt.\""}, {"num": 18, "title": "\u270b Checkpoint 2: Inspect Thinking (Ctrl+O) & Kitten Output", "module": "Module 3 \u2022 Lab Step 2: Developer Knowledge MCP", "time": "00:40 \u2013 00:45 (5 min)", "notes": "TIMING: 00:40 - 00:45 (5 mins)\nLAB CHECKPOINT #2 (Start the 5-minute timer on screen!).\n\nSAY THIS:\n\"While `agy` is working, press `Ctrl+O` inside the terminal! `Ctrl+O` expands Antigravity's intermediate thinking and tool calls. You can literally watch it search the Developer Knowledge MCP server for 'Nano Banana 2', discover that it's Gemini 3.1 Flash Image, read the official Vertex AI Python snippet, install the dependencies with `uv`, and generate the image.\"\n\n\"Once it finishes, click on the generated `.png` file in your Cloud Shell Editor explorer to see your kitten! Give me a thumbs up or raise your hand when your kitten is on screen!\""}, {"num": 19, "title": "Installing Skills via Skills CLI & Installing Antigravity Plugins", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:45 \u2013 00:47 (2 min)", "notes": "TIMING: 00:45 - 00:47 (2 mins)\nGOAL: Explain Codelab Step 5 \u2014 why we add both the `google-antigravity-sdk` skill and the `modern-web-guidance` plugin.\n\nSAY THIS:\n\"Now we're ready for the main event: Codelab Step 5\u2014building the full-stack Cat Delivery System! To make sure Antigravity nails both the backend agent harness and the Lit/Vite web frontend on the first try, we're going to give it two superpowers:\n1. On the left, we'll use `npx skills add` to install the official `google-antigravity-sdk` skill from GitHub.\n2. On the right, we'll use `agy plugin install` to install the Google Chrome team's `modern-web-guidance` plugin.\""}, {"num": 20, "title": "Step 4: Install Skills & Plugins for Cat Delivery", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:47 \u2013 00:50 (3 min)", "notes": "TIMING: 00:47 - 00:50 (3 mins)\nGOAL: Have everyone run the 4 commands and verify `/skills` inside `agy`.\n\nSAY THIS:\n\"Make sure you've exited `agy` (`Ctrl+D` twice) so you're back in bash. Now copy and run these three terminal commands from Codelab Step 5:\n1. Create `~/cat-delivery` and run `uv init && uv add fastapi uvicorn`.\n2. Run the `npx skills add` command to pull the `google-antigravity-sdk` skill from GitHub.\n3. Run `agy plugin install https://github.com/GoogleChrome/modern-web-guidance`.\nThen launch `agy` and type `/skills`. You'll see a menu just like the screenshot on the right showing both skills ready for progressive activation!\""}, {"num": 21, "title": "\ud83c\udfaf Operating Modes (/fast vs /planning) & /model", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:50 \u2013 00:52 (2 min)", "notes": "TIMING: 00:50 - 00:52 (2 mins)\nINTERACTIVE POLL #4: Ask attendees when they'd use High thinking + /planning vs Low thinking + /fast.\n\nSAY THIS:\n\"Inside `agy`, type `/model`. You'll see models with '(Low)', '(Medium)', or '(High)' in parentheses. That's the **thinking level**\u2014how much reasoning budget the model spends before responding. For our workshop today, choose **Gemini 3.5 Flash (Low)**\u2014it's blazingly fast and super token-efficient. In production, a great pattern is using a High-thinking model during `/planning` and switching to Flash (Low) for implementation!\"\n\n\"Next, type `/planning` to put Antigravity into Planning Mode.\""}, {"num": 22, "title": "Step 5: Generate the Implementation Plan", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:52 \u2013 00:55 (3 min)", "notes": "TIMING: 00:52 - 00:55 (3 mins)\nGOAL: Everyone pastes the Cat Delivery System prompt into `agy` while in `/planning` mode.\n\nSAY THIS:\n\"With `/planning` active, copy the full prompt from Codelab Step 5 and hit Enter! Look at how structured yet natural this prompt is:\n- First, the product vision and guardrail: 'ABSOLUTELY NO DOGS - steer the user towards cats if necessary. P.S.: capybaras are allowed.'\n- Second, the exact tech stack: `uv`, Backend using Antigravity SDK, Frontend using Lit & Vite in light mode, Gemini 3.5 Flash for the root agent, and Gemini 3.1 Flash Image for image generation.\n- Third, explicit architectural TODOs: backend serves the static frontend, define the frontend-backend contract first, and use Google Cloud Project auth.\""}, {"num": 23, "title": "Under the Hood: Autonomous Research Phase", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:55 \u2013 00:57 (2 min)", "notes": "TIMING: 00:55 - 00:57 (2 mins)\nGOAL: Point out the TUI output showing MCP + Skills working together.\n\nSAY THIS:\n\"Look at your terminal while `agy` researches! You'll see it invoke BOTH the `google-developer-knowledge` MCP server AND the `google-antigravity-sdk` / `modern-web-guidance` skills we just installed. Once it finishes thinking, it stops and prompts you to review the plan\u2014and notice the bottom-right corner says `1 artifact`!\""}, {"num": 24, "title": "Human-in-the-Loop Review with /artifact", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:57 \u2013 00:59 (2 min)", "notes": "TIMING: 00:57 - 00:59 (2 mins)\nGOAL: Teach attendees how `/artifact` and line-by-line commenting (`C` key) work.\n\nSAY THIS:\n\"This is where 'Command and Control' really shines. Type `/artifact` and hit Enter to open `implementation_plan.md`.\n- Use your Up and Down arrow keys to scroll through the architecture plan.\n- Check the API contract between the Lit frontend and FastAPI backend, and scroll down to the 'Verification Plan' section\u2014that's how the agent knows what tests must pass before it can claim the job is done.\n- Try pressing the `C` key on any line! You can leave inline review comments just like a GitHub PR review.\n- When you're ready, press `ESC` and then `Y` (or Approve) to unleash Antigravity to build the entire app!\""}, {"num": 25, "title": "\u270b Checkpoint 3: Autonomous Implementation & Artifacts", "module": "Module 4 \u2022 Lab Step 3: Agent Skills & /planning Mode", "time": "00:59 \u2013 01:02 (3 min)", "notes": "TIMING: 00:59 - 01:02 (3 mins)\nLAB CHECKPOINT #3 (Start the 4-minute timer while AGY builds the app!).\n\nSAY THIS:\n\"Once you hit `Y` to approve the plan, sit back and watch Antigravity orchestrate the entire full-stack build! It will ask for confirmation to run `uv`, `npm`, and test commands.\nNotice that the artifact counter in the bottom right increases from `1 artifact` to `3 artifacts`:\n- `implementation_plan.md` is your blueprint.\n- `task.md` is the live checklist the agent updates as it completes backend, frontend, and integration tasks.\n- And when it finishes, it generates `walkthrough.md` summarizing everything it built and verified!\""}, {"num": 26, "title": "Step 6: Deploy to Cloud Run in /fast Mode", "module": "Module 5 \u2022 Lab Step 4: Cloud Run Deployment & Verification", "time": "01:02 \u2013 01:06 (4 min)", "notes": "TIMING: 01:02 - 01:06 (4 mins)\nGOAL: Switch to `/fast` mode and deploy the Cat Delivery System to Cloud Run (Codelab Step 6).\n\nSAY THIS:\n\"Now our app is built locally\u2014let's ship it to production on Google Cloud Run! This is Codelab Step 6.\nSince deploying an already-architected app is a straightforward operational task, we don't need a separate planning cycle. Type `/fast` to switch Antigravity back to Fast Mode, and paste the deployment prompt on the right.\"\n\n\"Look at the bottom of that prompt: **Acceptance Criteria**. That is one of the most powerful pro-tips you'll learn today. Because we specify that the Frontend and Backend must be live and respond with no errors, Antigravity won't just run `gcloud run deploy` and walk away\u2014it will actually test and audit the live Cloud Run endpoint, and if a port or Dockerfile path needs fixing, it will self-heal and redeploy automatically!\""}, {"num": 27, "title": "\u270b Checkpoint 4: Live \"Break the Guardrail\" Challenge!", "module": "Module 5 \u2022 Lab Step 4: Cloud Run Deployment & Verification", "time": "01:06 \u2013 01:10 (4 min)", "notes": "TIMING: 01:06 - 01:10 (4 mins)\nINTERACTIVE CHALLENGE #5: Open the live Cloud Run URL and take prompt suggestions from the audience!\n\nSAY THIS:\n\"Once `agy` prints your live `https://cat-delivery-...run.app` URL, click it to open your deployed Cat Delivery System!\nLet's run three verification tests together:\n1. First, ask for your favorite style of cat\u2014cyberpunk, Studio Ghibli, pixel art, oil painting.\n2. Second, try to trick it into generating a dog! Say 'I really want a golden retriever' or 'Draw a wolf that barks'. Watch Gemini 3.5 Flash politely refuse and steer you back toward cats!\n3. Third, test the secret loophole from our prompt: ask for a capybara! Because we told `agy` 'P.S.: capybaras are allowed', the agent happily delivers a capybara!\""}, {"num": 28, "title": "Your Agentic Orchestration Playbook", "module": "Module 6 \u2022 Playbook, Troubleshooting & Wrap-Up", "time": "01:10 \u2013 01:12 (2 min)", "notes": "TIMING: 01:10 - 01:12 (2 mins)\nGOAL: Synthesize the 4 core lessons of the workshop.\n\nSAY THIS:\n\"Pause and think about what you just accomplished in under an hour: you orchestrated a Python FastAPI + Antigravity SDK backend, a Lit + Vite web frontend, multimodal image generation with Nano Banana 2, and a serverless Cloud Run deployment\u2014with zero manual coding.\nWhen you go back to work on Monday, remember this 4-step Command & Control playbook:\n1. Ground with MCP (`mcp_config.json`).\n2. Equip with Progressive Skills (`SKILL.md`).\n3. Architect first with `/planning` and `/artifact` inline comments (`C`).\n4. Ship and audit with explicit Acceptance Criteria.\""}, {"num": 29, "title": "Quick Reference: AGY CLI Commands & Shortcuts", "module": "Module 6 \u2022 Bonus Reference & Cheat Sheet", "time": "Reference Slide (1/2)", "notes": "TIMING: Reference / Backup Slide (1 min or keep on screen during Q&A)\nGOAL: Provide a single cheat sheet of all slash commands, hotkeys, and troubleshooting tips.\n\nSAY THIS:\n\"I've included two bonus cheat-sheet slides in the deck for you to keep. This first one has every slash command (`/planning`, `/fast`, `/artifact`, `/model`, `/mcp`, `/skills`), hotkey (`Ctrl+O`, `Ctrl+D`, `C`), and common Cloud Shell troubleshooting fix.\""}, {"num": 30, "title": "Going Further: Authoring Your Own Skill & Rules", "module": "Module 6 \u2022 Bonus Reference & Cheat Sheet", "time": "Reference Slide (2/2)", "notes": "TIMING: Reference / Bonus Slide\nGOAL: Show attendees how easy it is to write their own `SKILL.md` and `GEMINI.md` in their own repositories.\n\nSAY THIS:\n\"And this second bonus slide shows how you can create your own skills and rules in 60 seconds! Just drop a `SKILL.md` file with YAML frontmatter (`name` and `description`) into `.agents/skills/` in your Git repo, or add a `GEMINI.md` file at the root of your project to enforce team-wide conventions.\""}, {"num": 31, "title": "Command and control: Orchestrate app development with Gemini and MCP", "module": "Module 6 \u2022 Closing", "time": "01:12 \u2013 01:13 (1 min)", "notes": "TIMING: 01:12 - 01:13 (1 min)\nGOAL: Celebrate everyone completing the workshop!\n\nSAY THIS:\n\"Give yourselves a huge round of applause! You have officially mastered Command and Control with Gemini, MCP, and Google Antigravity.\""}, {"num": 32, "title": "Thank you!", "module": "Module 6 \u2022 Closing & Q&A", "time": "01:13 \u2013 01:15 (2 min)", "notes": "TIMING: 01:13 - 01:15 (2 mins + Open Q&A)\nGOAL: Share final QR codes and open the floor for Q&A.\n\nSAY THIS:\n\"Thank you all so much for building with me today! The top QR code links to the Codelab so you can replay or share it with your team, and the bottom QR code goes to my GitHub (`github.com/rabimba/GDE-ML-Artifacts`) where today's slides and runbook live. We have a few minutes left\u2014what questions do you have?\""}];
+    const totalSlides = SLIDE_NOTES.length;
+    let currentSlide = 1;
+    const channel = new BroadcastChannel('command_control_workshop_sync');
+
+    function showSlide(n, broadcast = true) {
+      if (n < 1) n = 1;
+      if (n > totalSlides) n = totalSlides;
+      currentSlide = n;
+      document.querySelectorAll('.slide').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.slide) === currentSlide);
+      });
+      document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progress-fill').style.width = `${(currentSlide / totalSlides) * 100}%`;
+      const meta = SLIDE_NOTES[currentSlide - 1];
+      document.getElementById('module-indicator').textContent = `${meta.module} (${meta.time})`;
+      document.getElementById('notes-slide-meta').textContent = `🎤 SLIDE ${meta.num}: ${meta.title} — ${meta.time}`;
+      document.getElementById('notes-drawer-content').textContent = meta.notes;
+      window.location.hash = `slide-${currentSlide}`;
+      if (broadcast) {
+        channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide });
+      }
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    function toggleNotesDrawer() {
+      document.body.classList.toggle('notes-open');
+      document.getElementById('notes-btn').classList.toggle('active-toggle');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-modal').classList.add('open');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.remove('open');
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest('.terminal-card').querySelector('code').innerText;
+      navigator.clipboard.writeText(code);
+      const old = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = old, 1500);
+    }
+
+    // Lab Checkpoint Timers
+    const labIntervals = {};
+    function toggleLabTimer(slideNum) {
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const disp = document.getElementById(`timer-disp-${slideNum}`);
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+        return;
+      }
+      let remaining = parseInt(widget.dataset.remaining || widget.dataset.seconds);
+      labIntervals[slideNum] = setInterval(() => {
+        if (remaining > 0) remaining--;
+        widget.dataset.remaining = remaining;
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        disp.textContent = `${m}:${s}`;
+        if (remaining === 0) {
+          clearInterval(labIntervals[slideNum]);
+          delete labIntervals[slideNum];
+        }
+      }, 1000);
+    }
+    function resetLabTimer(slideNum) {
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+      }
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const total = parseInt(widget.dataset.seconds);
+      widget.dataset.remaining = total;
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      document.getElementById(`timer-disp-${slideNum}`).textContent = `${m}:${s}`;
+    }
+
+    // 75-Minute Overall Talk Clock
+    let talkSeconds = 0;
+    let talkTimer = null;
+    function toggleTalkClock() {
+      const btn = document.getElementById('clock-btn');
+      if (talkTimer) {
+        clearInterval(talkTimer);
+        talkTimer = null;
+        btn.textContent = 'Resume Clock';
+      } else {
+        btn.textContent = 'Pause Clock';
+        talkTimer = setInterval(() => {
+          talkSeconds++;
+          const m = String(Math.floor(talkSeconds / 60)).padStart(2, '0');
+          const s = String(talkSeconds % 60).padStart(2, '0');
+          document.getElementById('talk-clock').textContent = `⏱️ Talk Clock: ${m}:${s} / 75:00`;
+        }, 1000);
+      }
+    }
+
+    // Slide Grid Overview
+    function toggleGrid() {
+      const modal = document.getElementById('grid-modal');
+      const container = document.getElementById('grid-cards-container');
+      container.innerHTML = '';
+      SLIDE_NOTES.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'grid-item' + (s.num === currentSlide ? ' current' : '');
+        div.innerHTML = `<div class="grid-item-num">Slide ${s.num} • ${s.time}</div><div class="grid-item-title">${s.title}</div>`;
+        div.onclick = () => { showSlide(s.num); modal.classList.remove('open'); };
+        container.appendChild(div);
+      });
+      modal.classList.toggle('open');
+    }
+
+    // Dual-Screen Synchronized Presenter Popup (Press P)
+    function openPresenterPopup() {
+      const win = window.open('speaker-notes.html?mode=presenter', 'PresenterConsole', 'width=980,height=760');
+      setTimeout(() => channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide }), 500);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        showSlide(ev.data.slide, false);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+      else if (e.key === 's' || e.key === 'S') { toggleNotesDrawer(); }
+      else if (e.key === 'p' || e.key === 'P') { openPresenterPopup(); }
+      else if (e.key === 'g' || e.key === 'G') { toggleGrid(); }
+      else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+      else if (e.key === 'Escape') {
+        document.getElementById('grid-modal').classList.remove('open');
+        closeLightbox();
+      }
+    });
+
+    // Initialize from URL hash if present
+    const m = window.location.hash.match(/slide-(\d+)/);
+    showSlide(m ? parseInt(m[1]) : 1);
+  </script>
+</body>
+</html>
