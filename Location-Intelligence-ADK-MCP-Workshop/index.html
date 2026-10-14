@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Intelligence ADK Agent — MCP servers for BigQuery &amp; Google Maps — Workshop Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --g-blue: #1A73E8;
+      --g-blue-dark: #174EA6;
+      --g-blue-bg: #E8F0FE;
+      --g-red: #EA4335;
+      --g-red-dark: #C5221F;
+      --g-red-bg: #FCE8E6;
+      --g-yellow: #FBBC04;
+      --g-yellow-bg: #FEF7E0;
+      --g-green: #34A853;
+      --g-green-dark: #137333;
+      --g-dark: #202124;
+      --g-gray: #5F6368;
+      --g-border: #DADCE0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Google Sans', 'Roboto', system-ui, sans-serif;
+      background: #111318;
+      color: var(--g-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Main viewport scaling 16:9 canvas */
+    #deck-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+    }
+    .slide {
+      display: none;
+      width: min(96vw, calc((100vh - 64px) * 16 / 9));
+      aspect-ratio: 16 / 9;
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    body.notes-open .slide {
+      width: min(94vw, calc((100vh - 245px) * 16 / 9));
+    }
+    .slide.active { display: block; }
+    .slide-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      padding: 2.2% 4.2%;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top & Bottom Master Branding */
+    .slide-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2%;
+      min-height: 36px;
+    }
+    .gcl-logo-sm { height: 34px; object-fit: contain; }
+    .gcl-logo { position: absolute; top: 4.5%; left: 4.5%; height: 46px; z-index: 5; }
+    .gcl-footer { position: absolute; bottom: 2.8%; left: 4.2%; height: 15px; opacity: 0.85; }
+    .prop-badge { font-size: 0.78rem; color: var(--g-gray); font-weight: 500; }
+    .prop-badge-abs { position: absolute; top: 4.5%; right: 4.2%; font-size: 0.78rem; color: var(--g-gray); z-index: 5; }
+    .module-pill {
+      background: #F1F3F4;
+      color: var(--g-gray);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Cover Slide */
+    .slide-cover {
+      padding: 0;
+      flex-direction: row;
+      align-items: center;
+    }
+    .cover-left {
+      width: 52%;
+      padding: 8% 3% 4% 4.8%;
+      z-index: 3;
+    }
+    .pill-badge {
+      display: inline-block;
+      background: var(--g-blue-bg);
+      color: var(--g-blue);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--g-blue);
+      margin-bottom: 18px;
+    }
+    .cover-title {
+      font-size: clamp(1.7rem, 3.1vw, 3.1rem);
+      line-height: 1.16;
+      font-weight: 700;
+      color: var(--g-dark);
+      margin-bottom: 18px;
+    }
+    .cover-subtitle {
+      font-size: clamp(0.95rem, 1.35vw, 1.3rem);
+      color: var(--g-gray);
+      line-height: 1.45;
+      margin-bottom: 22px;
+    }
+    .cover-meta {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--g-blue-dark);
+    }
+    .cover-right {
+      width: 48%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .cover-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* QR Hub Slide */
+    .center-title { text-align: center; font-size: clamp(1.5rem, 2.5vw, 2.4rem); font-weight: 700; margin-bottom: 4px; }
+    .center-subtitle { text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.2%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .qr-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .qr-icon-badge {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4285F4, #669DF6);
+      color: #fff;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .qr-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .qr-link { font-size: 0.84rem; color: var(--g-blue); font-weight: 600; text-decoration: underline; margin-bottom: 6px; word-break: break-all; }
+    .qr-card p { font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }
+    .qr-img { width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }
+
+    /* Speaker & Thank You Slide */
+    .slide-speaker { padding: 0; flex-direction: row; align-items: center; }
+    .speaker-fan-bg { position: absolute; left: 0; top: 0; width: 48%; height: 100%; z-index: 1; }
+    .speaker-fan-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .speaker-content {
+      position: relative; z-index: 3;
+      display: flex; align-items: center;
+      width: 100%; height: 100%;
+      padding: 6% 5% 6% 7%;
+      gap: 6%;
+    }
+    .speaker-photo-wrap img {
+      width: clamp(200px, 27vw, 330px);
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+      border: 4px solid #fff;
+    }
+    .speaker-Bio-text h1 { font-size: clamp(2.2rem, 3.8vw, 3.8rem); line-height: 1.08; margin-bottom: 16px; }
+    .role-line { font-size: clamp(1.1rem, 1.6vw, 1.55rem); color: #3C4043; margin-bottom: 8px; font-weight: 500; }
+    .speaker-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tag-chip { background: var(--g-blue-bg); color: var(--g-blue-dark); padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+    .thankyou-right {
+      margin-left: 46%;
+      width: 54%;
+      padding: 5% 4.5% 5% 2%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .thankyou-text h1 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); margin-bottom: 12px; }
+    .thankyou-text p { font-size: 1.05rem; color: var(--g-gray); line-height: 1.5; }
+    .thankyou-qrs { display: flex; flex-direction: column; gap: 18px; }
+    .ty-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; background: #F8F9FA; padding: 10px; border-radius: 12px; border: 1px solid var(--g-border); width: 185px; }
+    .ty-qr-box img { width: 125px; height: 125px; margin-bottom: 6px; }
+    .ty-qr-box span { font-size: 0.72rem; color: var(--g-blue-dark); font-weight: 600; line-height: 1.25; }
+
+    /* Section Poll Slide */
+    .section-poll-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 88%; margin: 0 auto; }
+    .section-robot-icon { width: 64px; height: 64px; margin-bottom: 8px; }
+    .section-poll-wrap h2 { font-size: clamp(1.6rem, 2.6vw, 2.5rem); margin-bottom: 16px; line-height: 1.18; }
+    .interactive-poll-card {
+      width: 100%;
+      background: var(--g-blue-bg);
+      border: 2px solid var(--g-blue);
+      border-radius: 14px;
+      padding: 16px 22px;
+      text-align: left;
+    }
+    .poll-q { font-size: 1.05rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 10px; }
+    .poll-opts { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+    .poll-opts li {
+      background: #fff;
+      border: 1.5px solid #BBD6FB;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .poll-opts li:hover, .poll-opts li.voted { background: #D2E3FC; border-color: var(--g-blue); font-weight: 600; }
+    .vote-pill { font-size: 0.75rem; background: var(--g-blue); color: #fff; padding: 2px 9px; border-radius: 999px; }
+    .reveal-btn, .reveal-btn-sm {
+      background: var(--g-blue); color: #fff; border: none;
+      padding: 7px 14px; border-radius: 8px; font-weight: 600;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .reveal-btn:hover, .reveal-btn-sm:hover { background: var(--g-blue-dark); }
+    .poll-answer, .quiz-ans-row {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 12px;
+      background: #E6F4EA;
+      border-left: 4px solid var(--g-green);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--g-green-dark);
+    }
+    .poll-answer.visible, .quiz-ans-row.visible { display: block; }
+
+    /* Triad Slide */
+    .triad-headline {
+      font-size: clamp(1.35rem, 2.2vw, 2.15rem);
+      font-weight: 700;
+      line-height: 1.28;
+      max-width: 90%;
+      margin: 1.5% auto 4% auto;
+    }
+    .hl-blue { color: var(--g-blue); }
+    .hl-green { color: var(--g-green-dark); }
+    .triad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex: 1;
+      margin-bottom: 4%;
+    }
+    .triad-box {
+      flex: 1;
+      background: #F1F3F4;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 28px 16px 22px 16px;
+      text-align: center;
+      position: relative;
+    }
+    .triad-center { border: 2px solid var(--g-blue); background: var(--g-blue-bg); }
+    .triad-box img { width: 58px; height: 58px; margin-bottom: 10px; }
+    .triad-box h3 { font-size: 1.25rem; line-height: 1.3; }
+    .triad-arrow { font-size: 2rem; color: var(--g-gray); font-weight: 700; }
+
+    /* Standard Content & Split Layouts */
+    .slide-h2 { font-size: clamp(1.35rem, 2.1vw, 2.05rem); font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
+    .sub-blue { font-size: clamp(1rem, 1.3vw, 1.22rem); color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
+    .body-p { font-size: 0.92rem; color: #3C4043; line-height: 1.45; margin-bottom: 10px; }
+    .blue-outline-card {
+      border: 2.5px solid var(--g-blue);
+      border-radius: 16px;
+      padding: 20px 26px;
+      flex: 1;
+      margin-bottom: 3.5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card-intro { font-size: 1.05rem; font-weight: 500; margin-bottom: 14px; color: var(--g-dark); line-height: 1.4; }
+    .obj-list { list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.96rem; line-height: 1.42; }
+    .split-2col {
+      display: grid;
+      grid-template-columns: 47% 51%;
+      gap: 2%;
+      flex: 1;
+      margin-bottom: 3.2%;
+      min-height: 0;
+    }
+    .col-left, .col-right { display: flex; flex-direction: column; min-height: 0; }
+    .clean-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; font-size: 0.89rem; line-height: 1.38; color: #3C4043; }
+    .clean-bullets li strong { color: var(--g-blue-dark); }
+    .compact-list { gap: 6px; font-size: 0.84rem; margin-top: 8px; }
+    .center-img-box { align-items: center; justify-content: center; background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 10px; }
+    .arch-img { max-width: 100%; max-height: 88%; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
+    .click-hint, .img-caption { font-size: 0.76rem; color: var(--g-gray); margin-top: 5px; text-align: center; }
+
+    /* Three Tech Columns */
+    .three-tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5%;
+      flex: 1;
+      margin: 1.5% 0 4% 0;
+    }
+    .tech-col-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tech-col-card img { width: 54px; height: 54px; object-fit: contain; margin-bottom: 14px; }
+    .tech-col-card h3 { font-size: 1.15rem; margin-bottom: 10px; line-height: 1.28; }
+    .tech-col-card p { font-size: 0.9rem; color: #3C4043; line-height: 1.45; }
+
+    /* Dual Cards & Quiz Banner */
+    .dual-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2%;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 10px;
+    }
+    .bordered-card {
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #fff;
+    }
+    .card-blue { border: 2.5px solid var(--g-blue); }
+    .card-blue h3 { color: var(--g-blue); font-size: 1.18rem; margin-bottom: 2px; }
+    .card-red { border: 2.5px solid var(--g-red); }
+    .card-red h3 { color: var(--g-red-dark); font-size: 1.18rem; margin-bottom: 2px; }
+    .bordered-card h4 { font-size: 0.86rem; color: var(--g-gray); margin-bottom: 8px; font-weight: 600; }
+    .quiz-banner {
+      background: var(--g-yellow-bg);
+      border: 1.5px solid var(--g-yellow);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin-bottom: 2.8%;
+    }
+    .quiz-q-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.86rem; font-weight: 700; color: #B06000; }
+
+    /* Lab Divider */
+    .lab-divider-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lab-divider-center h1 { font-size: clamp(2.4rem, 4vw, 3.8rem); margin-bottom: 18px; }
+    .lab-sub-row { display: flex; align-items: center; gap: 14px; font-size: 1.35rem; color: var(--g-blue); font-weight: 700; }
+    .lab-sub-row img { width: 36px; height: 36px; }
+
+    /* Terminal Code Box */
+    .terminal-card {
+      background: var(--g-dark);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3C4043;
+      margin-bottom: 8px;
+    }
+    .terminal-card.compact { max-height: 46%; }
+    .term-header {
+      background: #2D2E31;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-r { background: #EA4335; }
+    .dot-y { background: #FBBC04; }
+    .dot-g { background: #34A853; }
+    .term-title { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #9AA0A6; }
+    .copy-btn {
+      background: #3C4043; color: #E8EAED; border: 1px solid #5F6368;
+      border-radius: 5px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .term-body {
+      padding: 10px 14px;
+      color: #E8EAED;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.38;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+    }
+    .shot-preview-box {
+      flex: 1;
+      min-height: 0;
+      background: #F8F9FA;
+      border: 1px solid var(--g-border);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .shot-preview-box img { max-width: 100%; max-height: 135px; object-fit: contain; border-radius: 4px; cursor: zoom-in; }
+
+    /* Vertical Stepper & Callout */
+    .v-stepper-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      justify-content: space-around;
+    }
+    .v-step-item { display: flex; align-items: flex-start; gap: 14px; }
+    .v-step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue); color: #fff; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .v-step-text h4 { font-size: 1rem; margin-bottom: 3px; }
+    .v-step-text code { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--g-green-dark); }
+    .callout-card {
+      background: #fff; border: 1.5px solid var(--g-border);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    }
+    .callout-pill {
+      display: inline-block; background: var(--g-red-bg); color: var(--g-red-dark);
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 6px;
+    }
+    .callout-card h4 { font-size: 0.98rem; margin-bottom: 4px; }
+    .callout-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.36; }
+
+    /* Four Steps Grid */
+    .four-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .four-step-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .four-step-card.step-card-hi { border: 2.5px solid var(--g-blue); background: #fff; }
+    .step-num-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue-bg); color: var(--g-blue);
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .step-card-hi .step-num-circle { background: var(--g-blue); color: #fff; }
+    .four-step-card h4 { font-size: 0.98rem; margin-bottom: 8px; line-height: 1.28; }
+    .step-card-hi h4 { color: var(--g-blue); }
+    .four-step-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.4; }
+
+    /* Verification Cards */
+    .query-box { background: #F1F3F4; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 10px; }
+    .grounded-box { background: var(--g-blue-bg); border: 1px solid var(--g-blue); padding: 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .trap-box { padding: 10px 12px; border-radius: 8px; font-size: 0.83rem; line-height: 1.35; margin-bottom: 8px; flex: 1; }
+    .trap-red { background: var(--g-red-bg); border: 1px solid var(--g-red); }
+    .trap-yellow { background: var(--g-yellow-bg); border: 1px solid var(--g-yellow); }
+
+    /* Lab Timer Widget */
+    .title-with-timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .lab-timer-widget {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g-blue-bg); border: 1.5px solid var(--g-blue);
+      padding: 4px 12px; border-radius: 999px; font-size: 0.82rem;
+    }
+    .timer-label { font-weight: 700; color: var(--g-blue-dark); }
+    .timer-display { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: var(--g-red-dark); min-width: 48px; }
+    .timer-btn {
+      background: var(--g-blue); color: #fff; border: none;
+      border-radius: 999px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+    }
+    .timer-btn.secondary { background: #5F6368; }
+
+    /* Speaker Notes Teleprompter Drawer (Press S) */
+    #notes-drawer {
+      display: none;
+      height: 185px;
+      background: #1E2028;
+      border-top: 2px solid var(--g-blue);
+      color: #E8EAED;
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    body.notes-open #notes-drawer { display: block; }
+    #notes-drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 0.8rem; color: #8AB4F8; font-weight: 700;
+    }
+    #notes-drawer-content { white-space: pre-wrap; font-family: 'Roboto', sans-serif; }
+
+    /* Bottom Presenter Control Bar */
+    #presenter-bar {
+      height: 46px;
+      background: #181A20;
+      border-top: 1px solid #2D3139;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      color: #E8EAED;
+      font-size: 0.84rem;
+      user-select: none;
+    }
+    .bar-group { display: flex; align-items: center; gap: 8px; }
+    .bar-btn {
+      background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
+      padding: 5px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .bar-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .bar-btn.active-toggle { background: var(--g-blue); border-color: var(--g-blue); }
+    #progress-track { width: 140px; height: 6px; background: #2D3139; border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--g-blue); width: 3%; transition: width 0.2s; }
+
+    /* Slide Grid Modal (Press G) */
+    #grid-modal, #lightbox-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15, 17, 23, 0.92);
+      z-index: 100;
+      padding: 32px;
+      overflow-y: auto;
+    }
+    #grid-modal.open, #lightbox-modal.open { display: flex; flex-direction: column; }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .grid-item {
+      background: #20232A; border: 1.5px solid #3C4043; border-radius: 8px;
+      padding: 12px; color: #E8EAED; cursor: pointer;
+    }
+    .grid-item:hover, .grid-item.current { border-color: var(--g-blue); background: #263147; }
+    .grid-item-num { font-size: 0.75rem; color: #8AB4F8; font-weight: 700; margin-bottom: 4px; }
+    .grid-item-title { font-size: 0.88rem; font-weight: 600; }
+    #lightbox-modal { align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox-img { max-width: 94vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
+
+    /* ---- NEW slide types (Location Intelligence) ---- */
+    .hero-media-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      background: #0d1117; border-radius: 12px; overflow: hidden; margin: 1% 0;
+    }
+    .hero-media-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .hero-caption { text-align: center; font-size: 0.8rem; color: var(--g-gray); margin-bottom: 2%; }
+
+    .build-col { display: flex; flex-direction: column; gap: 2.2%; flex: 1; margin-top: 1%; }
+    .build-step {
+      display: flex; align-items: center; gap: 18px;
+      background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px;
+      padding: 2.4% 3%;
+    }
+    .build-step img { width: 46px; height: 46px; object-fit: contain; flex: 0 0 auto; }
+    .build-step-text h3 { font-size: 1.1rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 2px; }
+    .build-step-text p { font-size: 0.92rem; color: var(--g-gray); line-height: 1.35; }
+    .build-summary {
+      margin-top: 2%; text-align: center; font-weight: 700; font-size: 1.05rem;
+      color: var(--g-green-dark); background: #E6F4EA; border-radius: 999px; padding: 10px 18px;
+    }
+
+    .worlds-row { display: flex; align-items: stretch; gap: 2%; flex: 1; margin-top: 2%; }
+    .world-card {
+      flex: 1; border-radius: 14px; padding: 3%; border: 2px solid var(--g-border);
+      display: flex; flex-direction: column;
+    }
+    .world-card img { width: 52px; height: 52px; object-fit: contain; margin-bottom: 10px; }
+    .world-card h3 { font-size: 1.15rem; margin-bottom: 10px; }
+    .world-card ul { margin-left: 18px; font-size: 0.95rem; color: var(--g-dark); line-height: 1.6; }
+    .world-blue { border-color: var(--g-blue); background: var(--g-blue-bg); }
+    .world-blue h3 { color: var(--g-blue-dark); }
+    .world-green { border-color: var(--g-green); background: #E6F4EA; }
+    .world-green h3 { color: var(--g-green-dark); }
+    .worlds-bridge {
+      align-self: center; flex: 0 0 16%; text-align: center; font-weight: 700;
+      font-size: 0.9rem; color: var(--g-dark);
+      background: var(--g-yellow-bg); border: 2px dashed var(--g-yellow);
+      border-radius: 12px; padding: 12px;
+    }
+
+    .nxm-cols { display: flex; gap: 3%; flex: 1; margin-top: 1%; }
+    .nxm-col { flex: 1; display: flex; flex-direction: column; }
+    .nxm-caption { text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--g-gray); margin-bottom: 8px; }
+    .nxm-mesh {
+      flex: 1; display: flex; align-items: center; justify-content: space-between;
+      background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 4%;
+    }
+    .nxm-side { display: flex; flex-direction: column; gap: 12px; }
+    .nxm-node {
+      padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; text-align: center;
+      border: 1.5px solid var(--g-border); background: #fff;
+    }
+    .nxm-agent { border-color: var(--g-blue); color: var(--g-blue-dark); }
+    .nxm-server { border-color: var(--g-green); color: var(--g-green-dark); }
+    .nxm-tangle { color: var(--g-red); font-size: 1.4rem; text-align: center; line-height: 1.1; }
+    .nxm-hub {
+      align-self: center; background: var(--g-blue); color: #fff; font-weight: 700;
+      padding: 16px 22px; border-radius: 999px; font-size: 1.1rem;
+      box-shadow: 0 6px 18px rgba(26,115,232,0.35);
+    }
+
+    .tool-cat-head { display: flex; align-items: center; gap: 14px; margin-bottom: 1%; }
+    .tool-cat-head img { width: 54px; height: 54px; object-fit: contain; }
+    .tool-list { display: flex; flex-direction: column; gap: 1.4%; margin-top: 1%; }
+    .tool-row {
+      display: flex; align-items: center; gap: 16px;
+      background: #fff; border: 1.5px solid var(--g-border); border-radius: 10px; padding: 1.4% 2%;
+    }
+    .tool-name {
+      font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem;
+      background: #F1F3F4; padding: 4px 10px; border-radius: 6px; flex: 0 0 34%;
+    }
+    .tool-accent-blue .tool-name { color: var(--g-blue-dark); }
+    .tool-accent-green .tool-name { color: var(--g-green-dark); }
+    .tool-desc { font-size: 0.9rem; color: var(--g-dark); }
+    .tool-callout {
+      margin-top: 2%; font-size: 0.92rem; font-weight: 600; color: var(--g-dark);
+      background: var(--g-yellow-bg); border-left: 4px solid var(--g-yellow);
+      border-radius: 8px; padding: 12px 16px;
+    }
+
+    .journey-table { display: flex; flex-direction: column; gap: 1.6%; flex: 1; margin-top: 1%; }
+    .journey-row {
+      display: grid; grid-template-columns: 7% 44% 26% 23%; align-items: center;
+      gap: 1.5%; padding: 1.5% 2%; border-radius: 10px; border: 1.5px solid var(--g-border); background: #fff;
+    }
+    .journey-tag { font-weight: 800; font-size: 1rem; }
+    .journey-blue .journey-tag { color: var(--g-blue); }
+    .journey-green .journey-tag { color: var(--g-green); }
+    .journey-yellow .journey-tag { color: #B06000; }
+    .journey-q { font-size: 0.92rem; font-weight: 600; color: var(--g-dark); }
+    .journey-tool { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--g-gray); }
+    .journey-res { font-size: 0.82rem; font-weight: 700; color: var(--g-dark); text-align: right; }
+    .journey-blue { border-left: 5px solid var(--g-blue); }
+    .journey-green { border-left: 5px solid var(--g-green); }
+    .journey-yellow { border-left: 5px solid var(--g-yellow); }
+  </style>
+</head>
+<body>
+  <div id="deck-viewport">
+    <section class="slide active" data-slide="1" data-title="Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps" data-module="Module 0 • Welcome" data-time="00:00 – 00:02 (2 min)">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">75-Min GDE Workshop</div>
+            <h1 class="cover-title">Build a Location Intelligence<br/>ADK Agent with MCP servers<br/>for BigQuery and Google Maps</h1>
+            <p class="cover-subtitle">Hands-On Workshop • Ground a Gemini agent in enterprise data and the real world</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers_cropped.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="2" data-title="This is what you&#x27;ll have running in about 40 minutes" data-module="Module 0 • Welcome" data-time="00:02 – 00:03 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Welcome • 00:02 – 00:03 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">This is what you&#x27;ll have running in about 40 minutes</h2>
+          <p class="center-subtitle">One Gemini agent • Two managed MCP servers • Zero hand-written API clients</p>
+          <div class="hero-media-wrap">
+            <img src="assets/adk_bq_maps_mcp.gif" alt="demo"/>
+          </div>
+          <p class="hero-caption">Live demo: an ADK agent chains BigQuery SQL with Google Maps lookups (source: Google Cloud announcement, Dec 10 2025).</p>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="3" data-title="Workshop Hub — scan these now" data-module="Module 0 • Welcome" data-time="00:03 – 00:04 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Welcome • 00:03 – 00:04 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Workshop Hub — scan these now</h2>
+          <p class="center-subtitle">Everything you need is one QR away; the codelab has all commands and prompts</p>
+          <div class="qr-grid">
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>1. The Codelab (follow along)</h3>
+              <a href="https://codelabs.developers.google.com/adk-mcp-bigquery-maps" target="_blank" class="qr-link">codelabs.developers.google.com/adk-mcp-bigquery-maps</a>
+              <p>Full step-by-step lab: setup scripts, agent code, and every prompt we will run today.</p>
+              <img class="qr-img" src="assets/qr_codelab.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>2. Free Credits (redeem first!)</h3>
+              <a href="https://g.dev/credits/latw-bigquery-100" target="_blank" class="qr-link">g.dev/credits/latw-bigquery-100</a>
+              <p>Maps Grounding Lite and BigQuery need billing enabled. Redeem your event credit code, then create a project.</p>
+              <img class="qr-img" src="assets/qr_credits.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>3. Slides &amp; Speaker Runbook</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts" target="_blank" class="qr-link">github.com/rabimba/GDE-ML-Artifacts</a>
+              <p>This deck, the verbatim facilitator script, and the copy-paste prompt sheet.</p>
+              <img class="qr-img" src="assets/qr_rabimba_github.png" alt="QR Code"/>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="4" data-title="Rabimba Karanjai" data-module="Module 0 • Welcome" data-time="00:04 – 00:05 (1 min)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Google Developer Expert</span>
+          <div class="speaker-content">
+            <div class="speaker-photo-wrap">
+              <img src="assets/ref_slide4_pic2.jpg" alt="Rabimba Karanjai"/>
+            </div>
+            <div class="speaker-Bio-text">
+              <h1>Rabimba<br/>Karanjai</h1>
+              <p class="role-line">Google Developer Expert — AI &amp; ML</p>
+              <p class="role-line">ML Scientist — PayPal</p>
+              <div class="speaker-tags">
+                <span class="tag-chip">Agentic Systems</span>
+                <span class="tag-chip">Model Context Protocol</span>
+                <span class="tag-chip">Google Cloud Run</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="5" data-title="Start your engines — setup runs while I talk" data-module="Module 0 • Welcome" data-time="00:05 – 00:06 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Welcome • 00:05 – 00:06 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Start your engines — setup runs while I talk</h2>
+          <div class="split-2col">
+            <div class="col-left v-stepper-card">
+              
+            <div class="v-step-item">
+              <div class="v-step-circle">1</div>
+              <div class="v-step-text">
+                <h4>Open Cloud Shell</h4>
+                <code>console.cloud.google.com → Activate Cloud Shell (top bar)</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">2</div>
+              <div class="v-step-text">
+                <h4>Clone the demo repo</h4>
+                <code>git clone https://github.com/google/mcp.git</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">3</div>
+              <div class="v-step-text">
+                <h4>Run setup_env.sh</h4>
+                <code>cd mcp/examples/launchmybakery &amp;&amp; ./setup/setup_env.sh</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">4</div>
+              <div class="v-step-text">
+                <h4>Run setup_bigquery.sh</h4>
+                <code>./setup/setup_bigquery.sh</code>
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-right">
+              <div class="callout-card">
+                <span class="callout-pill">DO THIS NOW</span>
+                <h4>Provision in the background</h4>
+                <p>The two setup scripts take ~3-5 min. Kick them off now, then look up — I&#x27;ll explain what everything is while your project provisions itself.</p>
+              </div>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Cloud Shell</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Verify auth + project
+gcloud auth list
+export PROJECT_ID=$(gcloud config get project)
+
+# Get the code
+git clone https://github.com/google/mcp.git
+cd mcp/examples/launchmybakery
+
+# Kick off BOTH setup scripts
+./setup/setup_env.sh
+./setup/setup_bigquery.sh</code></pre>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="6" data-title="Your friend is opening a sourdough bakery in Los Angeles. Where?" data-module="Module 1 • Concepts" data-time="00:06 – 00:08 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:06 – 00:08 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="section-poll-wrap">
+            <img class="section-robot-icon" src="assets/icon_maps.png" alt="Agent Icon"/>
+            <h2>Your friend is opening a sourdough<br/>bakery in Los Angeles. Where?</h2>
+            <div class="interactive-poll-card">
+              <div class="poll-q">🎤 Quick poll: how would you actually decide which LA zip code to open in?</div>
+              <ul class="poll-opts"><li onclick="this.classList.toggle('voted')">A) Walk around and &#x27;get a feel&#x27; for neighborhoods <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">B) Hire a market-research firm ($$$, weeks) <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">C) Ask an LLM chatbot for the &#x27;best&#x27; zip code <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">D) Combine real foot-traffic data with live Maps info <span class='vote-pill'>Click to Vote</span></li></ul>
+              <button class="reveal-btn" onclick="this.nextElementSibling.classList.toggle('visible')">✨ Reveal Takeaway</button>
+              <div class="poll-answer">💡 C alone hallucinates — a model can&#x27;t know current foot traffic or which bakeries exist. The winning move is D: data + the real world, joined by an agent. Today we build exactly that.</div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="7" data-title="Two data worlds, one question" data-module="Module 1 • Concepts" data-time="00:08 – 00:09 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:08 – 00:09 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Two data worlds, one question</h2>
+          <div class="worlds-row">
+            
+            <div class="world-card world-blue">
+              <img src="assets/icon_bigquery.png" alt="icon"/>
+              <h3>Enterprise Data — BigQuery</h3>
+              <ul><li>Demographics &amp; foot-traffic index by zip</li><li>Competitor product pricing</li><li>Weekly sales history per store</li><li>Your private, governed numbers</li></ul>
+            </div>
+            <div class="worlds-bridge">An agent must reason across BOTH to answer &#x27;where should I open?&#x27;</div>
+            
+            <div class="world-card world-green">
+              <img src="assets/icon_maps.png" alt="icon"/>
+              <h3>The Real World — Google Maps</h3>
+              <ul><li>Which bakeries actually exist nearby?</li><li>Drive time to the supplier</li><li>Weather for opening weekend</li><li>Fresh, public, geospatial truth</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="8" data-title="What makes an LLM an Agent?" data-module="Module 1 • Concepts" data-time="00:09 – 00:11 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:09 – 00:11 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">What makes an LLM an Agent?</h2>
+          <p class="center-subtitle">Build the definition up piece by piece — press → to reveal each part</p>
+          <div class="build-col">
+            <div class="build-step" data-step="0">
+              <img src="assets/icon_gemini.png" alt="icon"/>
+              <div class="build-step-text"><h3>1. MODEL</h3><p>Gemini 3.5 Flash — the reasoning brain. Alone, it only predicts text.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="1">
+              <img src="assets/icon_adk.png" alt="icon"/>
+              <div class="build-step-text"><h3>2. + INSTRUCTIONS</h3><p>A system prompt that defines the goal, persona, and rules of the game.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="2">
+              <img src="assets/icon_mcp.png" alt="icon"/>
+              <div class="build-step-text"><h3>3. + TOOLS</h3><p>Functions the model may call to act on the world — query BigQuery, search Maps.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="3">
+              <img src="assets/icon_gemini.png" alt="icon"/>
+              <div class="build-step-text"><h3>4. + LOOP</h3><p>Reason → pick a tool → act → observe result → reason again, until the goal is met.</p></div>
+            </div>
+            </div>
+          <div class="build-summary">Agent = Model + Instructions + Tools, running in a Reason-Act-Observe loop</div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="9" data-title="The three pillars we&#x27;ll use today" data-module="Module 1 • Concepts" data-time="00:11 – 00:12 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:11 – 00:12 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">The three pillars we&#x27;ll use today</h2>
+          <div class="three-tech-grid">
+            <div class="tech-col-card">
+              <img src="assets/icon_gemini.png" alt="Tech Icon"/>
+              <h3>Gemini 3.5 Flash<br/>(on Vertex AI)</h3>
+              <p>The reasoning model. Our .env sets GOOGLE_GENAI_USE_VERTEXAI=1, so ADK calls it through your project&#x27;s Vertex AI endpoint.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_adk.png" alt="Tech Icon"/>
+              <h3>ADK<br/>Agent Development Kit</h3>
+              <p>Google&#x27;s open-source framework for building agents: LlmAgent, tool wiring, sessions, and a built-in web UI for debugging.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_mcp.png" alt="Tech Icon"/>
+              <h3>MCP<br/>Model Context Protocol</h3>
+              <p>The open standard (started by Anthropic) that lets any agent discover and call tools on any server — one protocol instead of N custom integrations.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="10" data-title="An ADK agent in ~15 lines" data-module="Module 1 • Concepts" data-time="00:12 – 00:13 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:12 – 00:13 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">An ADK agent in ~15 lines</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">adk_agent/mcp_bakery_app/agent.py — the entire agent definition</h3>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">python</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>root_agent = LlmAgent(
+    model=&#x27;gemini-3.5-flash&#x27;,
+    name=&#x27;root_agent&#x27;,
+    instruction=f&quot;&quot;&quot;Help the user by strategically combining:
+        1. BigQuery toolset — demographics, foot traffic,
+           pricing and sales in the `mcp_bakery` dataset.
+           Run all query jobs from project id: {PROJECT_ID}.
+        2. Maps Toolset — real-world location analysis,
+           competition search, and travel routes.
+           Include a hyperlink to an interactive map.
+    &quot;&quot;&quot;,
+    tools=[maps_toolset, bigquery_toolset]
+)</code></pre>
+              </div>
+            </div>
+            <div class="col-right">
+              <div class="blue-outline-card">
+                <p class="card-intro">The three control surfaces:</p>
+                <ul class="obj-list"><li><code>model</code> — Which Gemini does the thinking</li><li><code>instruction</code> — The agent&#x27;s job description — notice it scopes the data AND names the project</li><li><code>tools</code> — Two MCP toolsets = every tool from both servers</li></ul>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="11" data-title="MCP: from N×M integrations to N+M" data-module="Module 1 • Concepts" data-time="00:13 – 00:15 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:13 – 00:15 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">MCP: from N×M integrations to N+M</h2>
+          <p class="center-subtitle">The &#x27;USB-C for AI&#x27; — Anthropic&#x27;s open standard, adopted across the industry</p>
+          <div class="nxm-cols">
+            <div class="nxm-col">
+              <div class="nxm-caption">Without MCP: every agent hand-codes every API</div>
+              <div class="nxm-mesh">
+                <div class="nxm-side"><div class="nxm-node nxm-agent">ADK Agent</div><div class="nxm-node nxm-agent">Gemini CLI</div><div class="nxm-node nxm-agent">Any MCP client</div></div>
+                <div class="nxm-tangle">✕ ✕ ✕<br/>✕ ✕ ✕</div>
+                <div class="nxm-side"><div class="nxm-node nxm-server">BigQuery</div><div class="nxm-node nxm-server">Google Maps</div><div class="nxm-node nxm-server">Your API?</div></div>
+              </div>
+            </div>
+            <div class="nxm-col">
+              <div class="nxm-caption">With MCP: each side implements the protocol once</div>
+              <div class="nxm-mesh">
+                <div class="nxm-side"><div class="nxm-node nxm-agent">ADK Agent</div><div class="nxm-node nxm-agent">Gemini CLI</div><div class="nxm-node nxm-agent">Any MCP client</div></div>
+                <div class="nxm-hub">MCP</div>
+                <div class="nxm-side"><div class="nxm-node nxm-server">BigQuery</div><div class="nxm-node nxm-server">Google Maps</div><div class="nxm-node nxm-server">Your API?</div></div>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="12" data-title="MCP anatomy: Host, Client, Server" data-module="Module 1 • Concepts" data-time="00:15 – 00:16 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:15 – 00:16 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">MCP anatomy: Host, Client, Server</h2>
+          <p class="center-subtitle">And the transport that carries it — today that&#x27;s Streamable HTTP</p>
+          <div class="build-col">
+            <div class="build-step" data-step="0">
+              <img src="assets/icon_adk.png" alt="icon"/>
+              <div class="build-step-text"><h3>HOST</h3><p>ADK&#x27;s web UI — the app the user chats with.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="1">
+              <img src="assets/icon_mcp.png" alt="icon"/>
+              <div class="build-step-text"><h3>CLIENT</h3><p>An MCP client inside the host keeps a dedicated connection per server.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="2">
+              <img src="assets/icon_bigquery.png" alt="icon"/>
+              <div class="build-step-text"><h3>SERVER</h3><p>BigQuery &amp; Maps servers expose a catalog of named, typed tools.</p></div>
+            </div>
+            
+            <div class="build-step" data-step="3">
+              <img src="assets/icon_maps.png" alt="icon"/>
+              <div class="build-step-text"><h3>TRANSPORT</h3><p>Stdio for local servers; Streamable HTTP for remote, Google-hosted ones — what we use today.</p></div>
+            </div>
+            </div>
+          <div class="build-summary">Our agent never runs BigQuery or Maps code — it calls remote tools over HTTP</div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="13" data-title="Google&#x27;s managed, remote MCP servers" data-module="Module 1 • Concepts" data-time="00:16 – 00:18 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:16 – 00:18 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Google&#x27;s managed, remote MCP servers</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Announced Dec 10, 2025 — Google&#x27;s API infrastructure now speaks MCP</h3>
+              <p class="body-p">No local servers to install, patch, or secure. You point your client at a globally-consistent endpoint.</p>
+              <ul class="clean-bullets"><li><strong>BigQuery:</strong> https://bigquery.googleapis.com/mcp</li><li><strong>Google Maps (Grounding Lite):</strong> https://mapstools.googleapis.com/mcp</li><li><strong>Also GA/Preview:</strong> GCE, GKE, Spanner, AlloyDB, Cloud Run, Developer Knowledge...</li><li><strong>Enable per project:</strong> gcloud beta services mcp enable &lt;service&gt; (setup_env.sh did this)</li><li><strong>Governance:</strong> IAM (roles/mcp.toolUser), audit logging, Model Armor for prompt-injection defense</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/repo_architecture.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="14" data-title="BigQuery MCP server — the 6 tools" data-module="Module 1 • Concepts" data-time="00:18 – 00:19 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:18 – 00:19 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="tool-cat-head">
+            <img src="assets/icon_bigquery.png" alt="icon"/>
+            <div><h2 class="slide-h2">BigQuery MCP server — the 6 tools</h2><p class="body-p">The agent discovers these itself; column descriptions become its documentation</p></div>
+          </div>
+          <div class="tool-list tool-accent-blue"><div class="tool-row"><code class="tool-name">list_dataset_ids</code><span class="tool-desc">What datasets exist in this project?</span></div><div class="tool-row"><code class="tool-name">list_table_ids</code><span class="tool-desc">What tables are in mcp_bakery?</span></div><div class="tool-row"><code class="tool-name">get_dataset_info</code><span class="tool-desc">Metadata about a dataset</span></div><div class="tool-row"><code class="tool-name">get_table_info</code><span class="tool-desc">Schema + column descriptions for a table</span></div><div class="tool-row"><code class="tool-name">execute_sql</code><span class="tool-desc">Run any SQL — including AI.FORECAST</span></div><div class="tool-row"><code class="tool-name">execute_sql_readonly</code><span class="tool-desc">Same, but mutations blocked by design</span></div></div>
+          <div class="tool-callout">The agent reads get_table_info output to write its own SQL. Rich column descriptions in setup_bigquery.sh = a better agent. Your schema docs ARE the prompt.</div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="15" data-title="Maps Grounding Lite — the 5 tools" data-module="Module 1 • Concepts" data-time="00:19 – 00:20 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:19 – 00:20 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="tool-cat-head">
+            <img src="assets/icon_maps.png" alt="icon"/>
+            <div><h2 class="slide-h2">Maps Grounding Lite — the 5 tools</h2><p class="body-p">Trusted geospatial grounding with required Google Maps attribution</p></div>
+          </div>
+          <div class="tool-list tool-accent-green"><div class="tool-row"><code class="tool-name">search_places</code><span class="tool-desc">Find places + AI summaries + Maps links</span></div><div class="tool-row"><code class="tool-name">compute_routes</code><span class="tool-desc">Distance &amp; duration between two points</span></div><div class="tool-row"><code class="tool-name">lookup_weather</code><span class="tool-desc">Current conditions &amp; forecasts</span></div><div class="tool-row"><code class="tool-name">resolve_names</code><span class="tool-desc">Free-text address/place -&gt; Place ID</span></div><div class="tool-row"><code class="tool-name">resolve_maps_urls</code><span class="tool-desc">Google Maps URL -&gt; Place ID</span></div></div>
+          <div class="tool-callout">Grounding Lite returns distance &amp; duration — NOT turn-by-turn directions. Every grounded answer must show its Google Maps source link (the agent is instructed to include it).</div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="16" data-title="Two servers, two auth patterns — tools.py" data-module="Module 1 • Concepts" data-time="00:20 – 00:21 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:20 – 00:21 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Two servers, two auth patterns — tools.py</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Same MCPToolset, different credentials</h3>
+              <p class='body-p'>Both toolsets use StreamableHTTPConnectionParams; only the header differs.</p>
+              <ul class="clean-bullets"><li><strong>Maps:</strong> Simple API key in the X-Goog-Api-Key header (restricted to mapstools.googleapis.com).</li><li><strong>BigQuery:</strong> OAuth 2.0 bearer token from your Application Default Credentials + x-goog-user-project for billing.</li><li><strong>⚠️ Token lifetime:</strong> ADC tokens expire ~60 min and ADK does not auto-refresh — re-run gcloud auth application-default login if a long session dies.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">adk_agent/mcp_bakery_app/tools.py</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># --- Maps: API key ---
+MCPToolset(connection_params=
+  StreamableHTTPConnectionParams(
+    url=&#x27;https://mapstools.googleapis.com/mcp&#x27;,
+    headers={&#x27;X-Goog-Api-Key&#x27;: maps_api_key}))
+
+# --- BigQuery: OAuth bearer (from ADC) ---
+creds, pid = google.auth.default(scopes=[BQ_SCOPE])
+creds.refresh(Request())
+MCPToolset(connection_params=
+  StreamableHTTPConnectionParams(
+    url=&#x27;https://bigquery.googleapis.com/mcp&#x27;,
+    headers={&#x27;Authorization&#x27;: f&#x27;Bearer {creds.token}&#x27;,
+             &#x27;x-goog-user-project&#x27;: pid}))</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="17" data-title="The reasoning journey: macro → micro → money" data-module="Module 1 • Concepts" data-time="00:21 – 00:23 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:21 – 00:23 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">The reasoning journey: macro → micro → money</h2>
+          <p class="center-subtitle">Watch how one conversation walks down the decision funnel, switching tools</p>
+          <div class="journey-table">
+            <div class="journey-row journey-blue">
+              <span class="journey-tag">Q1</span>
+              <span class="journey-q">Which zip has the highest morning foot traffic?</span>
+              <span class="journey-tool">BigQuery • execute_sql</span>
+              <span class="journey-res">→ 90403 (Santa Monica)</span>
+            </div>
+            <div class="journey-row journey-green">
+              <span class="journey-tag">Q2</span>
+              <span class="journey-q">Is 90403 already saturated with bakeries?</span>
+              <span class="journey-tool">Maps • search_places</span>
+              <span class="journey-res">→ competitor scan</span>
+            </div>
+            <div class="journey-row journey-blue">
+              <span class="journey-tag">Q3</span>
+              <span class="journey-q">Max price of a Sourdough Loaf in LA Metro?</span>
+              <span class="journey-tool">BigQuery • execute_sql</span>
+              <span class="journey-res">→ Erewhon ≈ $18.50</span>
+            </div>
+            <div class="journey-row journey-blue">
+              <span class="journey-tag">Q4</span>
+              <span class="journey-q">Forecast Dec sales from my best store @ $18</span>
+              <span class="journey-tool">BigQuery • AI.FORECAST</span>
+              <span class="journey-res">→ revenue projection</span>
+            </div>
+            <div class="journey-row journey-green">
+              <span class="journey-tag">Q5</span>
+              <span class="journey-q">Is Restaurant Depot &lt; 30 min away?</span>
+              <span class="journey-tool">Maps • compute_routes</span>
+              <span class="journey-res">→ logistics check</span>
+            </div></div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="18" data-title="The full architecture" data-module="Module 1 • Concepts" data-time="00:23 – 00:24 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:23 – 00:24 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">The full architecture</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Everything on one slide — this is your &#x27;you are here&#x27; map for the lab</h3>
+              <p class="body-p">Trace one request end to end:</p>
+              <ul class="clean-bullets"><li><strong>1. User:</strong> asks in the ADK web UI (adk web)</li><li><strong>2. Agent (Gemini 3.5 Flash):</strong> reasons on Vertex AI, picks a tool</li><li><strong>3. MCP toolset:</strong> sends a signed Streamable HTTP call</li><li><strong>4a. BigQuery MCP:</strong> interprets schema &amp; runs SQL in place — data never leaves BigQuery</li><li><strong>4b. Maps MCP:</strong> grounds in live places, routes, weather</li><li><strong>5. Agent:</strong> combines both into one grounded business answer</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_architecture.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="19" data-title="Concept Check &amp; Why not just…?" data-module="Module 1 • Concepts" data-time="00:24 – 00:25 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:24 – 00:25 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Concept Check</h3>
+              <h4>Click to reveal each answer</h4>
+              <ul class="clean-bullets"><li><strong>Q1:</strong> Agent needs today&#x27;s weather at the site?</li><li><strong>Q2:</strong> Agent must forecast December revenue?</li><li><strong>Q3:</strong> Agent must list tables before writing SQL?</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Why not just…?</h3>
+              <h4>Common objections</h4>
+              <ul class="clean-bullets"><li><strong>Paste CSVs into the prompt?:</strong> 40k+ rows won&#x27;t fit, goes stale, and leaves governance.</li><li><strong>Call Maps with curl?:</strong> You&#x27;d hand-write auth, parsing &amp; schemas — MCP already did it.</li><li><strong>Fine-tune on my data?:</strong> Teaches style, not fresh facts. Tools &gt; training for live data.</li></ul>
+            </div>
+          </div>
+          <div class="quiz-banner">
+            <div class="quiz-q-row">
+              <span>🎯 Answers: Q1 → Maps lookup_weather  •  Q2 → BigQuery execute_sql + AI.FORECAST  •  Q3 → BigQuery list_table_ids / get_table_info</span>
+              <button class="reveal-btn-sm" onclick="this.parentElement.nextElementSibling.classList.toggle('visible')">Reveal Answer</button>
+            </div>
+            <div class="quiz-ans-row">Rule of thumb: facts that live in your warehouse → BigQuery tool. Facts about the physical world right now → Maps tool. The agent learns the tools exist from the toolsets, not from you hard-coding the path.</div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="20" data-title="Taking this to production — the guardrails that matter" data-module="Module 1 • Concepts" data-time="00:25 – 00:26 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Concepts • 00:25 – 00:26 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Taking this to production — the guardrails that matter</h2>
+          <div class="blue-outline-card">
+            <p class="card-intro">The demo uses your personal credentials for speed. Before this pattern ships, layer on:</p>
+            <ul class="obj-list"><li><strong class='hl-blue'>• Least privilege:</strong> grant only roles/mcp.toolUser + bigquery.jobUser + bigquery.dataViewer; nothing broader</li><li><strong class='hl-blue'>• Separate agent identity:</strong> run the agent as its own service account so tool calls are attributable &amp; revocable</li><li><strong class='hl-blue'>• Prefer read-only SQL:</strong> use execute_sql_readonly, or an IAM deny policy on execute_sql, so the agent can&#x27;t mutate</li><li><strong class='hl-blue'>• Restrict the Maps key:</strong> scope it to mapstools.googleapis.com only (setup_env.sh already did)</li><li><strong class='hl-blue'>• Defend the prompt:</strong> Model Armor screens tool output for indirect prompt injection</li><li><strong class='hl-blue'>• Watch the logs:</strong> every MCP tool call lands in Cloud Audit Logs — alert on anomalies</li></ul>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="21" data-title="Let&#x27;s build this!" data-module="Module 2 • Lab A: Setup" data-time="00:26 – 00:27 (1 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab A: Setup • 00:26 – 00:27 (1 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="lab-divider-center">
+            <h1>Let&#x27;s build this!</h1>
+            <div class="lab-sub-row">
+              <img src="assets/ref_slide11_pic4.png" alt="Google G"/>
+              <span>Part A: finish provisioning • Part B: run the agent • Part C: the full journey</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="22" data-title="Step 1: Project, auth &amp; the code" data-module="Module 2 • Lab A: Setup" data-time="00:27 – 00:29 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab A: Setup • 00:27 – 00:29 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Step 1: Project, auth &amp; the code</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">If you did the &#x27;engines&#x27; step, just verify — else run it now</h3>
+              <p class='body-p'>Confirm you&#x27;re authenticated and the repo is cloned.</p>
+              <ul class="clean-bullets"><li><strong>gcloud auth list:</strong> must show your account as ACTIVE</li><li><strong>export PROJECT_ID=$(gcloud config get project):</strong> every later script reads this</li><li><strong>gcloud auth application-default login:</strong> creates the ADC the BigQuery MCP toolset needs</li><li><strong>⚠️ Billing:</strong> Maps Grounding Lite &amp; BigQuery both require billing — redeem your credit first</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Cloud Shell</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>gcloud auth list
+gcloud config get project
+export PROJECT_ID=$(gcloud config get project)
+
+git clone https://github.com/google/mcp.git
+cd mcp/examples/launchmybakery
+
+# Required so ADK can call BigQuery via MCP
+gcloud auth application-default login</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_activate_cloudshell.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="23" data-title="What those two setup scripts just did" data-module="Module 2 • Lab A: Setup" data-time="00:29 – 00:31 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab A: Setup • 00:29 – 00:31 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">What those two setup scripts just did</h2>
+          <p class="center-subtitle">Press → to walk through the provisioning you kicked off at minute 5</p>
+          <div class="build-col">
+            <div class="build-step" data-step="0">
+              <img src="assets/icon_gemini.png" alt="icon"/>
+              <div class="build-step-text"><h3>setup_env.sh • 1</h3><p>Enables APIs: aiplatform, apikeys, mapstools, bigquery — plus the MCP endpoints (gcloud beta services mcp enable).</p></div>
+            </div>
+            
+            <div class="build-step" data-step="1">
+              <img src="assets/icon_maps.png" alt="icon"/>
+              <div class="build-step-text"><h3>setup_env.sh • 2</h3><p>Creates a Maps API key restricted to mapstools.googleapis.com and writes .env (VERTEXAI flag, project, key).</p></div>
+            </div>
+            
+            <div class="build-step" data-step="2">
+              <img src="assets/icon_bigquery.png" alt="icon"/>
+              <div class="build-step-text"><h3>setup_bigquery.sh • 1</h3><p>Creates a Cloud Storage bucket and uploads the 4 CSVs (demographics, prices, sales, foot traffic).</p></div>
+            </div>
+            
+            <div class="build-step" data-step="3">
+              <img src="assets/icon_bigquery.png" alt="icon"/>
+              <div class="build-step-text"><h3>setup_bigquery.sh • 2</h3><p>Creates dataset mcp_bakery and 4 tables — each column carrying a description the agent will read.</p></div>
+            </div>
+            </div>
+          <div class="build-summary">Result: a governed dataset + a restricted key + MCP endpoints switched on</div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="24" data-title="✋ Checkpoint 1: Your data is live" data-module="Module 2 • Lab A: Setup" data-time="00:31 – 00:33 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab A: Setup • 00:31 – 00:33 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 1: Your data is live</h2>
+            
+        <div class="lab-timer-widget" data-seconds="180" id="timer-24">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-24">03:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(24)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(24)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Open:</strong> the BigQuery console in your project</li><li><strong>Confirm:</strong> dataset mcp_bakery exists with 4 tables</li><li><strong>Peek:</strong> at foot_traffic → notice the morning score column</li><li><strong>Stuck?:</strong> re-run ./setup/setup_bigquery.sh; check PROJECT_ID is set</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_bigquery_console.jpeg" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">BigQuery console: mcp_bakery dataset with its 4 tables (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="25" data-title="Step 2: Install ADK in a virtualenv" data-module="Module 2 • Lab A: Setup" data-time="00:33 – 00:36 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Lab A: Setup • 00:33 – 00:36 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Step 2: Install ADK in a virtualenv</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">google-adk[mcp] — the [mcp] extra brings the MCP client</h3>
+              <p class='body-p'>Isolate the install, then install ADK with MCP support.</p>
+              <ul class="clean-bullets"><li><strong>python3 -m venv .venv:</strong> keep Cloud Shell&#x27;s system Python clean</li><li><strong>pip install &quot;google-adk[mcp]&quot;:</strong> the extra pulls in the MCP client libraries</li><li><strong>Trouble?:</strong> the repo pins a known-good: pip install google-adk==1.28.0</li><li><strong>Then:</strong> cd adk_agent/ — adk web discovers apps under the CWD</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Cloud Shell</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>python3 -m venv .venv
+source .venv/bin/activate
+
+# The [mcp] extra = MCP client support
+pip install &quot;google-adk[mcp]&quot;
+
+# adk web scans the current dir for agents
+cd adk_agent/</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="26" data-title="Step 3: Read the agent you&#x27;ll run" data-module="Module 3 • Lab B: Run It" data-time="00:36 – 00:38 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:36 – 00:38 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Step 3: Read the agent you&#x27;ll run</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Open Editor:</strong> in Cloud Shell, browse mcp/examples/launchmybakery</li><li><strong>agent.py:</strong> find the LlmAgent — model, instruction, tools</li><li><strong>tools.py:</strong> find the two MCPToolset calls &amp; their headers</li><li><strong>.env:</strong> confirm GOOGLE_GENAI_USE_VERTEXAI=1 and MAPS_API_KEY are set</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_open_editor.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">Cloud Shell Editor showing the launchmybakery layout (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="27" data-title="Step 4: Launch the agent UI" data-module="Module 3 • Lab B: Run It" data-time="00:38 – 00:41 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:38 – 00:41 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Step 4: Launch the agent UI</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">adk web + Cloud Shell Web Preview on port 8000</h3>
+              <p class='body-p'>Start the dev server, then open it through Web Preview.</p>
+              <ul class="clean-bullets"><li><strong>--allow_origins:</strong> required in Cloud Shell so the IDE proxy origin is accepted</li><li><strong>Web Preview:</strong> top-right of Cloud Shell → Change port → 8000 → Change and Preview</li><li><strong>Pick the app:</strong> select mcp_bakery_app in the UI&#x27;s dropdown</li><li><strong>Empty dropdown?:</strong> you ran adk web from the wrong directory — cd adk_agent/ first</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Cloud Shell (inside adk_agent/)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>adk web --allow_origins \
+  &#x27;regex:https://.*\.cloudshell\.dev&#x27;
+
+# Then in Cloud Shell:
+#  Web Preview (top right)
+#    → Change port → 8000
+#    → Change and Preview</code></pre>
+              </div>
+              
+            <div class="shot-preview-box">
+              <img class="zoomable" src="assets/codelab_open_adk_ui.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click screenshot to zoom</span>
+            </div>
+            
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="28" data-title="✋ Checkpoint 2: First tool call (macro)" data-module="Module 3 • Lab B: Run It" data-time="00:41 – 00:44 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:41 – 00:44 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 2: First tool call (macro)</h2>
+            
+        <div class="lab-timer-widget" data-seconds="300" id="timer-28">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-28">05:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(28)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(28)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Ask:</strong> &quot;I want to open a bakery in LA. Find the zip code with the highest morning foot traffic score.&quot;</li><li><strong>Watch the trace:</strong> agent calls get_table_info, then execute_sql on foot_traffic</li><li><strong>Expect:</strong> zip 90403 (Santa Monica) surfaces to the top</li><li><strong>Auth error?:</strong> re-run gcloud auth application-default login (60-min token)</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_adk_macro.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">ADK web: execute_sql finds the top morning-traffic zip (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="29" data-title="✋ Checkpoint 3: Validate on the ground (micro)" data-module="Module 3 • Lab B: Run It" data-time="00:44 – 00:47 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:44 – 00:47 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">✋ Checkpoint 3: Validate on the ground (micro)</h2>
+            
+        <div class="lab-timer-widget" data-seconds="300" id="timer-29">
+          <span class="timer-label">⏱️ Hands-On Lab Timer:</span>
+          <span class="timer-display" id="timer-disp-29">05:00</span>
+          <button class="timer-btn" onclick="toggleLabTimer(29)">▶ Start / Pause</button>
+          <button class="timer-btn secondary" onclick="resetLabTimer(29)">↺ Reset</button>
+        </div>
+        
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Follow up:</strong> &quot;Search for &#x27;Bakeries&#x27; in that zip code — is it saturated?&quot;</li><li><strong>Notice:</strong> no zip in your prompt — the agent carried 90403 from memory</li><li><strong>Watch:</strong> the trace switch servers: Maps search_places</li><li><strong>Click:</strong> the Google Maps link in the answer — that&#x27;s the required attribution</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/codelab_adk_micro.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">ADK web: Maps search_places scans 90403 for bakeries (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="30" data-title="Your turn: run the rest of the journey" data-module="Module 3 • Lab B: Run It" data-time="00:47 – 00:50 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:47 – 00:50 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Your turn: run the rest of the journey</h2>
+          <p class="center-subtitle">Three more prompts — predict the tool before you run each (answers in the codelab)</p>
+          <div class="journey-table">
+            <div class="journey-row journey-blue">
+              <span class="journey-tag">Q3</span>
+              <span class="journey-q">Max price of a Sourdough Loaf in LA Metro?</span>
+              <span class="journey-tool">BigQuery</span>
+              <span class="journey-res">Erewhon ≈ $18.50</span>
+            </div>
+            <div class="journey-row journey-blue">
+              <span class="journey-tag">Q4</span>
+              <span class="journey-q">Forecast Dec &#x27;25 from best store, price $18</span>
+              <span class="journey-tool">BigQuery + AI.FORECAST</span>
+              <span class="journey-res">qty → ×$18 revenue</span>
+            </div>
+            <div class="journey-row journey-green">
+              <span class="journey-tag">Q5</span>
+              <span class="journey-q">Closest Restaurant Depot under 30 min away?</span>
+              <span class="journey-tool">Maps</span>
+              <span class="journey-res">compute_routes check</span>
+            </div>
+            <div class="journey-row journey-yellow">
+              <span class="journey-tag">★</span>
+              <span class="journey-q">Chain them yourself — one thread, all five</span>
+              <span class="journey-tool">both servers</span>
+              <span class="journey-res">full business case</span>
+            </div></div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="31" data-title="⚡ Finished early? Break it (productively)" data-module="Module 3 • Lab B: Run It" data-time="00:50 – 00:52 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:50 – 00:52 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">⚡ Finished early? Break it (productively)</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Tweak the instruction</h3>
+              <h4>The cheapest way to change behavior</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># agent.py — edit the instruction, e.g.:
+&quot;Position the brand as budget-friendly
+ and always cite the source table.&quot;
+# save → adk web reloads → re-ask Q3</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Watch:</strong> the price recommendation shift with one sentence</li><li><strong>Try:</strong> a persona: &#x27;You are a skeptical CFO&#x27;</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Stretch the tools</h3>
+              <h4>Push past the script</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Ask about the weather on opening day
+&quot;Weather in 90403 this Saturday?&quot;
+   → Maps lookup_weather
+
+# Safety: swap to read-only SQL
+# in tools.py, the agent can only
+# call execute_sql_readonly</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Weather:</strong> a 3rd tool you never configured — it was just there</li><li><strong>Read-only:</strong> one change removes the agent&#x27;s ability to mutate data</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="32" data-title="Quick fixes — the 6 ways today breaks" data-module="Module 3 • Lab B: Run It" data-time="00:52 – 00:55 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Lab B: Run It • 00:52 – 00:55 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Quick fixes — the 6 ways today breaks</h2>
+          <div class="blue-outline-card">
+            <p class="card-intro">Hit a wall? It&#x27;s almost certainly one of these:</p>
+            <ul class="obj-list"><li><strong class='hl-blue'>• Auth errors mid-lab:</strong> ADC token expired (~60 min) → gcloud auth application-default login</li><li><strong class='hl-blue'>• &#x27;API not enabled&#x27; / 403:</strong> MCP endpoint off → gcloud beta services mcp enable bigquery.googleapis.com mapstools.googleapis.com</li><li><strong class='hl-blue'>• Empty app dropdown:</strong> adk web run from wrong dir → cd mcp/examples/launchmybakery/adk_agent</li><li><strong class='hl-blue'>• Web Preview refuses:</strong> missing --allow_origins &#x27;regex:https://.*\.cloudshell\.dev&#x27;</li><li><strong class='hl-blue'>• Maps calls fail:</strong> key missing/restricted wrong → check .env MAPS_API_KEY, target service mapstools.googleapis.com</li><li><strong class='hl-blue'>• Billing errors:</strong> project has no billing → redeem the event credit and re-attach</li></ul>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="33" data-title="Clean up — don&#x27;t donate your credits back" data-module="Module 4 • Wrap-Up" data-time="00:55 – 00:57 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Wrap-Up • 00:55 – 00:57 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Clean up — don&#x27;t donate your credits back</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">One script deletes the dataset, bucket, and API key</h3>
+              <p class='body-p'>Stop the server (Ctrl+C), then run cleanup from the repo root.</p>
+              <ul class="clean-bullets"><li><strong>Deletes:</strong> BigQuery dataset mcp_bakery + the GCS bucket</li><li><strong>Revokes:</strong> the restricted Maps API key created at setup</li><li><strong>Keeps:</strong> your project — so you can re-run ./setup scripts any time</li><li><strong>Why it matters:</strong> BigQuery storage &amp; Maps calls are pay-as-you-go</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Cloud Shell (repo root)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Ctrl+C to stop adk web, then:
+cd mcp/examples/launchmybakery
+
+chmod +x cleanup/cleanup_env.sh
+./cleanup/cleanup_env.sh
+
+# Deletes: mcp_bakery dataset,
+#  the staging bucket, and the API key.</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="34" data-title="Your Location-Intelligence Agent playbook" data-module="Module 4 • Wrap-Up" data-time="00:57 – 01:00 (3 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Wrap-Up • 00:57 – 01:00 (3 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Your Location-Intelligence Agent playbook</h2>
+          <h3 class="sub-blue">The four ideas to take with you</h3>
+          <p class="body-p">Everything today reduces to four moves you can reuse for any agent + any data.</p>
+          <div class="four-steps-grid">
+            <div class="four-step-card ">
+              <div class="step-num-circle">1</div>
+              <h4>Ground,<br/>don&#x27;t guess</h4>
+              <p>An LLM alone hallucinates business facts. Ground it in your warehouse and live Maps data.</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">2</div>
+              <h4>One agent,<br/>many tools</h4>
+              <p>A single ADK LlmAgent + MCP toolsets reasons across BigQuery AND Maps — no glue code.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">3</div>
+              <h4>Schema is<br/>the prompt</h4>
+              <p>get_table_info feeds column descriptions to the model. Documented data = smarter agent.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">4</div>
+              <h4>Govern by<br/>default</h4>
+              <p>Managed MCP servers bring IAM, audit logs, read-only SQL, and Model Armor. Ship with guardrails.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="35" data-title="Where to take this next" data-module="Module 4 • Wrap-Up" data-time="01:00 – 01:02 (2 min)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Wrap-Up • 01:00 – 01:02 (2 min)</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Where to take this next</h2>
+          <div class="three-tech-grid">
+            <div class="tech-col-card">
+              <img src="assets/icon_adk.png" alt="Tech Icon"/>
+              <h3>Deploy the agent</h3>
+              <p>Move off adk web: containerize and ship to Cloud Run or Agent Engine, with a service-account identity.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_mcp.png" alt="Tech Icon"/>
+              <h3>More MCP servers</h3>
+              <p>Same pattern, new tools: GCE, GKE, Spanner, AlloyDB, Cloud Run, Developer Knowledge — google/mcp on GitHub.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_bigquery.png" alt="Tech Icon"/>
+              <h3>Your own data</h3>
+              <p>Point the agent at YOUR dataset: write rich column descriptions, scope the instruction, start with execute_sql_readonly.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="36" data-title="Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps" data-module="Module 4 • Closing" data-time="01:02 – 01:03 (1 min)">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">Mission Complete 🎉</div>
+            <h1 class="cover-title">Build a Location Intelligence<br/>ADK Agent with MCP servers<br/>for BigQuery and Google Maps</h1>
+            <p class="cover-subtitle">You built it: one grounded agent over your data and the real world</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers_cropped.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="37" data-title="Thank you!" data-module="Module 4 • Closing &amp; Q&amp;A" data-time="01:03 – 01:15 (12 min)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Google Developer Expert</span>
+          <div class="thankyou-right">
+            <div class="thankyou-text">
+              <h1>Thank you!</h1>
+              <p>Questions &amp; live troubleshooting.<br/>The codelab stays free — take it, fork it, teach it.</p>
+            </div>
+            <div class="thankyou-qrs">
+              <div class="ty-qr-box">
+                <img src="assets/qr_codelab.png" alt="Codelab QR"/>
+                <span>Codelab
+adk-mcp-bigquery-maps</span>
+              </div>
+              
+              <div class="ty-qr-box">
+                <img src="assets/qr_linkedin.png" alt="LinkedIn QR"/>
+                <span>Connect on LinkedIn
+in/rabimba-karanjai</span>
+              </div>
+            
+              <div class="ty-qr-box">
+                <img src="assets/qr_rabimba_github.png" alt="GitHub QR"/>
+                <span>Slides &amp; Runbook
+GDE-ML-Artifacts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="38" data-title="Cheat sheet — every command from today" data-module="Appendix • Reference" data-time="Reference Slide">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Appendix • Reference • Reference Slide</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Cheat sheet — every command from today</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Setup</h3>
+              <h4>Run once per project</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>export PROJECT_ID=$(gcloud config get project)
+git clone https://github.com/google/mcp.git
+cd mcp/examples/launchmybakery
+gcloud auth application-default login
+./setup/setup_env.sh
+./setup/setup_bigquery.sh</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>MCP endpoints:</strong> gcloud beta services mcp enable &lt;svc&gt;</li><li><strong>Billing:</strong> required for BigQuery + Maps</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Run &amp; clean up</h3>
+              <h4>Each session</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install &quot;google-adk[mcp]&quot;
+cd adk_agent/
+adk web --allow_origins \
+  &#x27;regex:https://.*\.cloudshell\.dev&#x27;
+
+# later:
+./cleanup/cleanup_env.sh</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Token:</strong> re-login after ~60 min</li><li><strong>Read-only:</strong> prefer execute_sql_readonly in prod</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section>
+  </div>
+
+  <!-- On-Screen Speaker Notes Teleprompter Drawer (Toggle with 'S') -->
+  <div id="notes-drawer">
+    <div id="notes-drawer-header">
+      <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
+      <span>Tip: Press <strong>P</strong> to pop out Dual-Screen Presenter Console | Press <strong>S</strong> to hide drawer</span>
+    </div>
+    <div id="notes-drawer-content"></div>
+  </div>
+
+  <!-- Bottom Presenter Toolbar -->
+  <div id="presenter-bar">
+    <div class="bar-group">
+      <button class="bar-btn" onclick="prevSlide()">◀ Prev</button>
+      <span id="slide-counter" style="min-width: 72px; text-align:center; font-weight:700;">1 / 38</span>
+      <button class="bar-btn" onclick="nextSlide()">Next ▶</button>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <span id="module-indicator" style="color:#9AA0A6; font-size:0.78rem; margin-left:8px;"></span>
+    </div>
+    <div class="bar-group">
+      <span id="talk-clock" style="font-family:'Roboto Mono',monospace; color:#FBBC04; font-weight:700;">⏱️ Talk Clock: 00:00 / 75:00</span>
+      <button class="bar-btn" onclick="toggleTalkClock()" id="clock-btn">Start Clock</button>
+      <button class="bar-btn" onclick="toggleNotesDrawer()" id="notes-btn">📝 Speaker Notes (S)</button>
+      <button class="bar-btn" onclick="openPresenterPopup()">🖥️ Presenter View (P)</button>
+      <button class="bar-btn" onclick="toggleGrid()">⊞ All Slides (G)</button>
+      <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </div>
+
+  <!-- All-Slides Overview Grid Modal -->
+  <div id="grid-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+      <h2>All Workshop Slides — Click Any Slide to Jump</h2>
+      <button class="bar-btn" onclick="toggleGrid()">✕ Close (ESC)</button>
+    </div>
+    <div class="grid-cards" id="grid-cards-container"></div>
+  </div>
+
+  <!-- Lightbox Modal for Diagrams & Screenshots -->
+  <div id="lightbox-modal" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Enlarged View"/>
+  </div>
+
+  <script>
+    const SLIDE_NOTES = [{"num": 1, "title": "Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps", "module": "Module 0 \u2022 Welcome", "time": "00:00 \u2013 00:02 (2 min)", "notes": "TIMING: 00:00 - 00:02 (2 mins)\nGOAL: High-energy welcome; name the payoff.\n\nSAY THIS:\n\"Welcome, everyone! Today we're going to build a Location Intelligence agent \u2014 an AI that answers a real business question: where should I open my bakery, and how much should I charge? It will do that by reasoning over enterprise data in BigQuery AND the real world in Google Maps, at the same time.\"\n\n\"The best part? You won't write any BigQuery or Maps API boilerplate. Two Google-managed MCP servers hand the agent its tools over a single open protocol. You'll build the whole thing yourself in this room.\""}, {"num": 2, "title": "This is what you'll have running in about 40 minutes", "module": "Module 0 \u2022 Welcome", "time": "00:02 \u2013 00:03 (1 min)", "notes": "TIMING: 00:02 - 00:03 (1 min)\nGOAL: Hook \u2014 show the finished product before any explanation.\n\nSAY THIS:\n\"Before any slides: here is the exact agent you'll build. Watch the bottom \u2014 the user asks 'which zip code has the highest morning foot traffic', the agent writes SQL and runs it in BigQuery. Then 'is that area saturated with bakeries' \u2014 it switches to Google Maps and searches Places. One conversation, two totally different data worlds, joined by one agent.\"\n\n\"Keep this picture in your head. Every concept I explain for the next 20 minutes maps to something you just saw.\""}, {"num": 3, "title": "Workshop Hub \u2014 scan these now", "module": "Module 0 \u2022 Welcome", "time": "00:03 \u2013 00:04 (1 min)", "notes": "TIMING: 00:03 - 00:04 (1 min)\nENGAGEMENT CUE: 'Phones out \u2014 scan the left QR for the codelab. That page has every command and every prompt, so you never have to type from the projector.'\n\nSAY THIS:\n\"Three links matter today. Left: the codelab \u2014 keep it open all session, it's your source of truth. Middle: your free Google Cloud credit \u2014 g.dev/credits/latw-bigquery-100 \u2014 redeem it now and create a project with billing on, because both services we use are pay-as-you-go. Right: my GitHub, where this deck and the full speaker script live if you want to rerun this workshop for your own GDG chapter.\""}, {"num": 4, "title": "Rabimba Karanjai", "module": "Module 0 \u2022 Welcome", "time": "00:04 \u2013 00:05 (1 min)", "notes": "TIMING: 00:04 - 00:05 (1 min)\nSAY THIS:\n\"Quick intro \u2014 I'm Rabimba Karanjai, a Google Developer Expert in AI/ML, and by day an ML Scientist at PayPal where I build and break agentic systems. This is a hands-on room: if something fails \u2014 and with live APIs something always hiccups \u2014 shout it out. Debugging together is part of the workshop.\""}, {"num": 5, "title": "Start your engines \u2014 setup runs while I talk", "module": "Module 0 \u2022 Welcome", "time": "00:05 \u2013 00:06 (1 min)", "notes": "TIMING: 00:05 - 00:06 (1 min)\nGOAL: Fire-and-forget provisioning so nobody waits on BigQuery loads later.\n\nSAY THIS:\n\"Here's my favorite workshop trick: the slowest part of today is provisioning APIs and loading BigQuery tables \u2014 and it needs zero attention. So start it NOW, in the background. Activate Cloud Shell from the Cloud Console top bar, paste these commands, and let them run in a corner.\"\n\n\"While Google does the boring work, I'll spend 20 minutes explaining what an agent, ADK, and MCP actually are. When we come back to the terminal, everything will be green. Use the Copy button \u2014 don't type these by hand.\"\n\nFACILITATOR: Watch the room. If more than ~30% look lost at 'Activate Cloud Shell', pause 60 extra seconds here \u2014 it's the single biggest dropout point."}, {"num": 6, "title": "Your friend is opening a sourdough bakery in Los Angeles. Where?", "module": "Module 1 \u2022 Concepts", "time": "00:06 \u2013 00:08 (2 min)", "notes": "TIMING: 00:06 - 00:08 (2 mins)\nGOAL: Frame the business problem; let the audience discover why a bare LLM fails.\n\nSAY THIS:\n\"A friend wants to open a high-end sourdough bakery in LA. Wrong zip code = bankruptcy. So \u2014 how do you pick? Show of hands for A... B... C? Someone always says 'just ask ChatGPT.' Here's the trap: a language model has no idea what foot traffic looks like in 90403 this morning, or that three new bakeries opened there last month. It will confidently invent an answer. That's not intelligence, that's a hallucination with a business plan.\"\n\n\"Click D on screen. Real foot-traffic data lives in a database. Real competitors live on a map. Today's agent queries BOTH, then reasons over the combined evidence.\""}, {"num": 7, "title": "Two data worlds, one question", "module": "Module 1 \u2022 Concepts", "time": "00:08 \u2013 00:09 (1 min)", "notes": "TIMING: 00:08 - 00:09 (1 min)\nSAY THIS:\n\"Look at the two columns. On the left, the private numbers every business guards: census demographics, what competitors charge for a loaf, your own sales history. That lives in BigQuery. On the right, public real-world facts that change daily: is there already a bakery on that block, how long is the drive to Restaurant Depot, will it rain on opening day. That lives in Google Maps.\"\n\n\"No single system answers both. The whole point of today is the bridge at the bottom \u2014 one agent that treats both as just... tools.\""}, {"num": 8, "title": "What makes an LLM an Agent?", "module": "Module 1 \u2022 Concepts", "time": "00:09 \u2013 00:11 (2 min)", "notes": "TIMING: 00:09 - 00:11 (2 mins)\nGOAL: Demystify 'agent' in four reveals. In the web deck each press of \u2192 reveals the next block.\n\nSAY THIS (per reveal):\n\"First: a model. Gemini 3.5 Flash \u2014 a brain that predicts text. Powerful, but it can only talk. [\u2192] Give it instructions \u2014 a job description: 'you are a location-intelligence analyst; combine BigQuery and Maps.' [\u2192] Give it tools \u2014 actual capabilities: run SQL, search places, compute a route. [\u2192] And wrap it in a loop: the model reasons about what to do, calls a tool, observes the result, and reasons again.\"\n\n\"That loop is the whole magic trick. An agent isn't a bigger model \u2014 it's a model with hands and a while-loop.\""}, {"num": 9, "title": "The three pillars we'll use today", "module": "Module 1 \u2022 Concepts", "time": "00:11 \u2013 00:12 (1 min)", "notes": "TIMING: 00:11 - 00:12 (1 min)\nSAY THIS:\n\"Three pillars. Gemini 3.5 Flash is the brain \u2014 we run it on Vertex AI so it's authenticated and billed through your Cloud project, which that setup script already switched on. ADK is the framework \u2014 you describe the agent in a few lines of Python and it handles the loop, tool dispatch, and a debug UI. And MCP is the connective tissue \u2014 the open protocol that lets ADK talk to BigQuery and Maps without us writing a single API wrapper. Next three slides take each in turn.\""}, {"num": 10, "title": "An ADK agent in ~15 lines", "module": "Module 1 \u2022 Concepts", "time": "00:12 \u2013 00:13 (1 min)", "notes": "TIMING: 00:12 - 00:13 (1 min)\nSAY THIS:\n\"This is genuinely the whole agent \u2014 about fifteen lines. An LlmAgent needs three things: a model, an instruction, and tools. Read the instruction like a job description: it tells the agent which dataset it's allowed to touch \u2014 mcp_bakery and nothing else \u2014 which project to bill queries to, and to always include a Maps link when it talks about places.\"\n\n\"The instruction is your strongest control surface. In the bonus section you'll edit it live and watch the agent's behavior change.\""}, {"num": 11, "title": "MCP: from N\u00d7M integrations to N+M", "module": "Module 1 \u2022 Concepts", "time": "00:13 \u2013 00:15 (2 min)", "notes": "TIMING: 00:13 - 00:15 (2 mins)\nGOAL: The 'why' of MCP \u2014 the integration math.\n\nSAY THIS:\n\"Before MCP, wiring an agent to a data source meant a bespoke adapter: read the API docs, hand-write a client, hand-write the tool schema, pray about auth. Three agents times three data sources is nine brittle adapters.\"\n\n\"MCP flips that. It's an open protocol \u2014 Anthropic created it, and it's now industry-wide, with Google as a founding member of the Agentic AI Foundation. A server exposes its capabilities as standard 'tools'; any MCP client discovers and calls them. Write the server once, write the client once, and N-plus-M replaces N-times-M. People call it 'USB-C for AI' and the analogy is exact: one connector, any device.\"\n\nKEY VOCAB on this slide: Host = the app the user talks to (ADK web UI). Client = the connection inside the host. Server = the thing exposing tools (BigQuery, Maps)."}, {"num": 12, "title": "MCP anatomy: Host, Client, Server", "module": "Module 1 \u2022 Concepts", "time": "00:15 \u2013 00:16 (1 min)", "notes": "TIMING: 00:15 - 00:16 (1 min)\nSAY THIS:\n\"Three roles. The Host is the app you talk to \u2014 ADK's web UI. Inside it, a Client maintains one dedicated connection per server. The Server is where the tools live. And the transport is how bytes move: stdio for a server running as a subprocess on your laptop, or Streamable HTTP for a remote server.\"\n\n\"Today both our servers are remote and Google-hosted, so it's Streamable HTTP with an auth header. That's why you don't install BigQuery or Maps SDKs at all \u2014 you saw the repo: no BigQuery client code, no Places client code. Just two URLs.\""}, {"num": 13, "title": "Google's managed, remote MCP servers", "module": "Module 1 \u2022 Concepts", "time": "00:16 \u2013 00:18 (2 min)", "notes": "TIMING: 00:16 - 00:18 (2 mins)\nGOAL: Position Google's managed servers as the enterprise-ready path.\n\nSAY THIS:\n\"Last December, Google announced that its API infrastructure itself now speaks MCP. Instead of installing some community server and babysitting it, you point at a managed endpoint: bigquery.googleapis.com/mcp, mapstools.googleapis.com/mcp. Same URL everywhere on Earth.\"\n\n\"Two things to notice. First, MCP is opt-in per project \u2014 that's why setup_env.sh ran 'gcloud beta services mcp enable' for both services. Second, it's governed like the rest of Google Cloud: there's a dedicated IAM role \u2014 roles/mcp.toolUser \u2014 every tool call lands in audit logs, and Model Armor can screen for prompt injection. That governance story is exactly why enterprises can actually deploy this.\""}, {"num": 14, "title": "BigQuery MCP server \u2014 the 6 tools", "module": "Module 1 \u2022 Concepts", "time": "00:18 \u2013 00:19 (1 min)", "notes": "TIMING: 00:18 - 00:19 (1 min)\nSAY THIS:\n\"What can the agent actually do in BigQuery? Six tools. It can list datasets, list tables, and read metadata \u2014 and then the two interesting ones: execute_sql runs arbitrary SQL, and execute_sql_readonly does the same with mutations blocked. Because it's full SQL, the agent can even call BigQuery's AI.FORECAST function \u2014 that's how it does the revenue projection you'll see later.\"\n\n\"Here's the subtle part \u2014 watch get_table_info. When the agent needs to write SQL, it first asks the server for the table schema, and the server returns the column descriptions that the setup script wrote: 'foot_traffic_index \u2014 index of estimated foot traffic based on commercial density.' The agent uses that text to decide which column to query. So your schema documentation literally becomes part of the prompt. Good descriptions, smarter agent.\""}, {"num": 15, "title": "Maps Grounding Lite \u2014 the 5 tools", "module": "Module 1 \u2022 Concepts", "time": "00:19 \u2013 00:20 (1 min)", "notes": "TIMING: 00:19 - 00:20 (1 min)\nSAY THIS:\n\"The Maps side is called Grounding Lite \u2014 an MCP server over Google's geospatial data. Five tools. search_places finds businesses and returns an AI summary plus a Maps link for each. compute_routes gives distance and drive time \u2014 note, deliberately not turn-by-turn navigation. lookup_weather does what it says. And the two resolve tools turn fuzzy text \u2014 'a bakery near the pier' \u2014 into stable Place IDs you can feed to other Maps APIs.\"\n\n\"One rule matters: attribution. When the agent's answer is grounded in Maps, the Google Maps source link must be shown. Remember our agent instruction said 'include a hyperlink to an interactive map'? That line is doing attribution compliance.\""}, {"num": 16, "title": "Two servers, two auth patterns \u2014 tools.py", "module": "Module 1 \u2022 Concepts", "time": "00:20 \u2013 00:21 (1 min)", "notes": "TIMING: 00:20 - 00:21 (1 min)\nSAY THIS:\n\"Open tools.py and it's almost disappointingly simple \u2014 two functions, same pattern. Maps takes an API key in a header; the setup script created a restricted key that only works for the maps tools service. BigQuery is stricter: it's your enterprise data, so it wants OAuth. We pull a token from your Application Default Credentials and pass it as a Bearer header, plus x-goog-user-project so queries bill to your project.\"\n\n\"Now the one operational gotcha of the whole day \u2014 star this. That OAuth token lives about 60 minutes, and ADK does not refresh it for you. If your agent suddenly starts failing late in the workshop, re-run gcloud auth application-default login. Write it down.\""}, {"num": 17, "title": "The reasoning journey: macro \u2192 micro \u2192 money", "module": "Module 1 \u2022 Concepts", "time": "00:21 \u2013 00:23 (2 min)", "notes": "TIMING: 00:21 - 00:23 (2 mins)\nGOAL: The narrative spine of the whole workshop \u2014 memorize this funnel.\n\nSAY THIS:\n\"Here's the entire workshop as five questions. Notice the rhythm \u2014 it zooms from the whole city down to a loading dock. Question one is MACRO: across all of LA, where's the morning foot traffic? That's a BigQuery aggregate \u2014 the agent writes SQL, scans the foot_traffic table, and lands on zip 90403, Santa Monica. Question two goes MICRO: is that zip already crawling with bakeries? No database knows that \u2014 that's a live Maps search. Three: pricing \u2014 back to BigQuery, max price for a sourdough loaf, and Erewhon tops out around $18.50. Four: money \u2014 forecast December revenue off your best store using BigQuery's AI.FORECAST. Five: logistics \u2014 a compute_routes call to confirm the supplier run is under 30 minutes.\"\n\n\"Blue rows are BigQuery, green rows are Maps. The agent is choosing the right tool for each question with no router, no if-statements \u2014 the instruction plus the model's reasoning does it.\""}, {"num": 18, "title": "The full architecture", "module": "Module 1 \u2022 Concepts", "time": "00:23 \u2013 00:24 (1 min)", "notes": "TIMING: 00:23 - 00:24 (1 min)\nSAY THIS:\n\"Everything we just covered, one diagram. User talks to the ADK web UI. The agent \u2014 Gemini 3.5 Flash on Vertex AI \u2014 reads the question and the instruction, decides it needs data, and the MCPToolset fires a signed HTTP call. BigQuery interprets the schema and runs SQL where the data lives \u2014 the rows never get shipped into the model, only the answer does. Maps grounds the same conversation in live places and routes. Then the agent fuses both into one answer.\"\n\n\"Screenshot this slide. In the lab, whenever you're lost, find yourself on this map.\"\n\nNOTE: This codelab diagram says 'Gemini 3 Pro' \u2014 the actual code uses gemini-3.5-flash. If a sharp attendee asks, confirm: model ID is set in agent.py and swappable."}, {"num": 19, "title": "Concept Check & Why not just\u2026?", "module": "Module 1 \u2022 Concepts", "time": "00:24 \u2013 00:25 (1 min)", "notes": "TIMING: 00:24 - 00:25 (1 min)\nGOAL: Lock in tool selection intuition before hands-on.\n\nSAY THIS:\n\"Sixty-second check. Weather at the site? Maps lookup_weather. December revenue forecast? BigQuery execute_sql calling AI.FORECAST. How does the agent know what columns exist? It calls list_table_ids and get_table_info first.\"\n\n\"And the right column kills the three things people always try instead: pasting CSVs into the prompt \u2014 stale and ungoverned; curling the Maps API \u2014 you're back to hand-rolled auth and parsing; fine-tuning \u2014 which teaches a model style, not today's facts. When in doubt: warehouse facts, BigQuery; real-world right-now, Maps.\""}, {"num": 20, "title": "Taking this to production \u2014 the guardrails that matter", "module": "Module 1 \u2022 Concepts", "time": "00:25 \u2013 00:26 (1 min)", "notes": "TIMING: 00:25 - 00:26 (1 min)\nGOAL: Bridge from toy to enterprise; this is what makes it 'GDE-grade'.\n\nSAY THIS:\n\"Quick reality check \u2014 today we use YOUR credentials because it's fast. In production you tighten it: grant only the three least-privilege roles; give the agent its own service account so every call is attributable; prefer execute_sql_readonly \u2014 or a deny policy on execute_sql \u2014 so the agent physically cannot DROP a table; keep the Maps key restricted to one service; put Model Armor in front of tool output so a poisoned web result can't hijack the agent; and alert on the audit logs. That's the list a security team will ask about \u2014 now you have answers.\"\n\nWith that \u2014 enough theory. Let's build it."}, {"num": 21, "title": "Let's build this!", "module": "Module 2 \u2022 Lab A: Setup", "time": "00:26 \u2013 00:27 (1 min)", "notes": "TIMING: 00:26 - 00:27 (1 min)\nGOAL: Shift the room from listening to doing.\n\nSAY THIS:\n\"Concepts done. From here it's all hands-on \u2014 three parts. Part A, we finish setup and verify the data landed. Part B, we boot the agent and say hello. Part C, the fun part: the full five-question business journey. If you started the scripts at the beginning, you're already ahead. Let's check on them.\"\n\nFACILITATOR: From this point, keep the codelab page open on the projector when not on a slide \u2014 attendees should mirror you."}, {"num": 22, "title": "Step 1: Project, auth & the code", "module": "Module 2 \u2022 Lab A: Setup", "time": "00:27 \u2013 00:29 (2 min)", "notes": "TIMING: 00:27 - 00:29 (2 mins)\nGOAL: Everyone authenticated with ADC set.\n\nSAY THIS:\n\"Step one. Three checks. gcloud auth list \u2014 your account should say ACTIVE. Then export PROJECT_ID so every later command knows your project. And the important one: gcloud auth application-default login. That creates Application Default Credentials on this machine \u2014 remember, the BigQuery toolset turns that into the OAuth bearer token. Skip this and the agent fails at query time, not at startup, which confuses everyone.\"\n\nWALK THE ROOM: the #1 failure here is people not having billing enabled because they skipped the credit redemption. Ask for a show of hands: 'Who sees their account as ACTIVE?'"}, {"num": 23, "title": "What those two setup scripts just did", "module": "Module 2 \u2022 Lab A: Setup", "time": "00:29 \u2013 00:31 (2 min)", "notes": "TIMING: 00:29 - 00:31 (2 mins)\nGOAL: Convert 'magic scripts' into understood infrastructure.\n\nSAY THIS:\n\"So what did you actually run? setup_env.sh did two things \u2014 it enabled the four APIs, AND it flipped on the MCP endpoints themselves with gcloud beta services mcp enable; remember, MCP is opt-in. Then it minted a Maps API key locked to just the maps-tools service and dropped your .env. setup_bigquery.sh staged the four CSVs into a bucket, then created the mcp_bakery dataset with four tables. And here's that detail again: every column got an OPTIONS description. Those descriptions are what get_table_info will feed the agent so it can write sensible SQL.\"\n\nCHECK: 'Everyone whose scripts finished \u2014 green check in chat / hand up. Still running? Fine, keep going, it'll catch up.'"}, {"num": 24, "title": "\u270b Checkpoint 1: Your data is live", "module": "Module 2 \u2022 Lab A: Setup", "time": "00:31 \u2013 00:33 (2 min)", "notes": "TIMING: 00:31 - 00:33 (2 mins) \u2014 START THE 3-MIN LAB TIMER.\nGOAL: First tangible win; everyone sees their own data.\n\nSAY THIS:\n\"First checkpoint \u2014 make it real. Open the BigQuery console. You should see a dataset called mcp_bakery with four tables: demographics, bakery_prices, sales_history_weekly, foot_traffic. Click into foot_traffic and find the morning score column \u2014 that's the exact column the agent is about to query for question one.\"\n\n\"If mcp_bakery isn't there, nine times out of ten the PROJECT_ID export didn't stick \u2014 echo it, re-run the script. Hands up when you see the four tables!\""}, {"num": 25, "title": "Step 2: Install ADK in a virtualenv", "module": "Module 2 \u2022 Lab A: Setup", "time": "00:33 \u2013 00:36 (3 min)", "notes": "TIMING: 00:33 - 00:36 (3 mins)\nSAY THIS:\n\"Install time. Make a virtualenv \u2014 Cloud Shell's system Python is shared, don't pollute it. Then pip install quote google-adk bracket mcp unquote. That little [mcp] extra is what brings the MCP client; without it MCPToolset import fails. If the resolver gives you grief, the repo pins google-adk==1.28.0 as a known-good.\"\n\n\"Then cd into adk_agent. Important: adk web discovers agent apps by scanning the CURRENT directory, so where you run it from matters. If the UI later shows an empty dropdown, you're in the wrong folder.\""}, {"num": 26, "title": "Step 3: Read the agent you'll run", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:36 \u2013 00:38 (2 min)", "notes": "TIMING: 00:36 - 00:38 (2 mins)\nGOAL: Connect the concept slides to real files before running.\n\nSAY THIS:\n\"Before we run anything, open it. Click 'Open Editor' in Cloud Shell and navigate into launchmybakery. Open agent.py \u2014 there's the LlmAgent from slide 10, word for word. Open tools.py \u2014 there's the API-key header and the OAuth header from slide 16. And check .env: you should see GOOGLE_GENAI_USE_VERTEXAI=1 and a MAPS_API_KEY, both written by the setup script. You're not writing code today \u2014 you're recognizing it, so that next week you can write your own.\""}, {"num": 27, "title": "Step 4: Launch the agent UI", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:38 \u2013 00:41 (3 min)", "notes": "TIMING: 00:38 - 00:41 (3 mins)\nGOAL: Everyone has the ADK web UI open.\n\nSAY THIS:\n\"Launch it. From inside adk_agent, run adk web with allow_origins set to the cloudshell.dev regex \u2014 that flag exists because you're reaching the server through Cloud Shell's web proxy, and without it the WebSocket gets rejected. When you see 'Uvicorn running on 127.0.0.1:8000', click Web Preview in the top right, change the port to 8000, and preview.\"\n\n\"A chat UI opens. Top-left dropdown: pick mcp_bakery_app. If that dropdown is empty, stop \u2014 you're in the wrong directory. Ctrl-C, cd adk_agent, rerun. This trips up half the room every time.\""}, {"num": 28, "title": "\u270b Checkpoint 2: First tool call (macro)", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:41 \u2013 00:44 (3 min)", "notes": "TIMING: 00:41 - 00:44 (3 mins) \u2014 START THE 5-MIN TIMER.\nGOAL: The 'wow' moment \u2014 the agent writes and runs its own SQL.\n\nSAY THIS:\n\"First real question \u2014 copy it from the codelab, don't type it: 'I want to open a bakery in LA. Find the zip code with the highest morning foot traffic score.' Hit enter and DON'T just read the answer \u2014 open the Events / trace panel. You'll see the agent think: it calls get_table_info to learn the schema, then execute_sql with a query it wrote itself ordering by morning foot traffic. And 90403 \u2014 Santa Monica \u2014 floats to the top.\"\n\n\"You just watched a model turn English into SQL, run it against governed data, and reason over the result. If you got an auth error instead \u2014 say it with me \u2014 60-minute token; re-run gcloud auth application-default login.\""}, {"num": 29, "title": "\u270b Checkpoint 3: Validate on the ground (micro)", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:44 \u2013 00:47 (3 min)", "notes": "TIMING: 00:44 - 00:47 (3 mins)\nGOAL: The pivot moment \u2014 same conversation, different server, conversational memory.\n\nSAY THIS:\n\"Now the move that makes this more than a text-to-SQL demo. Follow up with: 'Search for Bakeries in that zip code \u2014 is it saturated?' Two things to notice. First, you never repeated the zip \u2014 the agent remembered 90403 from the conversation. Second, look at the trace: it did NOT touch BigQuery. It switched servers and called search_places on Maps.\"\n\n\"Same thread, two data worlds. And when the answer comes back with a Maps link \u2014 click it. That link isn't decoration, it's the attribution requirement we talked about, and the agent included it because the instruction told it to.\""}, {"num": 30, "title": "Your turn: run the rest of the journey", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:47 \u2013 00:50 (3 min)", "notes": "TIMING: 00:47 - 00:50 (3 mins)\nGOAL: Self-directed exploration; make it a game.\n\nSAY THIS:\n\"Three more, and I want you to play a game: before you run each one, call the tool out loud. Pricing \u2014 'max price for a Sourdough Loaf in LA Metro' \u2014 which server? BigQuery; Erewhon's at about eighteen-fifty, so our premium price lands around fifteen-to-eighteen. Forecasting \u2014 'take my best store, forecast December, multiply by eighteen' \u2014 that's execute_sql running AI.FORECAST. Logistics \u2014 'closest Restaurant Depot under thirty minutes' \u2014 Maps compute_routes.\"\n\n\"Run them in the SAME chat thread. The agent will carry context across all five. By the end you'll have a zip code, a saturation read, a price point, a revenue forecast, and a supply-chain check \u2014 a whole mini business case, in one conversation. GO.\""}, {"num": 31, "title": "\u26a1 Finished early? Break it (productively)", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:50 \u2013 00:52 (2 min)", "notes": "TIMING: 00:50 - 00:52 (2 mins)\nGOAL: Keep fast finishers engaged while others catch up.\n\nSAY THIS:\n\"If you're done, don't sit idle \u2014 break it, productively. Two challenges. One: edit the instruction in agent.py \u2014 say 'position the brand as budget-friendly' \u2014 save, let adk web hot-reload, and re-ask the pricing question. One sentence changes the whole recommendation; that's prompt-as-control-surface. Two: ask about the weather on opening day. You never wrote a weather tool \u2014 lookup_weather was just there in the Maps server. That's the power of a tool catalog.\"\n\nFACILITATOR: This slide is your pressure-release valve. Keep it up while stragglers finish Checkpoint 3."}, {"num": 32, "title": "Quick fixes \u2014 the 6 ways today breaks", "module": "Module 3 \u2022 Lab B: Run It", "time": "00:52 \u2013 00:55 (3 min)", "notes": "TIMING: 00:52 - 00:55 (3 mins) \u2014 buffer / catch-up window.\nGOAL: Clear every blocker so the room ends on a win.\n\nSAY THIS:\n\"This is the slide to photograph. Every failure today is one of these six. Auth error after working fine? 60-minute token \u2014 re-login. 403 that says not enabled? The MCP endpoint flag from setup_env. Empty dropdown? Wrong directory. Web preview won't load? You dropped the allow_origins flag. Maps failing but BigQuery fine? Check the key in .env. Anything about billing? You need the credit redeemed.\"\n\nFACILITATOR: Use this whole block as flexible time. If the room is ahead, invite people to try their own city. If behind, this is your catch-up."}, {"num": 33, "title": "Clean up \u2014 don't donate your credits back", "module": "Module 4 \u2022 Wrap-Up", "time": "00:55 \u2013 00:57 (2 min)", "notes": "TIMING: 00:55 - 00:57 (2 mins)\nGOAL: Good cloud hygiene; protect the credits we just handed out.\n\nSAY THIS:\n\"Last responsible step: clean up. Ctrl+C to stop the server, then run cleanup_env.sh from the repo root. It deletes the mcp_bakery dataset, the staging bucket, and that API key. Your project stays, so if you want to run this again \u2014 or demo it to your team on Monday \u2014 the setup scripts recreate everything in about four minutes. Don't be the person who burns their credits on a forgotten BigQuery table.\""}, {"num": 34, "title": "Your Location-Intelligence Agent playbook", "module": "Module 4 \u2022 Wrap-Up", "time": "00:57 \u2013 01:00 (3 min)", "notes": "TIMING: 00:57 - 01:00 (3 mins)\nGOAL: Crystallize the four takeaways so they survive the parking lot.\n\nSAY THIS:\n\"If you remember four things. One: ground, don't guess \u2014 a bare model invents foot-traffic numbers; a grounded one queries them. Two: one agent, many tools \u2014 you never wrote a BigQuery or Maps client; two MCP toolsets gave one agent both worlds. Three: your schema is the prompt \u2014 the agent read our column descriptions to write its own SQL, so documenting your data is now an AI feature, not busywork. Four: govern by default \u2014 managed servers mean IAM, audit logs, read-only SQL and Model Armor come along for free.\"\n\n\"Ground, tools, schema, governance. Say it back to me on the way out.\""}, {"num": 35, "title": "Where to take this next", "module": "Module 4 \u2022 Wrap-Up", "time": "01:00 \u2013 01:02 (2 min)", "notes": "TIMING: 01:00 - 01:02 (2 mins)\nSAY THIS:\n\"Three on-ramps. First, deploy it \u2014 adk web is a debug UI, so for real users containerize and push to Cloud Run or Agent Engine with a service account. Second, more servers \u2014 the google/mcp repo lists every managed server: GCE, GKE, Spanner, Developer Knowledge; the wiring you learned today is identical. Third, the real homework \u2014 point this at your own data. Write honest column descriptions, scope the instruction to your dataset, and start on execute_sql_readonly until you trust it.\""}, {"num": 36, "title": "Build a Location Intelligence ADK Agent with MCP servers for BigQuery and Google Maps", "module": "Module 4 \u2022 Closing", "time": "01:02 \u2013 01:03 (1 min)", "notes": "TIMING: 01:02 - 01:03 (1 min)\nSAY THIS:\n\"Look back at the GIF from the first minute. That agent \u2014 the one that queries BigQuery, searches Maps, forecasts revenue, checks drive time \u2014 you just built it, yourself, with your own project. Not a demo I showed you. Yours.\""}, {"num": 37, "title": "Thank you!", "module": "Module 4 \u2022 Closing & Q&A", "time": "01:03 \u2013 01:15 (12 min)", "notes": "TIMING: 01:03 - 01:15 (remaining time \u2014 Q&A).\nSAY THIS:\n\"Thank you! Everything is open: the codelab is free and stays up \u2014 take it, fork it, run this same workshop at your own GDG. Top QR is the codelab, bottom is my repo with this deck and the full speaker script. And if you want to compare notes on agents in production \u2014 the middle QR is my LinkedIn; I answer.\"\n\n\"The rest of our time is yours \u2014 questions, and if anyone's still fighting a red error, bring it up now and we'll fix it live.\"\n\nFACILITATOR: Keep the troubleshooting slide (G key) one keystroke away during Q&A. Budget remaining clock \u2014 the runbook pacing table gives you slack back if concepts ran long."}, {"num": 38, "title": "Cheat sheet \u2014 every command from today", "module": "Appendix \u2022 Reference", "time": "Reference Slide", "notes": "REFERENCE SLIDE \u2014 not presented live.\nEvery command from the workshop in one place. Point attendees here if they re-run the lab later; it is also the fastest 'second screen' reference while facilitating."}];
+    const totalSlides = SLIDE_NOTES.length;
+    let currentSlide = 1;
+    const channel = new BroadcastChannel('location_intel_adk_mcp_sync');
+
+    function showSlide(n, broadcast = true) {
+      if (n < 1) n = 1;
+      if (n > totalSlides) n = totalSlides;
+      currentSlide = n;
+      document.querySelectorAll('.slide').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.slide) === currentSlide);
+      });
+      document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progress-fill').style.width = `${(currentSlide / totalSlides) * 100}%`;
+      const meta = SLIDE_NOTES[currentSlide - 1];
+      document.getElementById('module-indicator').textContent = `${meta.module} (${meta.time})`;
+      document.getElementById('notes-slide-meta').textContent = `🎤 SLIDE ${meta.num}: ${meta.title} — ${meta.time}`;
+      document.getElementById('notes-drawer-content').textContent = meta.notes;
+      window.location.hash = `slide-${currentSlide}`;
+      if (broadcast) {
+        channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide });
+      }
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    function toggleNotesDrawer() {
+      document.body.classList.toggle('notes-open');
+      document.getElementById('notes-btn').classList.toggle('active-toggle');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-modal').classList.add('open');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.remove('open');
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest('.terminal-card').querySelector('code').innerText;
+      navigator.clipboard.writeText(code);
+      const old = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = old, 1500);
+    }
+
+    // Lab Checkpoint Timers
+    const labIntervals = {};
+    function toggleLabTimer(slideNum) {
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const disp = document.getElementById(`timer-disp-${slideNum}`);
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+        return;
+      }
+      let remaining = parseInt(widget.dataset.remaining || widget.dataset.seconds);
+      labIntervals[slideNum] = setInterval(() => {
+        if (remaining > 0) remaining--;
+        widget.dataset.remaining = remaining;
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        disp.textContent = `${m}:${s}`;
+        if (remaining === 0) {
+          clearInterval(labIntervals[slideNum]);
+          delete labIntervals[slideNum];
+        }
+      }, 1000);
+    }
+    function resetLabTimer(slideNum) {
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+      }
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const total = parseInt(widget.dataset.seconds);
+      widget.dataset.remaining = total;
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      document.getElementById(`timer-disp-${slideNum}`).textContent = `${m}:${s}`;
+    }
+
+    // 75-Minute Overall Talk Clock
+    let talkSeconds = 0;
+    let talkTimer = null;
+    function toggleTalkClock() {
+      const btn = document.getElementById('clock-btn');
+      if (talkTimer) {
+        clearInterval(talkTimer);
+        talkTimer = null;
+        btn.textContent = 'Resume Clock';
+      } else {
+        btn.textContent = 'Pause Clock';
+        talkTimer = setInterval(() => {
+          talkSeconds++;
+          const m = String(Math.floor(talkSeconds / 60)).padStart(2, '0');
+          const s = String(talkSeconds % 60).padStart(2, '0');
+          document.getElementById('talk-clock').textContent = `⏱️ Talk Clock: ${m}:${s} / 75:00`;
+        }, 1000);
+      }
+    }
+
+    // Slide Grid Overview
+    function toggleGrid() {
+      const modal = document.getElementById('grid-modal');
+      const container = document.getElementById('grid-cards-container');
+      container.innerHTML = '';
+      SLIDE_NOTES.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'grid-item' + (s.num === currentSlide ? ' current' : '');
+        div.innerHTML = `<div class="grid-item-num">Slide ${s.num} • ${s.time}</div><div class="grid-item-title">${s.title}</div>`;
+        div.onclick = () => { showSlide(s.num); modal.classList.remove('open'); };
+        container.appendChild(div);
+      });
+      modal.classList.toggle('open');
+    }
+
+    // Dual-Screen Synchronized Presenter Popup (Press P)
+    function openPresenterPopup() {
+      const win = window.open('speaker-notes.html?mode=presenter', 'PresenterConsole', 'width=980,height=760');
+      setTimeout(() => channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide }), 500);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        showSlide(ev.data.slide, false);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+      else if (e.key === 's' || e.key === 'S') { toggleNotesDrawer(); }
+      else if (e.key === 'p' || e.key === 'P') { openPresenterPopup(); }
+      else if (e.key === 'g' || e.key === 'G') { toggleGrid(); }
+      else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+      else if (e.key === 'Escape') {
+        document.getElementById('grid-modal').classList.remove('open');
+        closeLightbox();
+      }
+    });
+
+    // Initialize from URL hash if present
+    const m = window.location.hash.match(/slide-(\d+)/);
+    showSlide(m ? parseInt(m[1]) : 1);
+  </script>
+</body>
+</html>
