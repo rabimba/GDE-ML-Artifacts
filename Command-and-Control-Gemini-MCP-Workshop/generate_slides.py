@@ -204,7 +204,7 @@ SLIDES_DATA = [
     {
         "num": 7,
         "module": "Module 1 • Concepts & Architecture",
-        "time": "00:14 – 00:15 (1.5 min)",
+        "time": "00:14 – 00:15 (1 min)",
         "type": "objectives_card",
         "title": "Objectives & Workshop Outcomes",
         "intro": "By the end of this hands-on workshop, you will orchestrate Antigravity to build and deploy the \"Cat Delivery System\" while mastering four modern agentic development skills:",
@@ -227,7 +227,7 @@ SLIDES_DATA = [
             ),
         ],
         "notes": (
-            "TIMING: 00:14 - 00:15 (1.5 mins)\n"
+            "TIMING: 00:14 - 00:15 (1 min)\n"
             "GOAL: Set clear learning outcomes.\n\n"
             "SAY THIS:\n"
             "\"Here are the four concrete outcomes you'll walk away with today:\n"
@@ -426,13 +426,13 @@ SLIDES_DATA = [
         "title": "Step 2: Authenticate Antigravity CLI",
         "steps": [
             ("01", "Select Auth Mode", "Choose 'Use a Google Cloud project'"),
-            ("02", "Complete OAuth Flow", "Open link in incognito tab & paste auth code"),
+            ("02", "Complete OAuth Flow", "Open link & paste the auth code"),
             ("03", "Set Project & Location", "Enter your PROJECT_ID & choose 'global'"),
         ],
         "callout_badge": "AUTHENTICATION CHECKLIST",
-        "callout_title": "Use Incognito & Select 'global' Location",
+        "callout_title": "Your Own Account & 'global' Location",
         "callout_body": (
-            "Copy the OAuth URL shown in agy and open it in a new tab of your SAME incognito window so you log in with your workshop student credentials. When prompted for location, select 'global'."
+            "Sign in with the same Google account that redeemed today's credit code. Already signed into a work org account? Open the OAuth link in an incognito tab instead. When prompted for location, select 'global'."
         ),
         "code_title": "agy — First-Time Authentication Flow",
         "code": (
@@ -449,7 +449,7 @@ SLIDES_DATA = [
             "SAY THIS:\n"
             "\"The first time `agy` launches, it asks how you want to authenticate:\n"
             "1. Select 'Use a Google Cloud project'.\n"
-            "2. It will print a URL. Copy that link, paste it into another tab in your SAME incognito browser window, sign in with your lab account, and copy the authorization code back into `agy`.\n"
+            "2. It will print a URL. Open it and sign in with the SAME Google account you used to redeem your credit code—that's the project we want to bill to. If you're already signed into a work org account in this browser, open the link in an incognito tab so you can pick the right account. Copy the authorization code back into `agy`.\n"
             "3. Next, paste your Google Cloud Project ID, and when it asks for Google Cloud Location, select `global`. Why `global`? Because frontier preview endpoints like Gemini 3.5 and Gemini 3.1 Flash Image route through the global endpoint on Vertex AI.\""
         ),
     },

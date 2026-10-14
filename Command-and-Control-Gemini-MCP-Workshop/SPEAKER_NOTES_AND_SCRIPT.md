@@ -146,11 +146,11 @@ SAY THIS:
 
 ### Slide 7: Objectives & Workshop Outcomes
 - **Module**: Module 1 • Concepts & Architecture
-- **Pacing**: `00:14 – 00:15 (1.5 min)`
+- **Pacing**: `00:14 – 00:15 (1 min)`
 
 #### 🎙️ Speaker Notes:
 ```text
-TIMING: 00:14 - 00:15 (1.5 mins)
+TIMING: 00:14 - 00:15 (1 min)
 GOAL: Set clear learning outcomes.
 
 SAY THIS:
@@ -267,7 +267,7 @@ GOAL: Walk everyone through the 3 authentication prompts inside `agy`.
 SAY THIS:
 "The first time `agy` launches, it asks how you want to authenticate:
 1. Select 'Use a Google Cloud project'.
-2. It will print a URL. Copy that link, paste it into another tab in your SAME incognito browser window, sign in with your lab account, and copy the authorization code back into `agy`.
+2. It will print a URL. Open it and sign in with the SAME Google account you used to redeem your credit code—that's the project we want to bill to. If you're already signed into a work org account in this browser, open the link in an incognito tab so you can pick the right account. Copy the authorization code back into `agy`.
 3. Next, paste your Google Cloud Project ID, and when it asks for Google Cloud Location, select `global`. Why `global`? Because frontier preview endpoints like Gemini 3.5 and Gemini 3.1 Flash Image route through the global endpoint on Vertex AI."
 ```
 
