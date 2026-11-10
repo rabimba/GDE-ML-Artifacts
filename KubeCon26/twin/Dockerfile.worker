@@ -1,0 +1,23 @@
+# Copyright 2026 Rabimba Karanjai & Contributors.
+# Licensed under the Apache License, Version 2.0.
+
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED="0"
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    fastapi>=0.115.0 \
+    uvicorn>=0.32.0 \
+    httpx>=0.27.0 \
+    pyzmq>=26.2.0 \
+    msgpack>=1.1.0
+
+COPY twin/tpu_worker_twin.py /app/tpu_worker_twin.py
+
+EXPOSE 8000 5557
+
+ENTRYPOINT ["python3", "/app/tpu_worker_twin.py"]

@@ -1,0 +1,160 @@
+# Copyright 2026 Rabimba Karanjai & Contributors.
+# Licensed under the Apache License, Version 2.0.
+#
+# Stage 3 Data Plane: llm-d DisaggregatedSet on GKE Cloud TPU v6e (1 Prefill TP=4 + 1 Decode TP=4).
+# Uses vllm/vllm-torchtpu:latest with Pallas PagedAttention (--block-size 256),
+# PYTHONHASHSEED="0", ZeroMQ KV-Events publisher on port 5557, and TPUConnectorHMA
+# backed by a 64Gi /dev/shm volume (48Gi pinned Host DRAM Tier-2 KV store).
+
+apiVersion: llm-d.ai/v1alpha1
+kind: DisaggregatedSet
+metadata:
+  name: qwen3-torchtpu-disagg
+  namespace: fleetkv-serving
+  labels:
+    app: fleetkv-torchtpu-disagg
+spec:
+  prefill:
+    replicas: 1
+    leaderWorkerSet:
+      size: 1
+      workerTemplate:
+        metadata:
+          labels:
+            app: fleetkv-torchtpu-disagg
+            llm-d.ai/role: prefill
+        spec:
+          nodeSelector:
+            cloud.google.com/gke-tpu-accelerator: tpu-v6e-slice
+            cloud.google.com/gke-tpu-topology: 2x2
+            fleetkv.io/pool: disagg
+          volumes:
+            - name: hma-dshm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Gi
+            - name: hf-cache
+              emptyDir:
+                sizeLimit: 120Gi
+          containers:
+            - name: vllm-torchtpu-prefill
+              image: vllm/vllm-torchtpu:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PYTHONHASHSEED
+                  value: "0"
+                - name: PJRT_DEVICE
+                  value: "TPU"
+                - name: VLLM_USE_V1
+                  value: "1"
+                - name: VLLM_TORCH_COMPILE_LEVEL
+                  value: "2"
+              args:
+                - "serve"
+                - "Qwen/Qwen3-30B-A3B-FP8"
+                - "--host"
+                - "0.0.0.0"
+                - "--port"
+                - "8000"
+                - "--tensor-parallel-size"
+                - "4"
+                - "--block-size"
+                - "256"
+                - "--max-model-len"
+                - "65536"
+                - "--enable-prefix-caching"
+                - "--kv-events-config"
+                - '{"enable_kv_cache_events":true,"publisher":"zmq","endpoint":"tcp://*:5557","topic":"kv-events"}'
+                - "--kv-transfer-config"
+                - '{"kv_connector":"TPUConnectorHMA","kv_role":"kv_producer","kv_buffer_device":"shm","kv_buffer_size":51539607552,"mtu":8896}'
+              ports:
+                - name: http
+                  containerPort: 8000
+                  protocol: TCP
+                - name: zmq-kv-events
+                  containerPort: 5557
+                  protocol: TCP
+              resources:
+                requests:
+                  google.com/tpu: "4"
+                  cpu: "32"
+                  memory: "160Gi"
+                limits:
+                  google.com/tpu: "4"
+                  cpu: "32"
+                  memory: "160Gi"
+              volumeMounts:
+                - name: hma-dshm
+                  mountPath: /dev/shm
+                - name: hf-cache
+                  mountPath: /root/.cache/huggingface
+
+  decode:
+    replicas: 1
+    leaderWorkerSet:
+      size: 1
+      workerTemplate:
+        metadata:
+          labels:
+            app: fleetkv-torchtpu-disagg
+            llm-d.ai/role: decode
+        spec:
+          nodeSelector:
+            cloud.google.com/gke-tpu-accelerator: tpu-v6e-slice
+            cloud.google.com/gke-tpu-topology: 2x2
+            fleetkv.io/pool: disagg
+          volumes:
+            - name: hma-dshm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Gi
+            - name: hf-cache
+              emptyDir:
+                sizeLimit: 120Gi
+          containers:
+            - name: vllm-torchtpu-decode
+              image: vllm/vllm-torchtpu:latest
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PYTHONHASHSEED
+                  value: "0"
+                - name: PJRT_DEVICE
+                  value: "TPU"
+                - name: VLLM_USE_V1
+                  value: "1"
+                - name: VLLM_TORCH_COMPILE_LEVEL
+                  value: "2"
+              args:
+                - "serve"
+                - "Qwen/Qwen3-30B-A3B-FP8"
+                - "--host"
+                - "0.0.0.0"
+                - "--port"
+                - "8000"
+                - "--tensor-parallel-size"
+                - "4"
+                - "--block-size"
+                - "256"
+                - "--max-model-len"
+                - "65536"
+                - "--enable-prefix-caching"
+                - "--kv-transfer-config"
+                - '{"kv_connector":"TPUConnectorHMA","kv_role":"kv_consumer","kv_buffer_device":"tpu_hbm","mtu":8896}'
+              ports:
+                - name: http
+                  containerPort: 8000
+                  protocol: TCP
+              resources:
+                requests:
+                  google.com/tpu: "4"
+                  cpu: "32"
+                  memory: "160Gi"
+                limits:
+                  google.com/tpu: "4"
+                  cpu: "32"
+                  memory: "160Gi"
+              volumeMounts:
+                - name: hma-dshm
+                  mountPath: /dev/shm
+                - name: hf-cache
+                  mountPath: /root/.cache/huggingface

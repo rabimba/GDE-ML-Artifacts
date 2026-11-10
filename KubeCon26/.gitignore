@@ -1,0 +1,16 @@
+# Binaries & build outputs
+router/bin/
+slides/node_modules/
+slides/dist/
+
+# Python caches & virtualenvs
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# OS / Editor
+.DS_Store
+*.swp

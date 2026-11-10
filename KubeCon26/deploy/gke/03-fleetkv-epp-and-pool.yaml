@@ -1,0 +1,241 @@
+# Copyright 2026 Rabimba Karanjai & Contributors.
+# Licensed under the Apache License, Version 2.0.
+#
+# FleetKV GAIE Control Plane:
+# - FleetKV Endpoint Picker (EPP) Deployment (ext_proc gRPC :9002 + Prometheus/Admin :9090)
+# - Naive Sticky EPP Deployment (Stage 2 comparison pool)
+# - Gateway API Inference Extension v1 InferencePools
+# - GKE Internal L7 Regional Load Balancer Gateway (gke-l7-rilb) + 3-Way Weighted HTTPRoute
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fleetkv-epp-sa
+  namespace: fleetkv-serving
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fleetkv-epp-pod-reader
+  namespace: fleetkv-serving
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fleetkv-epp-pod-reader-binding
+  namespace: fleetkv-serving
+subjects:
+  - kind: ServiceAccount
+    name: fleetkv-epp-sa
+    namespace: fleetkv-serving
+roleRef:
+  kind: Role
+  name: fleetkv-epp-pod-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleetkv-naive-epp
+  namespace: fleetkv-serving
+  labels:
+    app: fleetkv-naive-epp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fleetkv-naive-epp
+  template:
+    metadata:
+      labels:
+        app: fleetkv-naive-epp
+    spec:
+      serviceAccountName: fleetkv-epp-sa
+      containers:
+        - name: fleetkv-epp
+          image: ghcr.io/rkaranjai/fleetkv-epp:kubecon26
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PYTHONHASHSEED
+              value: "0"
+          args:
+            - "--grpc-port=9002"
+            - "--metrics-port=9090"
+            - "--policy=naive_sticky"
+            - "--pool=agg"
+            - "--block-size=256"
+            - "--zmq-role-selector=llm-d.ai/role=agg"
+          ports:
+            - name: grpc-extproc
+              containerPort: 9002
+            - name: http-metrics
+              containerPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleetkv-naive-epp-svc
+  namespace: fleetkv-serving
+spec:
+  selector:
+    app: fleetkv-naive-epp
+  ports:
+    - name: grpc-extproc
+      port: 9002
+      targetPort: 9002
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleetkv-epp
+  namespace: fleetkv-serving
+  labels:
+    app: fleetkv-epp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fleetkv-epp
+  template:
+    metadata:
+      labels:
+        app: fleetkv-epp
+    spec:
+      serviceAccountName: fleetkv-epp-sa
+      containers:
+        - name: fleetkv-epp
+          image: ghcr.io/rkaranjai/fleetkv-epp:kubecon26
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PYTHONHASHSEED
+              value: "0"
+          args:
+            - "--grpc-port=9002"
+            - "--metrics-port=9090"
+            - "--policy=fleetkv_fit"
+            - "--pool=disagg"
+            - "--block-size=256"
+            - "--safety-reserve-blocks=24"
+            - "--peak-prefill-tokens=12288"
+            - "--zmq-role-selector=llm-d.ai/role=prefill"
+          ports:
+            - name: grpc-extproc
+              containerPort: 9002
+            - name: http-metrics
+              containerPort: 9090
+          resources:
+            requests:
+              cpu: "4"
+              memory: "4Gi"
+            limits:
+              cpu: "8"
+              memory: "8Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fleetkv-epp-svc
+  namespace: fleetkv-serving
+spec:
+  selector:
+    app: fleetkv-epp
+  ports:
+    - name: grpc-extproc
+      port: 9002
+      targetPort: 9002
+    - name: http-metrics
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: vllm-agg-naive-pool
+  namespace: fleetkv-serving
+spec:
+  targetPorts:
+    - number: 8000
+  selector:
+    matchLabels:
+      app: vllm-torchtpu-agg
+  endpointPickerRef:
+    group: ""
+    kind: Service
+    name: fleetkv-naive-epp-svc
+    port:
+      number: 9002
+    failureMode: FailOpen
+---
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  name: fleetkv-disagg-pool
+  namespace: fleetkv-serving
+spec:
+  targetPorts:
+    - number: 8000
+  selector:
+    matchLabels:
+      app: fleetkv-torchtpu-disagg
+  endpointPickerRef:
+    group: ""
+    kind: Service
+    name: fleetkv-epp-svc
+    port:
+      number: 9002
+    failureMode: FailClose
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: fleetkv-inference-gateway
+  namespace: fleetkv-serving
+spec:
+  gatewayClassName: gke-l7-rilb
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: agent-fleet-route
+  namespace: fleetkv-serving
+spec:
+  parentRefs:
+    - name: fleetkv-inference-gateway
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1
+      timeouts:
+        request: 300s
+        backendRequest: 300s
+      backendRefs:
+        # Stage 1: Stateless K8s ClusterIP Service (Round-Robin)
+        - group: ""
+          kind: Service
+          name: vllm-agg-roundrobin-svc
+          port: 8000
+          weight: 100
+        # Stage 2: Naive Longest-Prefix Sticky InferencePool
+        - group: inference.networking.k8s.io
+          kind: InferencePool
+          name: vllm-agg-naive-pool
+          port: 8000
+          weight: 0
+        # Stage 3: FleetKV Fit-Aware + TorchTPU Disaggregated InferencePool
+        - group: inference.networking.k8s.io
+          kind: InferencePool
+          name: fleetkv-disagg-pool
+          port: 8000
+          weight: 0

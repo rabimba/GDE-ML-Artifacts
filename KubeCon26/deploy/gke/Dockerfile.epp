@@ -1,0 +1,23 @@
+# Copyright 2026 Rabimba Karanjai & Contributors.
+# Licensed under the Apache License, Version 2.0.
+
+FROM golang:1.23-bookworm AS builder
+
+WORKDIR /src
+COPY router/go.mod router/go.sum ./
+RUN go mod download
+
+COPY router/ ./
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/fleetkv-epp ./cmd/fleetkv-epp
+
+FROM gcr.io/distroless/static-debian12:nonroot
+
+ENV PYTHONHASHSEED="0"
+
+COPY --from=builder /out/fleetkv-epp /fleetkv-epp
+
+EXPOSE 9002 9090
+USER nonroot:nonroot
+
+ENTRYPOINT ["/fleetkv-epp"]

@@ -1,0 +1,243 @@
+# Copyright 2026 Rabimba Karanjai & Contributors.
+# Licensed under the Apache License, Version 2.0.
+#
+# Physics-Accurate Local Digital Twin for KubeCon 2026 Live Rehearsal & CI Gates.
+# Boots 4 Aggregated workers (agg-0..agg-3, ZMQ ports 5557..5560) +
+# Disaggregated Pool (prefill-0 w/ HMA DRAM + decode-0 + decode-1),
+# the compiled Go fleetkv-epp GAIE router, and real Envoy v1.31 proxy on :8080.
+
+services:
+  agg-0:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-agg-0
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=agg-0"
+      - "--role=agg"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.11:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8001:8000"
+      - "5557:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.11
+
+  agg-1:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-agg-1
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=agg-1"
+      - "--role=agg"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.12:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8002:8000"
+      - "5558:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.12
+
+  agg-2:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-agg-2
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=agg-2"
+      - "--role=agg"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.13:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8003:8000"
+      - "5559:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.13
+
+  agg-3:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-agg-3
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=agg-3"
+      - "--role=agg"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.14:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8004:8000"
+      - "5560:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.14
+
+  prefill-0:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-prefill-0
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=prefill-0"
+      - "--role=prefill"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.21:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+      - "--enable-hma-dram"
+      - "--dram-capacity-blocks=4096"
+    ports:
+      - "8005:8000"
+      - "5561:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.21
+
+  prefill-1:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-prefill-1
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=prefill-1"
+      - "--role=prefill"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.22:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+      - "--enable-hma-dram"
+      - "--dram-capacity-blocks=4096"
+    ports:
+      - "8008:8000"
+      - "5564:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.22
+
+  decode-0:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-decode-0
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=decode-0"
+      - "--role=decode"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.31:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8006:8000"
+      - "5562:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.31
+
+  decode-1:
+    build:
+      context: .
+      dockerfile: twin/Dockerfile.worker
+    container_name: fleetkv-decode-1
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--pod-id=decode-1"
+      - "--role=decode"
+      - "--port=8000"
+      - "--zmq-pub-port=5557"
+      - "--advertise-addr=172.28.10.32:8000"
+      - "--block-size=256"
+      - "--hbm-capacity-blocks=360"
+    ports:
+      - "8007:8000"
+      - "5563:5557"
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.32
+
+  fleetkv-epp:
+    build:
+      context: .
+      dockerfile: deploy/gke/Dockerfile.epp
+    container_name: fleetkv-epp
+    environment:
+      PYTHONHASHSEED: "0"
+    command:
+      - "--grpc-port=9002"
+      - "--metrics-port=9090"
+      - "--policy=round_robin"
+      - "--pool=agg"
+      - "--block-size=256"
+      - "--safety-reserve-blocks=24"
+      - "--peak-prefill-tokens=12288"
+      - "--zmq-endpoints=tcp://172.28.10.11:5557,tcp://172.28.10.12:5557,tcp://172.28.10.13:5557,tcp://172.28.10.14:5557,tcp://172.28.10.21:5557,tcp://172.28.10.22:5557,tcp://172.28.10.31:5557,tcp://172.28.10.32:5557"
+      - "--static-pods=agg-0=172.28.10.11:8000:agg:360,agg-1=172.28.10.12:8000:agg:360,agg-2=172.28.10.13:8000:agg:360,agg-3=172.28.10.14:8000:agg:360,prefill-0=172.28.10.21:8000:prefill:360,prefill-1=172.28.10.22:8000:prefill:360,decode-0=172.28.10.31:8000:decode:360,decode-1=172.28.10.32:8000:decode:360"
+    ports:
+      - "9002:9002"
+      - "9090:9090"
+    depends_on:
+      - agg-0
+      - agg-1
+      - agg-2
+      - agg-3
+      - prefill-0
+      - prefill-1
+      - decode-0
+      - decode-1
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.50
+
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    container_name: fleetkv-envoy
+    volumes:
+      - ./twin/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    command: ["-c", "/etc/envoy/envoy.yaml", "--log-level", "warn"]
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    depends_on:
+      - fleetkv-epp
+    networks:
+      fleetkv_net:
+        ipv4_address: 172.28.10.60
+
+networks:
+  fleetkv_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.10.0/24
