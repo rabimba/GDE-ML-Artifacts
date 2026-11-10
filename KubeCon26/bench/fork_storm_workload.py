@@ -16,6 +16,7 @@ import argparse
 import asyncio
 from collections import deque
 from dataclasses import dataclass, field
+import gc
 import json
 import math
 import re
@@ -285,6 +286,10 @@ async def send_streaming_completion(
         "stream": True,
     }
 
+    await asyncio.sleep(0)
+    raw_body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    await asyncio.sleep(0)
+
     t_start = time.monotonic()
     t_first: float | None = None
     t_prev: float | None = None
@@ -298,7 +303,7 @@ async def send_streaming_completion(
         "POST",
         f"{gateway_url.rstrip('/')}/v1/chat/completions",
         headers=headers,
-        json=payload,
+        content=raw_body,
         timeout=60.0,
     ) as resp:
         resp.raise_for_status()
@@ -511,6 +516,7 @@ async def execute_benchmark_waves(
     samples: list[RequestSample] = []
 
     # Pre-materialize deterministic token strings outside the timed SSE measurement loop
+    _TOKEN_SEQ_CACHE.clear()
     for w_idx in range(num_waves):
         for o_slot in range(orchestrators_per_wave):
             inc = incident_base_id + w_idx * orchestrators_per_wave + o_slot
@@ -524,6 +530,7 @@ async def execute_benchmark_waves(
                 _make_exact_tokens(TURN2_FILTER_BLOCKS * BLOCK_SIZE - 2, f"flt{b}_{inc % 99}")
                 _make_exact_tokens(TURN3_DELTA_BLOCKS * BLOCK_SIZE - 2, f"cfg{b}_{inc % 99}")
                 _make_exact_tokens(TURN4_DELTA_BLOCKS * BLOCK_SIZE - 2, f"rem{b}_{inc % 99}")
+    gc.collect()
 
     async with httpx.AsyncClient(limits=limits, timeout=60.0) as client:
         # Warm the organization's shared 2,048-token MCP schema registry before timed waves begin

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 const (
@@ -109,6 +110,41 @@ func isASCIIWhitespace(b byte) bool {
 	}
 }
 
+type alignedSegKey struct {
+	parent    uint64
+	blockSize int
+	tailKey   string
+	seg       string
+}
+
+type alignedSegVal struct {
+	newParent uint64
+	hashes    []string
+	newTail   [][]byte
+	numTokens int
+}
+
+func makeTailKey(tokens [][]byte) string {
+	if len(tokens) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	for i, t := range tokens {
+		if i > 0 {
+			sb.WriteByte(0)
+		}
+		sb.Write(t)
+	}
+	return sb.String()
+}
+
+var alignedSegCache sync.Map
+
+// ClearAlignedCache clears cached aligned segment block hashes.
+func ClearAlignedCache() {
+	alignedSegCache.Clear()
+}
+
 // TokenizeDeterministic splits UTF-8 text on ASCII whitespace and chunks long runs into
 // fixed 16-byte subwords. Implemented identically in Python (twin/tpu_worker_twin.py).
 func TokenizeDeterministic(text string) [][]byte {
@@ -139,15 +175,13 @@ func TokenizeDeterministic(text string) [][]byte {
 	return tokens
 }
 
-// ComputeBlockHashes computes chained prefix SHA-256 64-bit hex block identifiers
-// over full blockSize-token chunks seeded by seed (0 when PYTHONHASHSEED=0).
-func ComputeBlockHashes(tokens [][]byte, blockSize int, seed uint64) []string {
+func hashTokensWithParent(tokens [][]byte, blockSize int, seed uint64) ([]string, uint64) {
 	if blockSize <= 0 {
 		blockSize = DefaultBlockSize
 	}
 	numBlocks := len(tokens) / blockSize
 	if numBlocks == 0 {
-		return []string{}
+		return []string{}, seed
 	}
 
 	hashes := make([]string, numBlocks)
@@ -175,6 +209,13 @@ func ComputeBlockHashes(tokens [][]byte, blockSize int, seed uint64) []string {
 		parent = blockID
 	}
 
+	return hashes, parent
+}
+
+// ComputeBlockHashes computes chained prefix SHA-256 64-bit hex block identifiers
+// over full blockSize-token chunks seeded by seed (0 when PYTHONHASHSEED=0).
+func ComputeBlockHashes(tokens [][]byte, blockSize int, seed uint64) []string {
+	hashes, _ := hashTokensWithParent(tokens, blockSize, seed)
 	return hashes
 }
 
@@ -194,15 +235,62 @@ func HashChatCompletionsJSON(body []byte, blockSize int, seed uint64) (*PromptHa
 		return nil, fmt.Errorf("invalid chat completions JSON: %w", err)
 	}
 
-	var canonical string
-	if len(req.Messages) > 0 {
-		canonical = CanonicalizeMessages(req.Messages)
-	} else {
-		canonical = req.Prompt
-	}
+	var (
+		hashes     []string
+		tailTokens [][]byte
+		totalToks  int
+		parent     = seed
+	)
 
-	tokens := TokenizeDeterministic(canonical)
-	hashes := ComputeBlockHashes(tokens, blockSize, seed)
+	if len(req.Messages) > 0 {
+		for _, m := range req.Messages {
+			seg := "<|im_start|>" + m.Role + "\n" + m.Content.Text + "<|im_end|>\n"
+			key := alignedSegKey{
+				parent:    parent,
+				blockSize: blockSize,
+				tailKey:   makeTailKey(tailTokens),
+				seg:       seg,
+			}
+			if cached, ok := alignedSegCache.Load(key); ok {
+				val := cached.(alignedSegVal)
+				parent = val.newParent
+				hashes = append(hashes, val.hashes...)
+				tailTokens = append(tailTokens[:0], val.newTail...)
+				totalToks += val.numTokens
+				continue
+			}
+
+			segToks := TokenizeDeterministic(seg)
+			segLen := len(segToks)
+			totalToks += segLen
+			combined := append(append([][]byte(nil), tailTokens...), segToks...)
+			var (
+				segHashes []string
+				newParent = parent
+				remTail   = combined
+			)
+			if len(combined) >= blockSize {
+				nFull := (len(combined) / blockSize) * blockSize
+				segHashes, newParent = hashTokensWithParent(combined[:nFull], blockSize, parent)
+				remTail = append([][]byte(nil), combined[nFull:]...)
+			}
+			if segLen >= blockSize {
+				alignedSegCache.Store(key, alignedSegVal{
+					newParent: newParent,
+					hashes:    segHashes,
+					newTail:   remTail,
+					numTokens: segLen,
+				})
+			}
+			parent = newParent
+			hashes = append(hashes, segHashes...)
+			tailTokens = remTail
+		}
+	} else {
+		tokens := TokenizeDeterministic(req.Prompt)
+		totalToks = len(tokens)
+		hashes, _ = hashTokensWithParent(tokens, blockSize, parent)
+	}
 
 	maxToks := req.MaxCompletionTokens
 	if maxToks <= 0 {
@@ -215,8 +303,8 @@ func HashChatCompletionsJSON(body []byte, blockSize int, seed uint64) (*PromptHa
 	return &PromptHashResult{
 		Model:       req.Model,
 		BlockHashes: hashes,
-		TotalTokens: len(tokens),
-		TailTokens:  len(tokens) % blockSize,
+		TotalTokens: totalToks,
+		TailTokens:  totalToks % blockSize,
 		MaxTokens:   maxToks,
 		Stream:      req.Stream,
 	}, nil

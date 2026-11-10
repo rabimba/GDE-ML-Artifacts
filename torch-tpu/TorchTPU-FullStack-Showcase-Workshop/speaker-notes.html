@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speaker Notes &amp; Teleprompter — Full-Stack PyTorch on Cloud TPU Workshop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Google Sans', system-ui, sans-serif;
+      background: #0F1117;
+      color: #E8EAED;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: #181B24;
+      border-bottom: 2px solid #1A73E8;
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .ctrl-row { display: flex; align-items: center; gap: 10px; }
+    button {
+      background: #1A73E8; color: #fff; border: none;
+      padding: 7px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: #174EA6; }
+    #live-banner {
+      background: #1E2436; border: 2px solid #4285F4;
+      margin: 18px 24px; padding: 18px 22px; border-radius: 12px;
+    }
+    #live-banner h3 { color: #8AB4F8; margin-bottom: 6px; font-size: 1.2rem; }
+    #live-notes { white-space: pre-wrap; font-size: 1.15rem; line-height: 1.55; color: #FFF; }
+    #live-next { margin-top: 12px; padding-top: 10px; border-top: 1px solid #3C4043; color: #FBBC04; font-weight: 600; }
+    .container { max-width: 980px; margin: 0 auto; padding: 12px 24px 60px 24px; }
+    .note-card {
+      background: #181B24; border: 1.5px solid #2D3242;
+      border-radius: 12px; padding: 18px 22px; margin-bottom: 16px;
+    }
+    .note-card.active-card { border-color: #4285F4; box-shadow: 0 0 0 2px rgba(66,133,244,0.35); }
+    .note-hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .badge-num { background: #1A73E8; color: #fff; padding: 3px 10px; border-radius: 99px; font-weight: 700; font-size: 0.8rem; }
+    .badge-mod { color: #8AB4F8; font-size: 0.85rem; font-weight: 600; }
+    .badge-time { color: #FBBC04; font-size: 0.85rem; font-weight: 600; margin-left: auto; }
+    .jump-btn { background: #2D3242; font-size: 0.75rem; padding: 4px 10px; }
+    .note-card h2 { font-size: 1.25rem; margin-bottom: 10px; color: #fff; }
+    .note-body { white-space: pre-wrap; font-size: 1.02rem; line-height: 1.55; color: #D2D6DF; }
+    .cmd-box { margin-top: 12px; background: #0B0D12; border: 1px solid #3C4043; border-radius: 8px; overflow: hidden; }
+    .cmd-hdr { background: #20232D; padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #9AA0A6; }
+    .cmd-box pre { padding: 10px 12px; font-family: 'Roboto Mono', monospace; font-size: 0.82rem; white-space: pre-wrap; color: #81C995; margin: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <strong>🎤 Live Speaker Console &amp; Full Talk Script</strong>
+      <span style="color:#9AA0A6; font-size:0.85rem; margin-left:10px;">Synced with Main Presentation Window</span>
+    </div>
+    <div class="ctrl-row">
+      <button onclick="stepSlide(-1)">◀ Prev Slide</button>
+      <span id="console-counter" style="font-weight:700; min-width:80px; text-align:center;">Slide 1 / 32</span>
+      <button onclick="stepSlide(1)">Next Slide ▶</button>
+    </div>
+  </header>
+
+  <div id="live-banner">
+    <h3 id="live-title">Current Slide: 1</h3>
+    <div id="live-notes"></div>
+    <div id="live-next">Next Slide: 2</div>
+  </div>
+
+  <div class="container">
+    <h2 style="margin-bottom:14px; color:#8AB4F8;">All Slides — Continuous Speaker Script &amp; Copy-Paste Prompts</h2>
+    
+        <div class="note-card" id="note-slide-1">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 1 / 20</span>
+            <span class="badge-mod">Module 0 • Welcome &amp; Vision</span>
+            <span class="badge-time">⏱️ 00:00 – 00:02 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(1)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Full-Stack PyTorch on Cloud TPU: From Domain LoRA &amp; Pallas Kernels to Prefix-Cached Serving</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Welcome the audience with high energy! Ensure the cover slide is projected clearly.
+
+🗣️ SAY VERBATIM:
+&quot;Welcome everyone! Today we are going beyond isolated micro-benchmarks to walk through a complete, end-to-end production AI story on Google Cloud TPU using native PyTorch (`torch_tpu`). We will see how a developer or an AI coding agent can start in a standard Google Colab notebook connected over MCP to a live Cloud TPU (`tpu7x`), adapt multiple open-weight models to specialized enterprise domains like SecOps and FinTech PCI-DSS compliance using LoRA, inspect hardware bottlenecks with XProf, inject custom Pallas kernels directly into Hugging Face Transformer layers, and serve the merged checkpoints with SGLang RadixAttention prefix caching and continuous batching.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-2">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 2 / 20</span>
+            <span class="badge-mod">Module 0 • Speaker Intro</span>
+            <span class="badge-time">⏱️ 00:02 – 00:04 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(2)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Rabimba Karanjai</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Briefly introduce yourself and why this workflow matters in production AI.
+
+🗣️ SAY VERBATIM:
+&quot;I&#x27;m Rabimba Karanjai, a Google Developer Expert for AI/ML. Building production LLM systems, automated compliance auditors, and developer guardrails taught me one lesson: model quality, kernel latency, and serving economics cannot live in separate silos. If you fine-tune a domain model that triggers XLA recompilations or re-computes 1,200 tokens of policy context on every request, your tail latency explodes. Today&#x27;s showcase unifies those layers into one repeatable playbook.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-3">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 3 / 20</span>
+            <span class="badge-mod">Module 0 • Notebooks &amp; Artifacts</span>
+            <span class="badge-time">⏱️ 00:04 – 00:06 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(3)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Workshop Notebooks, Demos &amp; Agent Suite</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Point attendees to the three artifacts in the repository.
+
+🗣️ SAY VERBATIM:
+&quot;All of today&#x27;s code lives in three self-contained Colab notebooks (`04_specguard_e2e_app.ipynb`, `05_autokernel_pallas_lab.ipynb`, and our master notebook `06_end_to_end_showcase_and_domain_adaptation.ipynb`) plus standalone CLI scripts under `demos/05_specguard_app`, `06_autokernel_app`, and `07_domain_adaptation_showcase`. Every number on these slides was captured live on a Cloud TPU (`tpu7x` Chip 0).&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-4">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 4 / 20</span>
+            <span class="badge-mod">Module 1 • The Enterprise Challenge</span>
+            <span class="badge-time">⏱️ 00:06 – 00:09 (3m)</span>
+            <button class="jump-btn" onclick="syncToSlide(4)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Why Do Enterprise AI Guardrails Hit a Wall in Production?</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Ask the audience to raise hands for A, B, or C.
+
+🗣️ SAY VERBATIM:
+&quot;Let&#x27;s start with the real-world problem. Suppose you are building an automated compliance and code auditing platform for a FinTech or enterprise engineering org. First, base models don&#x27;t know your strict output schema or domain rules—like flagging unmasked PANs under PCI-DSS 3.3.1 or catching deprecated `torch_xla` calls. Second, if you run naive eager PyTorch on TPU, every tiny op dispatches separately and hammers HBM. Third, when you audit 16 files in a pull request, you re-compute the exact same 1,280-token policy header 16 times!&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-5">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 5 / 20</span>
+            <span class="badge-mod">Module 1 • The Three Pillars</span>
+            <span class="badge-time">⏱️ 00:09 – 00:12 (3m)</span>
+            <button class="jump-btn" onclick="syncToSlide(5)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Anatomy of an AI Coding Agent</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Walk across the three pillars on screen.
+
+🗣️ SAY VERBATIM:
+&quot;Our solution rests on three pillars. Pillar 1 is `torch_tpu`: the TPU is simply `torch.device(&#x27;tpu&#x27;)`, letting us run Hugging Face `peft` LoRA fine-tuning across multiple domain models with zero `torch_xla` boilerplate. Pillar 2 is hardware-aware optimization: using XProf and `torch.tpu.pallas.jax_op` to fuse memory-bound ops in TPU VMEM and hot-patch Hugging Face models in-place. Pillar 3 is production serving with `sglang-torchtpu` and `vllm-torchtpu`, exploiting RadixAttention prefix caching and continuous batching.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-6">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 6 / 20</span>
+            <span class="badge-mod">Module 1 • End-to-End Architecture</span>
+            <span class="badge-time">⏱️ 00:12 – 00:16 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(6)">Sync Projector Here ▶</button>
+          </div>
+          <h2>The 4-Stage Full-Stack TorchTPU Architecture</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Point to the 4-layer architecture diagram on the right (remind attendees they can click any chart in the web deck to zoom in full-screen).
+
+🗣️ SAY VERBATIM:
+&quot;Look at how the four stages connect on the right. At the top, `colab-mcp` and `tpu-agent-suite@0.7.0` give both humans and AI agents direct execution access to the TPU pod. In Stage 2, we run multi-model LoRA fine-tuning in `bfloat16` on `torch.device(&#x27;tpu&#x27;)`. In Stage 3, we profile with XProf and hot-patch 73 submodules inside the Hugging Face model with custom Pallas kernels. And in Stage 4, we hand the merged checkpoint to SGLang and vLLM for high-throughput serving.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-7">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 7 / 20</span>
+            <span class="badge-mod">Module 1 • Interactive Developer Setup</span>
+            <span class="badge-time">⏱️ 00:16 – 00:20 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(7)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Developer Workflow: Colab MCP + TPU Agent Suite</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Highlight the PJRT initialization order in the code box on the right—this is a critical practical tip for developers.
+
+🗣️ SAY VERBATIM:
+&quot;Here is a golden developer tip when combining `torch_tpu` and JAX Pallas on the same chip. Both PyTorch and JAX talk to the TPU through `libtpu` and PJRT. If you import `jax` before `torch_tpu` initializes its PJRT client, or if `TPU_VISIBLE_DEVICES` conflicts with `TPU_VISIBLE_CHIPS`, they will fight over the `/dev/vfio` device lock. By popping `TPU_VISIBLE_DEVICES`, pinning `TPU_VISIBLE_CHIPS=&#x27;0&#x27;`, and allocating one tensor on `torch.device(&#x27;tpu&#x27;)` followed by `torch.accelerator.synchronize()` before importing `jax`, both frameworks share the chip seamlessly!&quot;</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre>// 1. .opencode/opencode.jsonc
+{
+  &quot;mcp&quot;: {
+    &quot;colab-mcp&quot;: {
+      &quot;type&quot;: &quot;local&quot;,
+      &quot;command&quot;: [&quot;uvx&quot;, &quot;colab-mcp&quot;]
+    }
+  }
+}
+
+# 2. Single-Chip PJRT Sharing (PyTorch + JAX Pallas)
+os.environ.pop(&quot;TPU_VISIBLE_DEVICES&quot;, None)
+os.environ[&quot;TPU_VISIBLE_CHIPS&quot;] = &quot;0&quot;
+os.environ[&quot;TPU_CHIPS_PER_HOST_BOUNDS&quot;] = &quot;1,1,1&quot;
+import torch, torch_tpu
+_ = torch.ones(1, device=&quot;tpu&quot;)  # Acquire PJRT first!
+torch.accelerator.synchronize()
+import jax  # Shares PJRT client with torch_tpu</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-8">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 8 / 20</span>
+            <span class="badge-mod">Module 1 • Native torch_tpu vs Legacy Stack</span>
+            <span class="badge-time">⏱️ 00:20 – 00:23 (3m)</span>
+            <button class="jump-btn" onclick="syncToSlide(8)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Native PyTorch on TPU (torch_tpu) &amp; What to Avoid on Cloud TPU</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Contrast the blue card (`torch_tpu` best practices) with the red card (anti-patterns).
+
+🗣️ SAY VERBATIM:
+&quot;Let&#x27;s make sure everyone has the mental model of `torch_tpu`. First, `torch_xla` is deprecated—everything we do uses `import torch, torch_tpu` and `torch.device(&#x27;tpu&#x27;)`. Second, TPUs love static shapes and `bfloat16`. When we pad our batches to fixed buckets like `(4, 256)` or `(6, 128)` and mask padding tokens with `-100` in the loss, XLA compiles the training graph once on Step 0 and flies through the remaining steps without a single recompilation.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-9">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 9 / 20</span>
+            <span class="badge-mod">Module 2 • Multi-Model Domain Adaptation</span>
+            <span class="badge-time">⏱️ 00:23 – 00:25 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(9)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Stage 1: Multi-Model Domain Adaptation</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Transition to Module 2—showing how domain adaptation works across multiple models and domains.
+
+🗣️ SAY VERBATIM:
+&quot;Now let&#x27;s dive into Stage 1 of our showcase: Multi-Model Domain Adaptation on Cloud TPU. A common question from engineering teams is: does this workflow only work for one toy model, or can we specialize multiple models for different enterprise compliance domains? Let&#x27;s look at two distinct models and domains we trained on `tpu7x` Chip 0.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-10">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 10 / 20</span>
+            <span class="badge-mod">Module 2 • Two Models, Two Enterprise Domains</span>
+            <span class="badge-time">⏱️ 00:25 – 00:29 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(10)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Specializing Two Distinct Models on `torch.device(&#x27;tpu&#x27;)`</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Compare Model A (`Qwen/Qwen3-0.6B`) on the left and Model B (`Qwen/Qwen2.5-0.5B-Instruct`) on the right.
+
+🗣️ SAY VERBATIM:
+&quot;On the left, we adapted `Qwen/Qwen3-0.6B` to act as a SecOps and PyTorch-TPU Migration Auditor—catching SQL injection, hardcoded secrets, `.item()` sync stalls, and deprecated `torch_xla` code. In 40 steps at `181.7 ms/step`, loss dropped from `2.8536` to `0.0118` and perplexity collapsed from `17.35` to `1.01`. On the right, we took a different architecture—`Qwen/Qwen2.5-0.5B-Instruct`—and adapted it on FinTech PCI-DSS v4.0 and ISO-20022 payment compliance rules. In 30 steps at `105.2 ms/step`, loss dropped from `3.9182` to `0.0021` and domain perplexity collapsed from `50.31` to `1.00`, emitting exact rule citations like `PCI-DSS-3.3.1`!&quot;</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre># Prompt Input:
+import torch_xla.core.xla_model as xm
+dev = xm.xla_device()
+
+# Adapted Model Output:
+[CRITICAL | TPU-DEP-01] Deprecated torch_xla
+import detected. Replace with:
+import torch, torch_tpu; torch.device(&#x27;tpu&#x27;)
+
+# Prompt Input:
+logger.info(f&#x27;PAN={card_num} CVV={cvv}&#x27;)
+
+# Adapted Model Output:
+SEVERITY: CRITICAL | RULE: PCI-DSS-3.3.1 |
+VIOLATION: Full PAN and CVV logged in cleartext.
+REMEDIATION: Mask PAN (`tokenize_pan(card_num)`)</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-11">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 11 / 20</span>
+            <span class="badge-mod">Module 2 • Empirical Convergence &amp; Perplexity</span>
+            <span class="badge-time">⏱️ 00:29 – 00:33 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(11)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Empirical Results: Multi-Model LoRA &amp; In-Model Pallas Patching</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Click on `domain_adaptation_showcase.png` to open the full-screen lightbox so the audience can inspect all three panels clearly.
+
+🗣️ SAY VERBATIM:
+&quot;Here is the empirical plot generated directly from `domain_adapt_and_pallas_patch.py` on `tpu7x` Chip 0. In Panel 1, you see the step-by-step loss curves for both `Qwen3-0.6B` and `Qwen2.5-0.5B`. In Panel 2, you see the dramatic collapse in domain perplexity—from `17.35` down to `1.01` and from `50.31` down to `1.00`. And in Panel 3, you see what happens when we hot-patch the adapted Hugging Face model in-place with custom Pallas kernels: a `4.81x` speedup across the 24-layer RMSNorm stack and a `1.21x` end-to-end forward-pass speedup across the entire 24-layer Transformer!&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-12">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 12 / 20</span>
+            <span class="badge-mod">Module 2 • Before vs After Domain Adaptation</span>
+            <span class="badge-time">⏱️ 00:33 – 00:36 (3m)</span>
+            <button class="jump-btn" onclick="syncToSlide(12)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Qualitative Verification: Unadapted Base vs. TPU LoRA Adapted</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Highlight the concrete before-and-after text outputs on both cards.
+
+🗣️ SAY VERBATIM:
+&quot;Numbers are great, but let&#x27;s read the actual model outputs. Before LoRA fine-tuning, when we asked `Qwen3-0.6B` to audit a `torch_xla` snippet, it said: &#x27;The use of xm.xla_device() may expose the code to potential security vulnerabilities, update the library.&#x27; It had no idea `torch_xla` was deprecated in favor of `torch_tpu`! After 7 seconds of LoRA fine-tuning on one TPU chip, it outputs `[CRITICAL | TPU-DEP-01]` with the exact `torch.device(&#x27;tpu&#x27;)` migration fix. And on the right, our adapted `Qwen2.5-0.5B` FinTech model pinpoints `PCI-DSS-3.3.1` PAN logging violations and `TPU-SYNC-02` settlement loop stalls.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-13">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 13 / 20</span>
+            <span class="badge-mod">Module 3 • AutoKernel Lab &amp; Pallas Fusion</span>
+            <span class="badge-time">⏱️ 00:36 – 00:38 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(13)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Stage 2: AutoKernel Lab (XProf &amp; Pallas)</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Transition to Module 3—kernel engineering with XProf and Pallas.
+
+🗣️ SAY VERBATIM:
+&quot;Once we have an adapted model, how do we make it run as fast as the hardware allows? Welcome to Stage 2: AutoKernel Lab. Here we use the PyTorch TPU profiler (`ProfilerActivity.TPU`) and XProf to see what happens on the chip across four execution modes, and then write custom Pallas kernels that fuse memory-bound operations inside TPU Vector Memory (VMEM).&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-14">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 14 / 20</span>
+            <span class="badge-mod">Module 3 • The 4 Execution Modes on TPU</span>
+            <span class="badge-time">⏱️ 00:38 – 00:42 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(14)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Benchmarking 4 Execution Modes on a 4-Layer Decoder Stack</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Walk through the 4 cards from left to right, emphasizing the XProf program count drop (`47 -&gt; 3 -&gt; 1 -&gt; 1`).
+
+🗣️ SAY VERBATIM:
+&quot;Look at the progression across the four cards. In plain Eager mode, a 4-layer decoder block takes `3.591 ms` because it launches 47 separate TPU programs per step—every elementwise op reads and writes HBM. Turning on `TORCH_TPU_DEFER_AND_FUSE=1` cuts that to 3 TPU programs and `2.126 ms` (`1.69x`). `torch.compile(backend=&#x27;tpu&#x27;)` captures the whole graph into 1 TPU program at `1.579 ms` (`2.28x`). And with `torch.tpu.pallas.jax_op`, our custom Pallas kernels execute in 1 TPU program with `9.54e-07` numerical parity—and on the isolated 8-layer Residual+RMSNorm stack, Pallas hits `0.409 ms` versus `2.587 ms` eager: a massive `6.32x` kernel speedup!&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-15">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 15 / 20</span>
+            <span class="badge-mod">Module 3 • XProf Timeline &amp; Pallas Parity</span>
+            <span class="badge-time">⏱️ 00:42 – 00:46 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(15)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Inside the XProf Trace: 47 Dispatches vs. 1 Fused Program</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Click `autokernel_xprof_waterfall.png` to zoom in on the 4-row XProf waterfall chart.
+
+🗣️ SAY VERBATIM:
+&quot;This visualization from `autokernel_lab.py` makes the hardware story unmistakable. Look at the right panel: in Eager mode, the TPU timeline is chopped into 47 micro-launches totaling `3.59 ms`. With `DeferAndFuse`, `torch.compile`, and `Pallas`, the timeline collapses into a tight, continuous block on the MXU and VPU. Even better, Pallas gives us explicit control over VMEM tiling (`BlockSpec((128, d), lambda i: (i, 0))`) and `float32` accumulation precision.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-16">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 16 / 20</span>
+            <span class="badge-mod">Module 3 • Hot-Patching Hugging Face with Pallas</span>
+            <span class="badge-time">⏱️ 00:46 – 00:50 (4m)</span>
+            <button class="jump-btn" onclick="syncToSlide(16)">Sync Projector Here ▶</button>
+          </div>
+          <h2>How Developers Hot-Patch a Hugging Face Model with Pallas</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Walk through the 15-line Python snippet on the right.
+
+🗣️ SAY VERBATIM:
+&quot;Developers often ask: &#x27;Once I write a Pallas kernel, how do I actually plug it into a Hugging Face `AutoModelForCausalLM` that I just fine-tuned with PEFT?&#x27; Look at the code on the right—it takes 15 lines of Python! We register `pallas_rmsnorm_jax` with `torch.tpu.pallas.jax_op`, wrap it in `PallasPatchedRMSNorm` holding the original parameter tensor `orig_norm.weight`, and loop over `merged_model.model.layers`. In `Qwen2.5-0.5B`, that replaces 73 submodules in-place, cutting 24-layer RMSNorm time by `4.81x` (`4.73 ms -&gt; 0.98 ms`) and full-model forward time from `29.74 ms` to `24.66 ms` (`1.21x`) with `99.74%` top-1 token agreement!&quot;</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre>import autokernel
+
+# 1. Isolate Chip 0 &amp; wake up torch_tpu BEFORE JAX loads
+autokernel.init_tpu(chip=0, defer_and_fuse=True)
+
+# 2. Hot-swap 49 RMSNorm + 24 SwiGLU MLP layers in memory
+report = autokernel.patch_hf(merged_model)
+print(report.total_patched)  # -&gt; 73 (0 weight bytes copied)
+
+# 3. Verify speedup, max_abs_diff, and top-1 agreement
+bench = autokernel.verify_parity_and_speedup(
+    stock_fn, patched_fn, sample_input
+)
+# Reversible anytime: autokernel.unpatch_hf(merged_model)</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-17">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 17 / 20</span>
+            <span class="badge-mod">Module 4 • SpecGuard TPU Serving &amp; Audit</span>
+            <span class="badge-time">⏱️ 00:50 – 00:55 (5m)</span>
+            <button class="jump-btn" onclick="syncToSlide(17)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Stage 3: SpecGuard TPU — SGLang Prefix Cache &amp; 16-File Burst</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Click `specguard_dashboard.png` to show the 3-panel SpecGuard TPU results.
+
+🗣️ SAY VERBATIM:
+&quot;Now let&#x27;s complete the story in Stage 3: serving our merged checkpoint in production with `sglang-torchtpu`. In a real repository or payment compliance audit, every query shares a long prefix—your organization&#x27;s security rubric, rule definitions, and shared AST header (~1,357 tokens). On Pass 1 (Cold Cache), SGLang computes the prefill in `102.86 ms`. On Pass 2 and Pass 3, SGLang&#x27;s RadixAttention matches `1,280` prefix tokens directly in TPU HBM KV cache, dropping Time-to-First-Token to `41.80 ms`—a `2.46x` TTFT speedup! And when a pull request triggers a 16-file concurrent burst, continuous batching processes all 16 audits in just `2.05 seconds`!&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-18">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 18 / 20</span>
+            <span class="badge-mod">Module 4 • The Developer Adoption Playbook</span>
+            <span class="badge-time">⏱️ 00:55 – 00:58 (3m)</span>
+            <button class="jump-btn" onclick="syncToSlide(18)">Sync Projector Here ▶</button>
+          </div>
+          <h2>How Developers Adopt This Stack in 3 Steps</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Summarize the 3-step adoption path for engineering teams.
+
+🗣️ SAY VERBATIM:
+&quot;If you want to bring this exact workflow back to your team tomorrow, here is the 3-step playbook. Step 1: configure `tpu-agent-suite` and `colab-mcp` against your TPU VM or GKE TPU pod. Step 2: run static-shape `bfloat16` LoRA adaptation on `torch.device(&#x27;tpu&#x27;)` and use XProf + `torch.tpu.pallas.jax_op` to fuse any memory-bound custom ops. Step 3: merge the checkpoint and serve with `sglang-torchtpu` or `vllm-torchtpu` with prefix caching enabled.&quot;</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre># 1. Run 4-way AutoKernel Lab (Eager / DAF / Compile / Pallas)
+python demos/06_autokernel_app/autokernel_lab.py all
+
+# 2. Run Multi-Model Domain LoRA + 73-Submodule Pallas Patching
+python demos/07_domain_adaptation_showcase/domain_adapt_and_pallas_patch.py
+
+# 3. Run SpecGuard LoRA + SGLang Prefix Cache &amp; 16-File Burst
+python demos/05_specguard_app/stage1_lora_finetune.py
+python demos/05_specguard_app/stage2_serve_and_audit.py</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-19">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 19 / 20</span>
+            <span class="badge-mod">Module 4 • Summary of Empirical Benchmarks</span>
+            <span class="badge-time">⏱️ 00:58 – 01:00 (2m)</span>
+            <button class="jump-btn" onclick="syncToSlide(19)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Executive Summary: Verified Cloud TPU (`tpu7x`) Results</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Leave this executive summary card up for a moment so attendees can photograph the complete benchmark table.
+
+🗣️ SAY VERBATIM:
+&quot;Here is the complete scoreboard from our live runs on `tpu7x` Chip 0. Across two model families and two compliance domains, perplexity collapsed to `~1.00` in under 40 steps; our Pallas kernels delivered `4.81x` to `6.32x` operator speedups and a `1.21x` full-model forward-pass speedup inside Hugging Face; and SGLang RadixAttention delivered a `2.46x` Warm TTFT speedup while auditing 16 concurrent files in `2.05 seconds`.&quot;</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-20">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 20 / 20</span>
+            <span class="badge-mod">Module 4 • Wrap-Up &amp; Q&amp;A</span>
+            <span class="badge-time">⏱️ 01:00 – 01:05 (5m)</span>
+            <button class="jump-btn" onclick="syncToSlide(20)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Thank You!</h2>
+          <div class="note-body">🎬 [STAGE DIRECTION]: Thank the audience and open the floor for questions!
+
+🗣️ SAY VERBATIM:
+&quot;Thank you all for joining! Scan the QR codes on the right to grab the master Colab notebooks, the Pallas kernel patchers, and this slide deck from `github.com/rabimba/GDE-ML-Artifacts`. I would love to hear what models and custom kernels you build on Cloud TPU—what questions can I answer?&quot;</div>
+          
+        </div>
+        
+  </div>
+
+  <script>
+    const NOTES = [{"num": 1, "title": "Full-Stack PyTorch on Cloud TPU: From Domain LoRA & Pallas Kernels to Prefix-Cached Serving", "module": "Module 0 \u2022 Welcome & Vision", "time": "00:00 \u2013 00:02 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Welcome the audience with high energy! Ensure the cover slide is projected clearly.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Welcome everyone! Today we are going beyond isolated micro-benchmarks to walk through a complete, end-to-end production AI story on Google Cloud TPU using native PyTorch (`torch_tpu`). We will see how a developer or an AI coding agent can start in a standard Google Colab notebook connected over MCP to a live Cloud TPU (`tpu7x`), adapt multiple open-weight models to specialized enterprise domains like SecOps and FinTech PCI-DSS compliance using LoRA, inspect hardware bottlenecks with XProf, inject custom Pallas kernels directly into Hugging Face Transformer layers, and serve the merged checkpoints with SGLang RadixAttention prefix caching and continuous batching.\"", "code": ""}, {"num": 2, "title": "Rabimba Karanjai", "module": "Module 0 \u2022 Speaker Intro", "time": "00:02 \u2013 00:04 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Briefly introduce yourself and why this workflow matters in production AI.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"I'm Rabimba Karanjai, a Google Developer Expert for AI/ML. Building production LLM systems, automated compliance auditors, and developer guardrails taught me one lesson: model quality, kernel latency, and serving economics cannot live in separate silos. If you fine-tune a domain model that triggers XLA recompilations or re-computes 1,200 tokens of policy context on every request, your tail latency explodes. Today's showcase unifies those layers into one repeatable playbook.\"", "code": ""}, {"num": 3, "title": "Workshop Notebooks, Demos & Agent Suite", "module": "Module 0 \u2022 Notebooks & Artifacts", "time": "00:04 \u2013 00:06 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Point attendees to the three artifacts in the repository.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"All of today's code lives in three self-contained Colab notebooks (`04_specguard_e2e_app.ipynb`, `05_autokernel_pallas_lab.ipynb`, and our master notebook `06_end_to_end_showcase_and_domain_adaptation.ipynb`) plus standalone CLI scripts under `demos/05_specguard_app`, `06_autokernel_app`, and `07_domain_adaptation_showcase`. Every number on these slides was captured live on a Cloud TPU (`tpu7x` Chip 0).\"", "code": ""}, {"num": 4, "title": "Why Do Enterprise AI Guardrails Hit a Wall in Production?", "module": "Module 1 \u2022 The Enterprise Challenge", "time": "00:06 \u2013 00:09 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Ask the audience to raise hands for A, B, or C.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Let's start with the real-world problem. Suppose you are building an automated compliance and code auditing platform for a FinTech or enterprise engineering org. First, base models don't know your strict output schema or domain rules\u2014like flagging unmasked PANs under PCI-DSS 3.3.1 or catching deprecated `torch_xla` calls. Second, if you run naive eager PyTorch on TPU, every tiny op dispatches separately and hammers HBM. Third, when you audit 16 files in a pull request, you re-compute the exact same 1,280-token policy header 16 times!\"", "code": ""}, {"num": 5, "title": "Anatomy of an AI Coding Agent", "module": "Module 1 \u2022 The Three Pillars", "time": "00:09 \u2013 00:12 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk across the three pillars on screen.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Our solution rests on three pillars. Pillar 1 is `torch_tpu`: the TPU is simply `torch.device('tpu')`, letting us run Hugging Face `peft` LoRA fine-tuning across multiple domain models with zero `torch_xla` boilerplate. Pillar 2 is hardware-aware optimization: using XProf and `torch.tpu.pallas.jax_op` to fuse memory-bound ops in TPU VMEM and hot-patch Hugging Face models in-place. Pillar 3 is production serving with `sglang-torchtpu` and `vllm-torchtpu`, exploiting RadixAttention prefix caching and continuous batching.\"", "code": ""}, {"num": 6, "title": "The 4-Stage Full-Stack TorchTPU Architecture", "module": "Module 1 \u2022 End-to-End Architecture", "time": "00:12 \u2013 00:16 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Point to the 4-layer architecture diagram on the right (remind attendees they can click any chart in the web deck to zoom in full-screen).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Look at how the four stages connect on the right. At the top, `colab-mcp` and `tpu-agent-suite@0.7.0` give both humans and AI agents direct execution access to the TPU pod. In Stage 2, we run multi-model LoRA fine-tuning in `bfloat16` on `torch.device('tpu')`. In Stage 3, we profile with XProf and hot-patch 73 submodules inside the Hugging Face model with custom Pallas kernels. And in Stage 4, we hand the merged checkpoint to SGLang and vLLM for high-throughput serving.\"", "code": ""}, {"num": 7, "title": "Developer Workflow: Colab MCP + TPU Agent Suite", "module": "Module 1 \u2022 Interactive Developer Setup", "time": "00:16 \u2013 00:20 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Highlight the PJRT initialization order in the code box on the right\u2014this is a critical practical tip for developers.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is a golden developer tip when combining `torch_tpu` and JAX Pallas on the same chip. Both PyTorch and JAX talk to the TPU through `libtpu` and PJRT. If you import `jax` before `torch_tpu` initializes its PJRT client, or if `TPU_VISIBLE_DEVICES` conflicts with `TPU_VISIBLE_CHIPS`, they will fight over the `/dev/vfio` device lock. By popping `TPU_VISIBLE_DEVICES`, pinning `TPU_VISIBLE_CHIPS='0'`, and allocating one tensor on `torch.device('tpu')` followed by `torch.accelerator.synchronize()` before importing `jax`, both frameworks share the chip seamlessly!\"", "code": "// 1. .opencode/opencode.jsonc\n{\n  \"mcp\": {\n    \"colab-mcp\": {\n      \"type\": \"local\",\n      \"command\": [\"uvx\", \"colab-mcp\"]\n    }\n  }\n}\n\n# 2. Single-Chip PJRT Sharing (PyTorch + JAX Pallas)\nos.environ.pop(\"TPU_VISIBLE_DEVICES\", None)\nos.environ[\"TPU_VISIBLE_CHIPS\"] = \"0\"\nos.environ[\"TPU_CHIPS_PER_HOST_BOUNDS\"] = \"1,1,1\"\nimport torch, torch_tpu\n_ = torch.ones(1, device=\"tpu\")  # Acquire PJRT first!\ntorch.accelerator.synchronize()\nimport jax  # Shares PJRT client with torch_tpu"}, {"num": 8, "title": "Native PyTorch on TPU (torch_tpu) & What to Avoid on Cloud TPU", "module": "Module 1 \u2022 Native torch_tpu vs Legacy Stack", "time": "00:20 \u2013 00:23 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Contrast the blue card (`torch_tpu` best practices) with the red card (anti-patterns).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Let's make sure everyone has the mental model of `torch_tpu`. First, `torch_xla` is deprecated\u2014everything we do uses `import torch, torch_tpu` and `torch.device('tpu')`. Second, TPUs love static shapes and `bfloat16`. When we pad our batches to fixed buckets like `(4, 256)` or `(6, 128)` and mask padding tokens with `-100` in the loss, XLA compiles the training graph once on Step 0 and flies through the remaining steps without a single recompilation.\"", "code": ""}, {"num": 9, "title": "Stage 1: Multi-Model Domain Adaptation", "module": "Module 2 \u2022 Multi-Model Domain Adaptation", "time": "00:23 \u2013 00:25 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Transition to Module 2\u2014showing how domain adaptation works across multiple models and domains.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Now let's dive into Stage 1 of our showcase: Multi-Model Domain Adaptation on Cloud TPU. A common question from engineering teams is: does this workflow only work for one toy model, or can we specialize multiple models for different enterprise compliance domains? Let's look at two distinct models and domains we trained on `tpu7x` Chip 0.\"", "code": ""}, {"num": 10, "title": "Specializing Two Distinct Models on `torch.device('tpu')`", "module": "Module 2 \u2022 Two Models, Two Enterprise Domains", "time": "00:25 \u2013 00:29 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Compare Model A (`Qwen/Qwen3-0.6B`) on the left and Model B (`Qwen/Qwen2.5-0.5B-Instruct`) on the right.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"On the left, we adapted `Qwen/Qwen3-0.6B` to act as a SecOps and PyTorch-TPU Migration Auditor\u2014catching SQL injection, hardcoded secrets, `.item()` sync stalls, and deprecated `torch_xla` code. In 40 steps at `181.7 ms/step`, loss dropped from `2.8536` to `0.0118` and perplexity collapsed from `17.35` to `1.01`. On the right, we took a different architecture\u2014`Qwen/Qwen2.5-0.5B-Instruct`\u2014and adapted it on FinTech PCI-DSS v4.0 and ISO-20022 payment compliance rules. In 30 steps at `105.2 ms/step`, loss dropped from `3.9182` to `0.0021` and domain perplexity collapsed from `50.31` to `1.00`, emitting exact rule citations like `PCI-DSS-3.3.1`!\"", "code": "# Prompt Input:\nimport torch_xla.core.xla_model as xm\ndev = xm.xla_device()\n\n# Adapted Model Output:\n[CRITICAL | TPU-DEP-01] Deprecated torch_xla\nimport detected. Replace with:\nimport torch, torch_tpu; torch.device('tpu')\n\n# Prompt Input:\nlogger.info(f'PAN={card_num} CVV={cvv}')\n\n# Adapted Model Output:\nSEVERITY: CRITICAL | RULE: PCI-DSS-3.3.1 |\nVIOLATION: Full PAN and CVV logged in cleartext.\nREMEDIATION: Mask PAN (`tokenize_pan(card_num)`)"}, {"num": 11, "title": "Empirical Results: Multi-Model LoRA & In-Model Pallas Patching", "module": "Module 2 \u2022 Empirical Convergence & Perplexity", "time": "00:29 \u2013 00:33 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click on `domain_adaptation_showcase.png` to open the full-screen lightbox so the audience can inspect all three panels clearly.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is the empirical plot generated directly from `domain_adapt_and_pallas_patch.py` on `tpu7x` Chip 0. In Panel 1, you see the step-by-step loss curves for both `Qwen3-0.6B` and `Qwen2.5-0.5B`. In Panel 2, you see the dramatic collapse in domain perplexity\u2014from `17.35` down to `1.01` and from `50.31` down to `1.00`. And in Panel 3, you see what happens when we hot-patch the adapted Hugging Face model in-place with custom Pallas kernels: a `4.81x` speedup across the 24-layer RMSNorm stack and a `1.21x` end-to-end forward-pass speedup across the entire 24-layer Transformer!\"", "code": ""}, {"num": 12, "title": "Qualitative Verification: Unadapted Base vs. TPU LoRA Adapted", "module": "Module 2 \u2022 Before vs After Domain Adaptation", "time": "00:33 \u2013 00:36 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Highlight the concrete before-and-after text outputs on both cards.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Numbers are great, but let's read the actual model outputs. Before LoRA fine-tuning, when we asked `Qwen3-0.6B` to audit a `torch_xla` snippet, it said: 'The use of xm.xla_device() may expose the code to potential security vulnerabilities, update the library.' It had no idea `torch_xla` was deprecated in favor of `torch_tpu`! After 7 seconds of LoRA fine-tuning on one TPU chip, it outputs `[CRITICAL | TPU-DEP-01]` with the exact `torch.device('tpu')` migration fix. And on the right, our adapted `Qwen2.5-0.5B` FinTech model pinpoints `PCI-DSS-3.3.1` PAN logging violations and `TPU-SYNC-02` settlement loop stalls.\"", "code": ""}, {"num": 13, "title": "Stage 2: AutoKernel Lab (XProf & Pallas)", "module": "Module 3 \u2022 AutoKernel Lab & Pallas Fusion", "time": "00:36 \u2013 00:38 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Transition to Module 3\u2014kernel engineering with XProf and Pallas.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Once we have an adapted model, how do we make it run as fast as the hardware allows? Welcome to Stage 2: AutoKernel Lab. Here we use the PyTorch TPU profiler (`ProfilerActivity.TPU`) and XProf to see what happens on the chip across four execution modes, and then write custom Pallas kernels that fuse memory-bound operations inside TPU Vector Memory (VMEM).\"", "code": ""}, {"num": 14, "title": "Benchmarking 4 Execution Modes on a 4-Layer Decoder Stack", "module": "Module 3 \u2022 The 4 Execution Modes on TPU", "time": "00:38 \u2013 00:42 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk through the 4 cards from left to right, emphasizing the XProf program count drop (`47 -> 3 -> 1 -> 1`).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Look at the progression across the four cards. In plain Eager mode, a 4-layer decoder block takes `3.591 ms` because it launches 47 separate TPU programs per step\u2014every elementwise op reads and writes HBM. Turning on `TORCH_TPU_DEFER_AND_FUSE=1` cuts that to 3 TPU programs and `2.126 ms` (`1.69x`). `torch.compile(backend='tpu')` captures the whole graph into 1 TPU program at `1.579 ms` (`2.28x`). And with `torch.tpu.pallas.jax_op`, our custom Pallas kernels execute in 1 TPU program with `9.54e-07` numerical parity\u2014and on the isolated 8-layer Residual+RMSNorm stack, Pallas hits `0.409 ms` versus `2.587 ms` eager: a massive `6.32x` kernel speedup!\"", "code": ""}, {"num": 15, "title": "Inside the XProf Trace: 47 Dispatches vs. 1 Fused Program", "module": "Module 3 \u2022 XProf Timeline & Pallas Parity", "time": "00:42 \u2013 00:46 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click `autokernel_xprof_waterfall.png` to zoom in on the 4-row XProf waterfall chart.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"This visualization from `autokernel_lab.py` makes the hardware story unmistakable. Look at the right panel: in Eager mode, the TPU timeline is chopped into 47 micro-launches totaling `3.59 ms`. With `DeferAndFuse`, `torch.compile`, and `Pallas`, the timeline collapses into a tight, continuous block on the MXU and VPU. Even better, Pallas gives us explicit control over VMEM tiling (`BlockSpec((128, d), lambda i: (i, 0))`) and `float32` accumulation precision.\"", "code": ""}, {"num": 16, "title": "How Developers Hot-Patch a Hugging Face Model with Pallas", "module": "Module 3 \u2022 Hot-Patching Hugging Face with Pallas", "time": "00:46 \u2013 00:50 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk through the 15-line Python snippet on the right.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Developers often ask: 'Once I write a Pallas kernel, how do I actually plug it into a Hugging Face `AutoModelForCausalLM` that I just fine-tuned with PEFT?' Look at the code on the right\u2014it takes 15 lines of Python! We register `pallas_rmsnorm_jax` with `torch.tpu.pallas.jax_op`, wrap it in `PallasPatchedRMSNorm` holding the original parameter tensor `orig_norm.weight`, and loop over `merged_model.model.layers`. In `Qwen2.5-0.5B`, that replaces 73 submodules in-place, cutting 24-layer RMSNorm time by `4.81x` (`4.73 ms -> 0.98 ms`) and full-model forward time from `29.74 ms` to `24.66 ms` (`1.21x`) with `99.74%` top-1 token agreement!\"", "code": "import autokernel\n\n# 1. Isolate Chip 0 & wake up torch_tpu BEFORE JAX loads\nautokernel.init_tpu(chip=0, defer_and_fuse=True)\n\n# 2. Hot-swap 49 RMSNorm + 24 SwiGLU MLP layers in memory\nreport = autokernel.patch_hf(merged_model)\nprint(report.total_patched)  # -> 73 (0 weight bytes copied)\n\n# 3. Verify speedup, max_abs_diff, and top-1 agreement\nbench = autokernel.verify_parity_and_speedup(\n    stock_fn, patched_fn, sample_input\n)\n# Reversible anytime: autokernel.unpatch_hf(merged_model)"}, {"num": 17, "title": "Stage 3: SpecGuard TPU \u2014 SGLang Prefix Cache & 16-File Burst", "module": "Module 4 \u2022 SpecGuard TPU Serving & Audit", "time": "00:50 \u2013 00:55 (5m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click `specguard_dashboard.png` to show the 3-panel SpecGuard TPU results.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Now let's complete the story in Stage 3: serving our merged checkpoint in production with `sglang-torchtpu`. In a real repository or payment compliance audit, every query shares a long prefix\u2014your organization's security rubric, rule definitions, and shared AST header (~1,357 tokens). On Pass 1 (Cold Cache), SGLang computes the prefill in `102.86 ms`. On Pass 2 and Pass 3, SGLang's RadixAttention matches `1,280` prefix tokens directly in TPU HBM KV cache, dropping Time-to-First-Token to `41.80 ms`\u2014a `2.46x` TTFT speedup! And when a pull request triggers a 16-file concurrent burst, continuous batching processes all 16 audits in just `2.05 seconds`!\"", "code": ""}, {"num": 18, "title": "How Developers Adopt This Stack in 3 Steps", "module": "Module 4 \u2022 The Developer Adoption Playbook", "time": "00:55 \u2013 00:58 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Summarize the 3-step adoption path for engineering teams.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"If you want to bring this exact workflow back to your team tomorrow, here is the 3-step playbook. Step 1: configure `tpu-agent-suite` and `colab-mcp` against your TPU VM or GKE TPU pod. Step 2: run static-shape `bfloat16` LoRA adaptation on `torch.device('tpu')` and use XProf + `torch.tpu.pallas.jax_op` to fuse any memory-bound custom ops. Step 3: merge the checkpoint and serve with `sglang-torchtpu` or `vllm-torchtpu` with prefix caching enabled.\"", "code": "# 1. Run 4-way AutoKernel Lab (Eager / DAF / Compile / Pallas)\npython demos/06_autokernel_app/autokernel_lab.py all\n\n# 2. Run Multi-Model Domain LoRA + 73-Submodule Pallas Patching\npython demos/07_domain_adaptation_showcase/domain_adapt_and_pallas_patch.py\n\n# 3. Run SpecGuard LoRA + SGLang Prefix Cache & 16-File Burst\npython demos/05_specguard_app/stage1_lora_finetune.py\npython demos/05_specguard_app/stage2_serve_and_audit.py"}, {"num": 19, "title": "Executive Summary: Verified Cloud TPU (`tpu7x`) Results", "module": "Module 4 \u2022 Summary of Empirical Benchmarks", "time": "00:58 \u2013 01:00 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Leave this executive summary card up for a moment so attendees can photograph the complete benchmark table.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is the complete scoreboard from our live runs on `tpu7x` Chip 0. Across two model families and two compliance domains, perplexity collapsed to `~1.00` in under 40 steps; our Pallas kernels delivered `4.81x` to `6.32x` operator speedups and a `1.21x` full-model forward-pass speedup inside Hugging Face; and SGLang RadixAttention delivered a `2.46x` Warm TTFT speedup while auditing 16 concurrent files in `2.05 seconds`.\"", "code": ""}, {"num": 20, "title": "Thank You!", "module": "Module 4 \u2022 Wrap-Up & Q&A", "time": "01:00 \u2013 01:05 (5m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Thank the audience and open the floor for questions!\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Thank you all for joining! Scan the QR codes on the right to grab the master Colab notebooks, the Pallas kernel patchers, and this slide deck from `github.com/rabimba/GDE-ML-Artifacts`. I would love to hear what models and custom kernels you build on Cloud TPU\u2014what questions can I answer?\"", "code": ""}];
+    let cur = 1;
+    const channel = new BroadcastChannel('torchtpu_fullstack_workshop_sync');
+
+    function updateConsole(n) {
+      if (n < 1) n = 1;
+      if (n > NOTES.length) n = NOTES.length;
+      cur = n;
+      const item = NOTES[cur - 1];
+      const nextItem = NOTES[cur] || null;
+      document.getElementById('console-counter').textContent = `Slide ${cur} / ${NOTES.length}`;
+      document.getElementById('live-title').textContent = `LIVE ON SCREEN — Slide ${item.num}: ${item.title} (${item.time})`;
+      document.getElementById('live-notes').textContent = item.notes;
+      document.getElementById('live-next').textContent = nextItem ? `⏭️ UP NEXT — Slide ${nextItem.num}: ${nextItem.title} (${nextItem.time})` : `🎉 End of Deck`;
+      document.querySelectorAll('.note-card').forEach(c => c.classList.remove('active-card'));
+      const activeEl = document.getElementById(`note-slide-${cur}`);
+      if (activeEl) {
+        activeEl.classList.add('active-card');
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function syncToSlide(n) {
+      updateConsole(n);
+      channel.postMessage({ type: 'SLIDE_CHANGE', slide: n });
+    }
+
+    function stepSlide(delta) {
+      syncToSlide(cur + delta);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        updateConsole(ev.data.slide);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); stepSlide(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); stepSlide(-1); }
+    });
+
+    updateConsole(1);
+  </script>
+</body>
+</html>

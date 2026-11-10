@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Speaker Notes &amp; Teleprompter — KubeCon 2026 FleetKV &amp; GKE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Google Sans', system-ui, sans-serif;
+      background: #0F1117;
+      color: #E8EAED;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: #181B24;
+      border-bottom: 2px solid #1A73E8;
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .ctrl-row { display: flex; align-items: center; gap: 10px; }
+    button {
+      background: #1A73E8; color: #fff; border: none;
+      padding: 7px 14px; border-radius: 6px; font-weight: 600; cursor: pointer;
+    }
+    button:hover { background: #174EA6; }
+    #live-banner {
+      background: #1E2436; border: 2px solid #4285F4;
+      margin: 18px 24px; padding: 18px 22px; border-radius: 12px;
+    }
+    #live-banner h3 { color: #8AB4F8; margin-bottom: 6px; font-size: 1.2rem; }
+    #live-notes { white-space: pre-wrap; font-size: 1.15rem; line-height: 1.55; color: #FFF; }
+    #live-next { margin-top: 12px; padding-top: 10px; border-top: 1px solid #3C4043; color: #FBBC04; font-weight: 600; }
+    .container { max-width: 980px; margin: 0 auto; padding: 12px 24px 60px 24px; }
+    .note-card {
+      background: #181B24; border: 1.5px solid #2D3242;
+      border-radius: 12px; padding: 18px 22px; margin-bottom: 16px;
+    }
+    .note-card.active-card { border-color: #4285F4; box-shadow: 0 0 0 2px rgba(66,133,244,0.35); }
+    .note-hdr { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .badge-num { background: #1A73E8; color: #fff; padding: 3px 10px; border-radius: 99px; font-weight: 700; font-size: 0.8rem; }
+    .badge-mod { color: #8AB4F8; font-size: 0.85rem; font-weight: 600; }
+    .badge-time { color: #FBBC04; font-size: 0.85rem; font-weight: 600; margin-left: auto; }
+    .jump-btn { background: #2D3242; font-size: 0.75rem; padding: 4px 10px; }
+    .note-card h2 { font-size: 1.25rem; margin-bottom: 10px; color: #fff; }
+    .note-body { white-space: pre-wrap; font-size: 1.02rem; line-height: 1.55; color: #D2D6DF; }
+    .cmd-box { margin-top: 12px; background: #0B0D12; border: 1px solid #3C4043; border-radius: 8px; overflow: hidden; }
+    .cmd-hdr { background: #20232D; padding: 5px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: #9AA0A6; }
+    .cmd-box pre { padding: 10px 12px; font-family: 'Roboto Mono', monospace; font-size: 0.82rem; white-space: pre-wrap; color: #81C995; margin: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <strong>🎤 Live Speaker Console &amp; Full Talk Script</strong>
+      <span style="color:#9AA0A6; font-size:0.85rem; margin-left:10px;">Synced with Main Presentation Window</span>
+    </div>
+    <div class="ctrl-row">
+      <button onclick="stepSlide(-1)">◀ Prev Slide</button>
+      <span id="console-counter" style="font-weight:700; min-width:80px; text-align:center;">Slide 1 / 14</span>
+      <button onclick="stepSlide(1)">Next Slide ▶</button>
+    </div>
+  </header>
+
+  <div id="live-banner">
+    <h3 id="live-title">Current Slide: 1</h3>
+    <div id="live-notes"></div>
+    <div id="live-next">Next Slide: 2</div>
+  </div>
+
+  <div class="container">
+    <h2 style="margin-bottom:14px; color:#8AB4F8;">All 14 Slides — Continuous Speaker Script &amp; Copy-Paste Snippets</h2>
+    
+        <div class="note-card" id="note-slide-1">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 1 / 14</span>
+            <span class="badge-mod">Session Opening</span>
+            <span class="badge-time">⏱️ 00:00 – 00:35</span>
+            <button class="jump-btn" onclick="syncToSlide(1)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Defeating the Prefix-Cache Penalty: KV-Aware Routing &amp; Disaggregated Serving for Agent Fleets on GKE</h2>
+          <div class="note-body">[00:00 - 00:35]
+Kubernetes services were built around a simple assumption: HTTP requests are independent, pods are interchangeable, and round-robin spreads load evenly.
+
+When you run an autonomous SWE or SRE agent fleet behind a stateless Service, you spend most of your accelerator cycles recomputing identical prompt prefixes across replicas. And if you switch to naive longest-prefix sticky routing, parallel agent fan-out herds onto a single pod and makes P95 tail latency worse than round-robin.
+
+In this session, we will walk through why both failures happen and how we fix them using Gateway API Inference Extension and disaggregated TorchTPU serving on GKE.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-2">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 2 / 14</span>
+            <span class="badge-mod">Speaker &amp; Companion Artifact</span>
+            <span class="badge-time">⏱️ 00:35 – 01:00</span>
+            <button class="jump-btn" onclick="syncToSlide(2)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Rabimba Karanjai</h2>
+          <div class="note-body">[00:35 - 01:00]
+I&#x27;m Rabimba Karanjai, a Google Developer Expert for AI/ML and ML Scientist at PayPal.
+
+Everything we cover today—the Go 1.23 Envoy ext_proc router, the GKE Cloud TPU v6e and GAIE manifests, and the trace-calibrated local digital twin—is open-source under Apache-2.0 in our companion repository.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-3">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 3 / 14</span>
+            <span class="badge-mod">Companion Repository &amp; Resources</span>
+            <span class="badge-time">⏱️ 01:00 – 01:20</span>
+            <button class="jump-btn" onclick="syncToSlide(3)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Scan to Grab the Companion Artifact &amp; Slides</h2>
+          <div class="note-body">[01:00 - 01:20]
+If you want to run the benchmark on your laptop or deploy the manifests on GKE, scan the left QR code for the companion repo, or the middle QR code for this interactive slide deck.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-4">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 4 / 14</span>
+            <span class="badge-mod">Part 1: The Agent Tree Workload</span>
+            <span class="badge-time">⏱️ 01:20 – 02:30</span>
+            <button class="jump-btn" onclick="syncToSlide(4)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Chatbots Are Lines. Agent Fleets Are Trees.</h2>
+          <div class="note-body">[01:20 - 02:30]
+Why do agent fleets break standard serving pools? Because a chatbot is a line, whereas an agent workflow is a tree.
+
+When an incident orchestrator triggers on an alert, it assembles a 20,480-token shared trunk—80 blocks of 256 tokens holding MCP tool schemas, repository structure, and alert state—and at millisecond zero spawns 8 parallel sub-agents. Each sub-agent pulls 8,192 tokens of pod logs and diffs before converging on a synthesis turn. Over the episode, 85.6% of tokens across those branches are shared prefix blocks.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-5">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 5 / 14</span>
+            <span class="badge-mod">Part 1: Fork-Storm Topology</span>
+            <span class="badge-time">⏱️ 02:30 – 03:20</span>
+            <button class="jump-btn" onclick="syncToSlide(5)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Anatomy of an 8-Way Incident Orchestrator Fork-Storm</h2>
+          <div class="note-body">[02:30 - 03:20]
+Look at the token budget across a single orchestrator episode. Blocks 0 through 79 form the 20,480-token parent trunk. When the orchestrator forks 8 sub-agents simultaneously, all 8 child requests carry those exact 80 block hashes, followed by a 2-block role delta and a 32-block (8,192-token) log burst on Turn 2. Finally, the join turn reuses the original 80-block trunk.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-6">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 6 / 14</span>
+            <span class="badge-mod">Part 2: Two Routing Failure Modes</span>
+            <span class="badge-time">⏱️ 03:20 – 05:00</span>
+            <button class="jump-btn" onclick="syncToSlide(6)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Failure Mode 1: Stateless K8s Round-Robin &amp; Failure Mode 2: The Prefix-Herd Trap</h2>
+          <div class="note-body">[03:20 - 05:00]
+Behind a standard Kubernetes Service, round-robin scatters those 8 child branches across all replicas. Every replica misses on the parent trunk, recomputes 20,480 tokens of prefill, and stalls co-located decode streams past 133 milliseconds P99 ITL.
+
+The natural next step is enabling longest-prefix sticky routing. That triggers a second failure mode during parallel agent fan-out: the Prefix-Herd Trap. At fork time, all 8 sub-agents match 80 out of 80 parent blocks on Pod 0. A router that maximizes prefix match sends all 8 concurrent branches to Pod 0 while Pods 1 through 3 sit idle. Worse, as those 8 branches append 8,192-token log bursts on Pod 0, they exceed Pod 0&#x27;s 360-block HBM capacity and LRU-evict the shared parent trunk right before the synthesis join turn.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-7">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 7 / 14</span>
+            <span class="badge-mod">Part 3: Co-Designing Routing &amp; Disaggregation</span>
+            <span class="badge-time">⏱️ 05:00 – 06:15</span>
+            <button class="jump-btn" onclick="syncToSlide(7)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Why KV-Aware Routing &amp; Disaggregation Need Each Other</h2>
+          <div class="note-body">[05:00 - 06:15]
+This is why routing and disaggregation have to work together. KV-aware routing on an aggregated pool ties compute affinity to memory residency, herding forked branches onto whichever pod holds the parent trunk. Disaggregation without KV-aware fit routing still recomputes shared prefixes.
+
+When we combine them, Prefill pods compute the shared trunk once, pin evicted blocks in 48 GiB of host DRAM, compute only the branch delta, and stream KV blocks over gVNIC to whichever Decode pod has HBM headroom.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-8">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 8 / 14</span>
+            <span class="badge-mod">Part 3: Control Plane (FleetKV EPP)</span>
+            <span class="badge-time">⏱️ 06:15 – 07:30</span>
+            <button class="jump-btn" onclick="syncToSlide(8)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Control Plane: Fit-Aware Tree Routing in GAIE ext_proc</h2>
+          <div class="note-body">[06:15 - 07:30]
+Here is the scoring function inside fleetkv-epp. Every vllm-torchtpu prefill pod publishes BlockStored and BlockRemoved events over ZeroMQ on port 5557 as 256-token blocks enter HBM or spill to host DRAM.
+
+When Envoy forwards a request over ext_proc, the router first checks the HBM Fit Gate: if admitting another branch plus our 24-block safety reserve would overflow the pod&#x27;s free HBM blocks, it spills that branch to a peer pod instead of evicting the shared trunk. Second, notice our staged lease accounting: we release InFlightPrefillTokens as soon as ResponseHeaders arrive at TTFT, while holding the HBM block reservation until the SSE decode stream completes.</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre>func ScoreEndpoint(pod *PodState, req *RouteInput) float64 {
+    // 1. Hard HBM Fit Gate: spill to peer if branch horizon overflows HBM
+    effectiveFree := pod.FreeHBMBlocks - pod.ReservedBlocks
+    if effectiveFree &lt; req.EstimatedBranchBlocks + SafetyReserveBlocks {
+        return RejectOverflowSpillToPeer
+    }
+    // 2. Trade off ZMQ-indexed block hits against in-flight prefill queue
+    savedMs   := float64(pod.MatchedHBMBlocks)*HBMBlockMs +
+                 float64(pod.MatchedDRAMBlocks)*DRAMBlockMs
+    queueWait := float64(pod.InFlightPrefillTokens) / PodTokPerMs
+    return savedMs - queueWait
+}</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-9">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 9 / 14</span>
+            <span class="badge-mod">Part 3: Data Plane (vllm-torchtpu + HMA)</span>
+            <span class="badge-time">⏱️ 07:30 – 08:30</span>
+            <button class="jump-btn" onclick="syncToSlide(9)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Data Plane: vllm-torchtpu + TPUConnectorHMA on GKE</h2>
+          <div class="note-body">[07:30 - 08:30]
+On the data plane, our DisaggregatedSet runs vllm-torchtpu on GKE Trillium ct6e-standard-4t node pools. Prefill pods mount a 64 GiB /dev/shm volume and allocate 48 GiB to TPUConnectorHMA as a Tier-2 host DRAM cache, keeping shared agent trunks warm even when active branch deltas cycle through HBM.
+
+Once a prefill pod computes the branch delta, it transfers the KV blocks asynchronously over an MTU-8896 gVNIC network to the Decode pod selected by fleetkv-epp. Let&#x27;s switch to the live terminal and watch all three stages under load.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-10">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 10 / 14</span>
+            <span class="badge-mod">Part 4: Live 3-Stage Traffic Flip Demo</span>
+            <span class="badge-time">⏱️ 08:30 – 11:45</span>
+            <button class="jump-btn" onclick="syncToSlide(10)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Live Demo: 3-Stage Traffic Flip Under 64-Branch Fork-Storm</h2>
+          <div class="note-body">[08:30 - 11:45]
+[SWITCH TO TMUX TERMINAL]
+1. Stage 1 (round_robin): Point out the 4-pod even traffic split (25% each), low cache hit rate (~30.8% in the local twin, ~19.4% on 8-chip GKE), and P99 decode ITL at 133 ms from prefill-decode interference.
+2. Run ./bench/demo_ctl.sh stage2: Watch Stage 1 freeze in Column 1 while Stage 2 skews onto a single hot pod as all 8 forked branches match the 80-block trunk. HBM evictions climb past 10,500 blocks and P95 tail TTFT spikes to 33.4 seconds—worse than Stage 1.
+3. Run ./bench/demo_ctl.sh stage3: Watch fleetkv-epp emit herd_spillover decisions, pinning the trunk in prefill HBM/DRAM while splitting decode streams evenly across decode-0 and decode-1. HBM evictions drop to 0, hit rate reaches 86.1% (91.6% on GKE), and P99 ITL drops to 33.1 ms (&lt; 40 ms SLO).</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre># Launch 3-pane tmux layout (Scorecard TUI + EPP Route Stream + Shell)
+./bench/demo_ctl.sh prep
+
+# Flip live traffic across all 3 architectures:
+./bench/demo_ctl.sh stage2   # Trigger single-pod herd &amp; HBM thrash
+./bench/demo_ctl.sh stage3   # Enable FleetKV Fit Gate + Disagg P/D</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-11">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 11 / 14</span>
+            <span class="badge-mod">Part 5: Empirical Benchmark Scorecard</span>
+            <span class="badge-time">⏱️ 11:45 – 12:30</span>
+            <button class="jump-btn" onclick="syncToSlide(11)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Benchmark Scorecard: Gate G1 Twin &amp; GKE Cloud TPU v6e</h2>
+          <div class="note-body">[11:45 - 12:30]
+Here are both sets of numbers side by side: the local trace-calibrated twin verified by make gate-g1 on 416 requests per stage, and the 8-chip GKE TPU v6e hardware reference (2x ct6e-standard-4t).
+
+In both environments, Stage 2&#x27;s naive sticky routing makes P95 tail TTFT worse than stateless round-robin—33.4 seconds in the 4-pod twin and 3.89 seconds on GKE—because all 8 forked branches queue on a single replica and evict over 10,500 HBM blocks. Stage 3 cuts median TTFT by 82 to 88 percent, eliminates HBM evictions, and keeps P99 decode ITL at 27 to 33 milliseconds.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-12">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 12 / 14</span>
+            <span class="badge-mod">Part 6: Production GKE Invariants</span>
+            <span class="badge-time">⏱️ 12:30 – 13:30</span>
+            <button class="jump-btn" onclick="syncToSlide(12)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Three Production Invariants (Audited in CI by Gate G2)</h2>
+          <div class="note-body">[12:30 - 13:30]
+Three operational invariants before you deploy this on GKE—all enforced by tests/test_g3_k8s_manifests.py in CI.
+
+First, set PYTHONHASHSEED=&quot;0&quot; on every container; otherwise Python&#x27;s per-process hash randomization causes block hash mismatches across workers. Second, set --block-size 256 on both vllm-torchtpu and fleetkv-epp so Pallas paged-attention kernels fit inside TPU v6e Scalar Memory. Third, use a Kubernetes Headless Service (clusterIP: None) filtered to llm-d.ai/role=prefill so the router subscribes to every prefill pod&#x27;s ZMQ socket individually, and configure mtu: 8896 on your gVNIC VPC.</div>
+          
+        </div>
+        
+        <div class="note-card" id="note-slide-13">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 13 / 14</span>
+            <span class="badge-mod">Reference: GKE &amp; Local Commands</span>
+            <span class="badge-time">⏱️ 13:30 – 14:00</span>
+            <button class="jump-btn" onclick="syncToSlide(13)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Reproduce Locally in 60 Seconds or Deploy on GKE TPU v6e</h2>
+          <div class="note-body">[13:30 - 14:00]
+Here is the complete command reference for both environments. On the left, make gate-all runs our Go race-detector unit tests, cross-language SHA-256 block-hash parity checks, the 3-stage end-to-end fork-storm benchmark, and the Kubernetes manifest audit. On the right are the four commands to bootstrap the MTU-8896 GKE cluster, apply the DisaggregatedSet and InferencePool manifests, and run the exact same stage controller against a live GKE Gateway VIP.</div>
+          
+            <div class="cmd-box">
+              <div class="cmd-hdr"><span>Copyable Command / Prompt</span><button onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.innerText); this.textContent='✅ Copied!';">📋 Copy</button></div>
+              <pre># Run all verification gates (Go race + E2E SLOs + K8s YAML)
+make gate-all
+
+# Launch interactive 3-pane conference TUI
+./bench/demo_ctl.sh prep
+./bench/demo_ctl.sh stage2
+./bench/demo_ctl.sh stage3
+
+./deploy/gke/00-bootstrap-gke-tpu.sh
+kubectl apply -f deploy/gke/01-baseline-agg-service.yaml
+kubectl apply -f deploy/gke/02-disaggregatedset-torchtpu.yaml
+kubectl apply -f deploy/gke/03-fleetkv-epp-and-pool.yaml
+
+FLEETKV_GATEWAY_URL=&quot;http://${GATEWAY_VIP}&quot; \
+  ./bench/demo_ctl.sh stage3 --target=gke</pre>
+            </div>
+            
+        </div>
+        
+        <div class="note-card" id="note-slide-14">
+          <div class="note-hdr">
+            <span class="badge-num">Slide 14 / 14</span>
+            <span class="badge-mod">Closing &amp; Q&amp;A</span>
+            <span class="badge-time">⏱️ 14:00 – 15:00</span>
+            <button class="jump-btn" onclick="syncToSlide(14)">Sync Projector Here ▶</button>
+          </div>
+          <h2>Thank You!</h2>
+          <div class="note-body">[14:00 - 15:00]
+To wrap up: agent fleets generate tree-structured bursts, not independent linear turns. By combining a fit-aware GAIE ext_proc router with disaggregated vllm-torchtpu and Tier-2 host DRAM on GKE, you keep shared trunks warm without herding parallel sub-agents onto a single pod.
+
+The Go router, GKE manifests, local digital twin, and automated test gates are all in the companion repository. Thank you—happy to take questions!</div>
+          
+        </div>
+        
+  </div>
+
+  <script>
+    const NOTES = [{"num": 1, "title": "Defeating the Prefix-Cache Penalty: KV-Aware Routing & Disaggregated Serving for Agent Fleets on GKE", "module": "Session Opening", "time": "00:00 \u2013 00:35", "notes": "[00:00 - 00:35]\nKubernetes services were built around a simple assumption: HTTP requests are independent, pods are interchangeable, and round-robin spreads load evenly.\n\nWhen you run an autonomous SWE or SRE agent fleet behind a stateless Service, you spend most of your accelerator cycles recomputing identical prompt prefixes across replicas. And if you switch to naive longest-prefix sticky routing, parallel agent fan-out herds onto a single pod and makes P95 tail latency worse than round-robin.\n\nIn this session, we will walk through why both failures happen and how we fix them using Gateway API Inference Extension and disaggregated TorchTPU serving on GKE.", "code": ""}, {"num": 2, "title": "Rabimba Karanjai", "module": "Speaker & Companion Artifact", "time": "00:35 \u2013 01:00", "notes": "[00:35 - 01:00]\nI'm Rabimba Karanjai, a Google Developer Expert for AI/ML and ML Scientist at PayPal.\n\nEverything we cover today\u2014the Go 1.23 Envoy ext_proc router, the GKE Cloud TPU v6e and GAIE manifests, and the trace-calibrated local digital twin\u2014is open-source under Apache-2.0 in our companion repository.", "code": ""}, {"num": 3, "title": "Scan to Grab the Companion Artifact & Slides", "module": "Companion Repository & Resources", "time": "01:00 \u2013 01:20", "notes": "[01:00 - 01:20]\nIf you want to run the benchmark on your laptop or deploy the manifests on GKE, scan the left QR code for the companion repo, or the middle QR code for this interactive slide deck.", "code": ""}, {"num": 4, "title": "Chatbots Are Lines. Agent Fleets Are Trees.", "module": "Part 1: The Agent Tree Workload", "time": "01:20 \u2013 02:30", "notes": "[01:20 - 02:30]\nWhy do agent fleets break standard serving pools? Because a chatbot is a line, whereas an agent workflow is a tree.\n\nWhen an incident orchestrator triggers on an alert, it assembles a 20,480-token shared trunk\u201480 blocks of 256 tokens holding MCP tool schemas, repository structure, and alert state\u2014and at millisecond zero spawns 8 parallel sub-agents. Each sub-agent pulls 8,192 tokens of pod logs and diffs before converging on a synthesis turn. Over the episode, 85.6% of tokens across those branches are shared prefix blocks.", "code": ""}, {"num": 5, "title": "Anatomy of an 8-Way Incident Orchestrator Fork-Storm", "module": "Part 1: Fork-Storm Topology", "time": "02:30 \u2013 03:20", "notes": "[02:30 - 03:20]\nLook at the token budget across a single orchestrator episode. Blocks 0 through 79 form the 20,480-token parent trunk. When the orchestrator forks 8 sub-agents simultaneously, all 8 child requests carry those exact 80 block hashes, followed by a 2-block role delta and a 32-block (8,192-token) log burst on Turn 2. Finally, the join turn reuses the original 80-block trunk.", "code": ""}, {"num": 6, "title": "Failure Mode 1: Stateless K8s Round-Robin & Failure Mode 2: The Prefix-Herd Trap", "module": "Part 2: Two Routing Failure Modes", "time": "03:20 \u2013 05:00", "notes": "[03:20 - 05:00]\nBehind a standard Kubernetes Service, round-robin scatters those 8 child branches across all replicas. Every replica misses on the parent trunk, recomputes 20,480 tokens of prefill, and stalls co-located decode streams past 133 milliseconds P99 ITL.\n\nThe natural next step is enabling longest-prefix sticky routing. That triggers a second failure mode during parallel agent fan-out: the Prefix-Herd Trap. At fork time, all 8 sub-agents match 80 out of 80 parent blocks on Pod 0. A router that maximizes prefix match sends all 8 concurrent branches to Pod 0 while Pods 1 through 3 sit idle. Worse, as those 8 branches append 8,192-token log bursts on Pod 0, they exceed Pod 0's 360-block HBM capacity and LRU-evict the shared parent trunk right before the synthesis join turn.", "code": ""}, {"num": 7, "title": "Why KV-Aware Routing & Disaggregation Need Each Other", "module": "Part 3: Co-Designing Routing & Disaggregation", "time": "05:00 \u2013 06:15", "notes": "[05:00 - 06:15]\nThis is why routing and disaggregation have to work together. KV-aware routing on an aggregated pool ties compute affinity to memory residency, herding forked branches onto whichever pod holds the parent trunk. Disaggregation without KV-aware fit routing still recomputes shared prefixes.\n\nWhen we combine them, Prefill pods compute the shared trunk once, pin evicted blocks in 48 GiB of host DRAM, compute only the branch delta, and stream KV blocks over gVNIC to whichever Decode pod has HBM headroom.", "code": ""}, {"num": 8, "title": "Control Plane: Fit-Aware Tree Routing in GAIE ext_proc", "module": "Part 3: Control Plane (FleetKV EPP)", "time": "06:15 \u2013 07:30", "notes": "[06:15 - 07:30]\nHere is the scoring function inside fleetkv-epp. Every vllm-torchtpu prefill pod publishes BlockStored and BlockRemoved events over ZeroMQ on port 5557 as 256-token blocks enter HBM or spill to host DRAM.\n\nWhen Envoy forwards a request over ext_proc, the router first checks the HBM Fit Gate: if admitting another branch plus our 24-block safety reserve would overflow the pod's free HBM blocks, it spills that branch to a peer pod instead of evicting the shared trunk. Second, notice our staged lease accounting: we release InFlightPrefillTokens as soon as ResponseHeaders arrive at TTFT, while holding the HBM block reservation until the SSE decode stream completes.", "code": "func ScoreEndpoint(pod *PodState, req *RouteInput) float64 {\n    // 1. Hard HBM Fit Gate: spill to peer if branch horizon overflows HBM\n    effectiveFree := pod.FreeHBMBlocks - pod.ReservedBlocks\n    if effectiveFree < req.EstimatedBranchBlocks + SafetyReserveBlocks {\n        return RejectOverflowSpillToPeer\n    }\n    // 2. Trade off ZMQ-indexed block hits against in-flight prefill queue\n    savedMs   := float64(pod.MatchedHBMBlocks)*HBMBlockMs +\n                 float64(pod.MatchedDRAMBlocks)*DRAMBlockMs\n    queueWait := float64(pod.InFlightPrefillTokens) / PodTokPerMs\n    return savedMs - queueWait\n}"}, {"num": 9, "title": "Data Plane: vllm-torchtpu + TPUConnectorHMA on GKE", "module": "Part 3: Data Plane (vllm-torchtpu + HMA)", "time": "07:30 \u2013 08:30", "notes": "[07:30 - 08:30]\nOn the data plane, our DisaggregatedSet runs vllm-torchtpu on GKE Trillium ct6e-standard-4t node pools. Prefill pods mount a 64 GiB /dev/shm volume and allocate 48 GiB to TPUConnectorHMA as a Tier-2 host DRAM cache, keeping shared agent trunks warm even when active branch deltas cycle through HBM.\n\nOnce a prefill pod computes the branch delta, it transfers the KV blocks asynchronously over an MTU-8896 gVNIC network to the Decode pod selected by fleetkv-epp. Let's switch to the live terminal and watch all three stages under load.", "code": ""}, {"num": 10, "title": "Live Demo: 3-Stage Traffic Flip Under 64-Branch Fork-Storm", "module": "Part 4: Live 3-Stage Traffic Flip Demo", "time": "08:30 \u2013 11:45", "notes": "[08:30 - 11:45]\n[SWITCH TO TMUX TERMINAL]\n1. Stage 1 (round_robin): Point out the 4-pod even traffic split (25% each), low cache hit rate (~30.8% in the local twin, ~19.4% on 8-chip GKE), and P99 decode ITL at 133 ms from prefill-decode interference.\n2. Run ./bench/demo_ctl.sh stage2: Watch Stage 1 freeze in Column 1 while Stage 2 skews onto a single hot pod as all 8 forked branches match the 80-block trunk. HBM evictions climb past 10,500 blocks and P95 tail TTFT spikes to 33.4 seconds\u2014worse than Stage 1.\n3. Run ./bench/demo_ctl.sh stage3: Watch fleetkv-epp emit herd_spillover decisions, pinning the trunk in prefill HBM/DRAM while splitting decode streams evenly across decode-0 and decode-1. HBM evictions drop to 0, hit rate reaches 86.1% (91.6% on GKE), and P99 ITL drops to 33.1 ms (< 40 ms SLO).", "code": "# Launch 3-pane tmux layout (Scorecard TUI + EPP Route Stream + Shell)\n./bench/demo_ctl.sh prep\n\n# Flip live traffic across all 3 architectures:\n./bench/demo_ctl.sh stage2   # Trigger single-pod herd & HBM thrash\n./bench/demo_ctl.sh stage3   # Enable FleetKV Fit Gate + Disagg P/D"}, {"num": 11, "title": "Benchmark Scorecard: Gate G1 Twin & GKE Cloud TPU v6e", "module": "Part 5: Empirical Benchmark Scorecard", "time": "11:45 \u2013 12:30", "notes": "[11:45 - 12:30]\nHere are both sets of numbers side by side: the local trace-calibrated twin verified by make gate-g1 on 416 requests per stage, and the 8-chip GKE TPU v6e hardware reference (2x ct6e-standard-4t).\n\nIn both environments, Stage 2's naive sticky routing makes P95 tail TTFT worse than stateless round-robin\u201433.4 seconds in the 4-pod twin and 3.89 seconds on GKE\u2014because all 8 forked branches queue on a single replica and evict over 10,500 HBM blocks. Stage 3 cuts median TTFT by 82 to 88 percent, eliminates HBM evictions, and keeps P99 decode ITL at 27 to 33 milliseconds.", "code": ""}, {"num": 12, "title": "Three Production Invariants (Audited in CI by Gate G2)", "module": "Part 6: Production GKE Invariants", "time": "12:30 \u2013 13:30", "notes": "[12:30 - 13:30]\nThree operational invariants before you deploy this on GKE\u2014all enforced by tests/test_g3_k8s_manifests.py in CI.\n\nFirst, set PYTHONHASHSEED=\"0\" on every container; otherwise Python's per-process hash randomization causes block hash mismatches across workers. Second, set --block-size 256 on both vllm-torchtpu and fleetkv-epp so Pallas paged-attention kernels fit inside TPU v6e Scalar Memory. Third, use a Kubernetes Headless Service (clusterIP: None) filtered to llm-d.ai/role=prefill so the router subscribes to every prefill pod's ZMQ socket individually, and configure mtu: 8896 on your gVNIC VPC.", "code": ""}, {"num": 13, "title": "Reproduce Locally in 60 Seconds or Deploy on GKE TPU v6e", "module": "Reference: GKE & Local Commands", "time": "13:30 \u2013 14:00", "notes": "[13:30 - 14:00]\nHere is the complete command reference for both environments. On the left, make gate-all runs our Go race-detector unit tests, cross-language SHA-256 block-hash parity checks, the 3-stage end-to-end fork-storm benchmark, and the Kubernetes manifest audit. On the right are the four commands to bootstrap the MTU-8896 GKE cluster, apply the DisaggregatedSet and InferencePool manifests, and run the exact same stage controller against a live GKE Gateway VIP.", "code": "# Run all verification gates (Go race + E2E SLOs + K8s YAML)\nmake gate-all\n\n# Launch interactive 3-pane conference TUI\n./bench/demo_ctl.sh prep\n./bench/demo_ctl.sh stage2\n./bench/demo_ctl.sh stage3\n\n./deploy/gke/00-bootstrap-gke-tpu.sh\nkubectl apply -f deploy/gke/01-baseline-agg-service.yaml\nkubectl apply -f deploy/gke/02-disaggregatedset-torchtpu.yaml\nkubectl apply -f deploy/gke/03-fleetkv-epp-and-pool.yaml\n\nFLEETKV_GATEWAY_URL=\"http://${GATEWAY_VIP}\" \\\n  ./bench/demo_ctl.sh stage3 --target=gke"}, {"num": 14, "title": "Thank You!", "module": "Closing & Q&A", "time": "14:00 \u2013 15:00", "notes": "[14:00 - 15:00]\nTo wrap up: agent fleets generate tree-structured bursts, not independent linear turns. By combining a fit-aware GAIE ext_proc router with disaggregated vllm-torchtpu and Tier-2 host DRAM on GKE, you keep shared trunks warm without herding parallel sub-agents onto a single pod.\n\nThe Go router, GKE manifests, local digital twin, and automated test gates are all in the companion repository. Thank you\u2014happy to take questions!", "code": ""}];
+    let cur = 1;
+    const channel = new BroadcastChannel('kubecon26_fleetkv_sync');
+
+    function updateConsole(n) {
+      if (n < 1) n = 1;
+      if (n > NOTES.length) n = NOTES.length;
+      cur = n;
+      const item = NOTES[cur - 1];
+      const nextItem = NOTES[cur] || null;
+      document.getElementById('console-counter').textContent = `Slide ${cur} / ${NOTES.length}`;
+      document.getElementById('live-title').textContent = `LIVE ON SCREEN — Slide ${item.num}: ${item.title} (${item.time})`;
+      document.getElementById('live-notes').textContent = item.notes;
+      document.getElementById('live-next').textContent = nextItem ? `⏭️ UP NEXT — Slide ${nextItem.num}: ${nextItem.title} (${nextItem.time})` : `🎉 End of Deck`;
+      document.querySelectorAll('.note-card').forEach(c => c.classList.remove('active-card'));
+      const activeEl = document.getElementById(`note-slide-${cur}`);
+      if (activeEl) {
+        activeEl.classList.add('active-card');
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function syncToSlide(n) {
+      updateConsole(n);
+      channel.postMessage({ type: 'SLIDE_CHANGE', slide: n });
+    }
+
+    function stepSlide(delta) {
+      syncToSlide(cur + delta);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        updateConsole(ev.data.slide);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); stepSlide(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); stepSlide(-1); }
+    });
+
+    updateConsole(1);
+  </script>
+</body>
+</html>

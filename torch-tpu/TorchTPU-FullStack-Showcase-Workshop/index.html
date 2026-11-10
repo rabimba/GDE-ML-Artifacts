@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command and control: Orchestrate app development with Gemini and MCP — Workshop Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --g-blue: #1A73E8;
+      --g-blue-dark: #174EA6;
+      --g-blue-bg: #E8F0FE;
+      --g-red: #EA4335;
+      --g-red-dark: #C5221F;
+      --g-red-bg: #FCE8E6;
+      --g-yellow: #FBBC04;
+      --g-yellow-bg: #FEF7E0;
+      --g-green: #34A853;
+      --g-green-dark: #137333;
+      --g-dark: #202124;
+      --g-gray: #5F6368;
+      --g-border: #DADCE0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Google Sans', 'Roboto', system-ui, sans-serif;
+      background: #111318;
+      color: var(--g-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Main viewport scaling 16:9 canvas */
+    #deck-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+    }
+    .slide {
+      display: none;
+      width: min(96vw, calc((100vh - 64px) * 16 / 9));
+      aspect-ratio: 16 / 9;
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    body.notes-open .slide {
+      width: min(94vw, calc((100vh - 245px) * 16 / 9));
+    }
+    .slide.active { display: block; }
+    .slide-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      padding: 2.2% 4.2%;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top & Bottom Master Branding */
+    .slide-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2%;
+      min-height: 36px;
+    }
+    .gcl-logo-sm { height: 34px; object-fit: contain; }
+    .gcl-logo { position: absolute; top: 4.5%; left: 4.5%; height: 46px; z-index: 5; }
+    .gcl-footer { position: absolute; bottom: 2.8%; left: 4.2%; height: 15px; opacity: 0.85; }
+    .prop-badge { font-size: 0.78rem; color: var(--g-gray); font-weight: 500; }
+    .prop-badge-abs { position: absolute; top: 4.5%; right: 4.2%; font-size: 0.78rem; color: var(--g-gray); z-index: 5; }
+    .module-pill {
+      background: #F1F3F4;
+      color: var(--g-gray);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Cover Slide */
+    .slide-cover {
+      padding: 0;
+      flex-direction: row;
+      align-items: center;
+    }
+    .cover-left {
+      width: 52%;
+      padding: 8% 3% 4% 4.8%;
+      z-index: 3;
+    }
+    .pill-badge {
+      display: inline-block;
+      background: var(--g-blue-bg);
+      color: var(--g-blue);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--g-blue);
+      margin-bottom: 18px;
+    }
+    .cover-title {
+      font-size: clamp(1.7rem, 3.1vw, 3.1rem);
+      line-height: 1.16;
+      font-weight: 700;
+      color: var(--g-dark);
+      margin-bottom: 18px;
+    }
+    .cover-subtitle {
+      font-size: clamp(0.95rem, 1.35vw, 1.3rem);
+      color: var(--g-gray);
+      line-height: 1.45;
+      margin-bottom: 22px;
+    }
+    .cover-meta {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--g-blue-dark);
+    }
+    .cover-right {
+      width: 48%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .cover-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* QR Hub Slide */
+    .center-title { text-align: center; font-size: clamp(1.5rem, 2.5vw, 2.4rem); font-weight: 700; margin-bottom: 4px; }
+    .center-subtitle { text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.6%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .qr-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .qr-icon-badge {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4285F4, #669DF6);
+      color: #fff;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .qr-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .qr-link { font-size: 0.84rem; color: var(--g-blue); font-weight: 600; text-decoration: underline; margin-bottom: 6px; word-break: break-all; }
+    .qr-card p { font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }
+    .qr-img { width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }
+
+    /* Big dedicated QR slide (credits redemption) */
+    .big-qr-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%; }
+    .big-qr-card {
+      background: #fff; border: 2px solid var(--g-border); border-radius: 20px;
+      padding: 1.6%; box-shadow: 0 10px 30px rgba(32,33,36,.12);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .big-qr-card:hover { transform: scale(1.02); border-color: var(--g-blue); box-shadow: 0 16px 40px rgba(26,115,232,.22); }
+    .big-qr-card img { display: block; width: min(40vh, 340px); height: auto; aspect-ratio: 1; }
+    .big-qr-link {
+      font-size: clamp(1.25rem, 2.6vw, 1.9rem); font-weight: 700; color: var(--g-blue);
+      text-decoration: none; letter-spacing: -0.01em;
+    }
+    .big-qr-link:hover { text-decoration: underline; }
+    .big-qr-desc { max-width: 74%; text-align: center; color: var(--g-gray); font-size: 0.95rem; line-height: 1.55; }
+
+    .wifi-chip {
+      background: #F1F3F4; border: 1.5px solid var(--g-border); border-radius: 999px;
+      padding: 8px 22px; font-size: 0.95rem; color: var(--g-dark); font-weight: 500;
+    }
+    .wifi-chip code {
+      font-family: 'Roboto Mono', monospace; background: #fff; border: 1px solid var(--g-border);
+      border-radius: 6px; padding: 2px 10px; font-weight: 700; color: var(--g-blue-dark);
+    }
+
+    /* Speaker & Thank You Slide */
+    .slide-speaker { padding: 0; flex-direction: row; align-items: center; }
+    .speaker-fan-bg { position: absolute; left: 0; top: 0; width: 48%; height: 100%; z-index: 1; }
+    .speaker-fan-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .speaker-content {
+      position: relative; z-index: 3;
+      display: flex; align-items: center;
+      width: 100%; height: 100%;
+      padding: 6% 5% 6% 7%;
+      gap: 6%;
+    }
+    .speaker-photo-wrap img {
+      width: clamp(200px, 27vw, 330px);
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+      border: 4px solid #fff;
+    }
+    .speaker-Bio-text h1 { font-size: clamp(2.2rem, 3.8vw, 3.8rem); line-height: 1.08; margin-bottom: 16px; }
+    .role-line { font-size: clamp(1.1rem, 1.6vw, 1.55rem); color: #3C4043; margin-bottom: 8px; font-weight: 500; }
+    .speaker-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tag-chip { background: var(--g-blue-bg); color: var(--g-blue-dark); padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+    .thankyou-right {
+      margin-left: 46%;
+      width: 54%;
+      padding: 5% 4.5% 5% 2%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .thankyou-text h1 { font-size: clamp(2.4rem, 4.2vw, 4.2rem); margin-bottom: 12px; }
+    .thankyou-text p { font-size: 1.05rem; color: var(--g-gray); line-height: 1.5; }
+    .thankyou-qrs { display: flex; flex-direction: column; gap: 18px; }
+    .ty-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; background: #F8F9FA; padding: 10px; border-radius: 12px; border: 1px solid var(--g-border); width: 185px; }
+    .ty-qr-box img { width: 125px; height: 125px; margin-bottom: 6px; }
+    .ty-qr-box span { font-size: 0.72rem; color: var(--g-blue-dark); font-weight: 600; line-height: 1.25; }
+
+    /* Section Poll Slide */
+    .section-poll-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 88%; margin: 0 auto; }
+    .section-robot-icon { width: 64px; height: 64px; margin-bottom: 8px; }
+    .section-poll-wrap h2 { font-size: clamp(1.6rem, 2.6vw, 2.5rem); margin-bottom: 16px; line-height: 1.18; }
+    .interactive-poll-card {
+      width: 100%;
+      background: var(--g-blue-bg);
+      border: 2px solid var(--g-blue);
+      border-radius: 14px;
+      padding: 16px 22px;
+      text-align: left;
+    }
+    .poll-q { font-size: 1.05rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 10px; }
+    .poll-opts { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+    .poll-opts li {
+      background: #fff;
+      border: 1.5px solid #BBD6FB;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .poll-opts li:hover, .poll-opts li.voted { background: #D2E3FC; border-color: var(--g-blue); font-weight: 600; }
+    .vote-pill { font-size: 0.75rem; background: var(--g-blue); color: #fff; padding: 2px 9px; border-radius: 999px; }
+    .reveal-btn, .reveal-btn-sm {
+      background: var(--g-blue); color: #fff; border: none;
+      padding: 7px 14px; border-radius: 8px; font-weight: 600;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .reveal-btn:hover, .reveal-btn-sm:hover { background: var(--g-blue-dark); }
+    .poll-answer, .quiz-ans-row {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 12px;
+      background: #E6F4EA;
+      border-left: 4px solid var(--g-green);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--g-green-dark);
+    }
+    .poll-answer.visible, .quiz-ans-row.visible { display: block; }
+
+    /* Triad Slide */
+    .triad-headline {
+      font-size: clamp(1.35rem, 2.2vw, 2.15rem);
+      font-weight: 700;
+      line-height: 1.28;
+      max-width: 90%;
+      margin: 1.5% auto 4% auto;
+    }
+    .hl-blue { color: var(--g-blue); }
+    .hl-green { color: var(--g-green-dark); }
+    .triad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex: 1;
+      margin-bottom: 4%;
+    }
+    .triad-box {
+      flex: 1;
+      background: #F1F3F4;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 28px 16px 22px 16px;
+      text-align: center;
+      position: relative;
+    }
+    .triad-center { border: 2px solid var(--g-blue); background: var(--g-blue-bg); }
+    .triad-box img { width: 58px; height: 58px; margin-bottom: 10px; }
+    .triad-box h3 { font-size: 1.25rem; line-height: 1.3; }
+    .triad-arrow { font-size: 2rem; color: var(--g-gray); font-weight: 700; }
+
+    /* Standard Content & Split Layouts */
+    .slide-h2 { font-size: clamp(1.35rem, 2.1vw, 2.05rem); font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
+    .sub-blue { font-size: clamp(1rem, 1.3vw, 1.22rem); color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
+    .body-p { font-size: 0.92rem; color: #3C4043; line-height: 1.45; margin-bottom: 10px; }
+    .blue-outline-card {
+      border: 2.5px solid var(--g-blue);
+      border-radius: 16px;
+      padding: 20px 26px;
+      flex: 1;
+      margin-bottom: 3.5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card-intro { font-size: 1.05rem; font-weight: 500; margin-bottom: 14px; color: var(--g-dark); line-height: 1.4; }
+    .obj-list { list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.96rem; line-height: 1.42; }
+    .split-2col {
+      display: grid;
+      grid-template-columns: 47% 51%;
+      gap: 2%;
+      flex: 1;
+      margin-bottom: 3.2%;
+      min-height: 0;
+    }
+    .col-left, .col-right { display: flex; flex-direction: column; min-height: 0; }
+    .clean-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; font-size: 0.89rem; line-height: 1.38; color: #3C4043; }
+    .clean-bullets li strong { color: var(--g-blue-dark); }
+    .compact-list { gap: 6px; font-size: 0.84rem; margin-top: 8px; }
+    .center-img-box { align-items: center; justify-content: center; background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 10px; }
+    .arch-img { max-width: 100%; max-height: 88%; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
+    .click-hint, .img-caption { font-size: 0.76rem; color: var(--g-gray); margin-top: 5px; text-align: center; }
+
+    /* Three Tech Columns */
+    .three-tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5%;
+      flex: 1;
+      margin: 1.5% 0 4% 0;
+    }
+    .tech-col-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tech-col-card img { width: 54px; height: 54px; object-fit: contain; margin-bottom: 14px; }
+    .tech-col-card h3 { font-size: 1.15rem; margin-bottom: 10px; line-height: 1.28; }
+    .tech-col-card p { font-size: 0.9rem; color: #3C4043; line-height: 1.45; }
+
+    /* Dual Cards & Quiz Banner */
+    .dual-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2%;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 10px;
+    }
+    .bordered-card {
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #fff;
+    }
+    .card-blue { border: 2.5px solid var(--g-blue); }
+    .card-blue h3 { color: var(--g-blue); font-size: 1.18rem; margin-bottom: 2px; }
+    .card-red { border: 2.5px solid var(--g-red); }
+    .card-red h3 { color: var(--g-red-dark); font-size: 1.18rem; margin-bottom: 2px; }
+    .bordered-card h4 { font-size: 0.86rem; color: var(--g-gray); margin-bottom: 8px; font-weight: 600; }
+    .quiz-banner {
+      background: var(--g-yellow-bg);
+      border: 1.5px solid var(--g-yellow);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin-bottom: 2.8%;
+    }
+    .quiz-q-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.86rem; font-weight: 700; color: #B06000; }
+
+    /* Lab Divider */
+    .lab-divider-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lab-divider-center h1 { font-size: clamp(2.4rem, 4vw, 3.8rem); margin-bottom: 18px; }
+    .lab-sub-row { display: flex; align-items: center; gap: 14px; font-size: 1.35rem; color: var(--g-blue); font-weight: 700; }
+    .lab-sub-row img { width: 36px; height: 36px; }
+
+    /* Terminal Code Box */
+    .terminal-card {
+      background: var(--g-dark);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3C4043;
+      margin-bottom: 8px;
+    }
+    .terminal-card.compact { max-height: 46%; }
+    .term-header {
+      background: #2D2E31;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-r { background: #EA4335; }
+    .dot-y { background: #FBBC04; }
+    .dot-g { background: #34A853; }
+    .term-title { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #9AA0A6; }
+    .copy-btn {
+      background: #3C4043; color: #E8EAED; border: 1px solid #5F6368;
+      border-radius: 5px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .term-body {
+      padding: 10px 14px;
+      color: #E8EAED;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.38;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+    }
+    .shot-preview-box {
+      flex: 1;
+      min-height: 0;
+      background: #F8F9FA;
+      border: 1px solid var(--g-border);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .shot-preview-box img { max-width: 100%; max-height: 135px; object-fit: contain; border-radius: 4px; cursor: zoom-in; }
+
+    /* Vertical Stepper & Callout */
+    .v-stepper-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      justify-content: space-around;
+    }
+    .v-step-item { display: flex; align-items: flex-start; gap: 14px; }
+    .v-step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue); color: #fff; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .v-step-text h4 { font-size: 1rem; margin-bottom: 3px; }
+    .v-step-text code { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--g-green-dark); }
+    .callout-card {
+      background: #fff; border: 1.5px solid var(--g-border);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    }
+    .callout-pill {
+      display: inline-block; background: var(--g-red-bg); color: var(--g-red-dark);
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 6px;
+    }
+    .callout-card h4 { font-size: 0.98rem; margin-bottom: 4px; }
+    .callout-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.36; }
+
+    /* Four Steps Grid */
+    .four-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .four-step-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .four-step-card.step-card-hi { border: 2.5px solid var(--g-blue); background: #fff; }
+    .step-num-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue-bg); color: var(--g-blue);
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .step-card-hi .step-num-circle { background: var(--g-blue); color: #fff; }
+    .four-step-card h4 { font-size: 0.98rem; margin-bottom: 8px; line-height: 1.28; }
+    .step-card-hi h4 { color: var(--g-blue); }
+    .four-step-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.4; }
+
+    /* Verification Cards */
+    .query-box { background: #F1F3F4; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 10px; }
+    .grounded-box { background: var(--g-blue-bg); border: 1px solid var(--g-blue); padding: 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .trap-box { padding: 10px 12px; border-radius: 8px; font-size: 0.83rem; line-height: 1.35; margin-bottom: 8px; flex: 1; }
+    .trap-red { background: var(--g-red-bg); border: 1px solid var(--g-red); }
+    .trap-yellow { background: var(--g-yellow-bg); border: 1px solid var(--g-yellow); }
+
+    /* Lab Timer Widget */
+    .title-with-timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .lab-timer-widget {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g-blue-bg); border: 1.5px solid var(--g-blue);
+      padding: 4px 12px; border-radius: 999px; font-size: 0.82rem;
+    }
+    .timer-label { font-weight: 700; color: var(--g-blue-dark); }
+    .timer-display { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: var(--g-red-dark); min-width: 48px; }
+    .timer-btn {
+      background: var(--g-blue); color: #fff; border: none;
+      border-radius: 999px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+    }
+    .timer-btn.secondary { background: #5F6368; }
+
+    /* Speaker Notes Teleprompter Drawer (Press S) */
+    #notes-drawer {
+      display: none;
+      height: 185px;
+      background: #1E2028;
+      border-top: 2px solid var(--g-blue);
+      color: #E8EAED;
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    body.notes-open #notes-drawer { display: block; }
+    #notes-drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 0.8rem; color: #8AB4F8; font-weight: 700;
+    }
+    #notes-drawer-content { white-space: pre-wrap; font-family: 'Roboto', sans-serif; }
+
+    /* Bottom Presenter Control Bar (hidden by default; press B to toggle; never in fullscreen) */
+    #presenter-bar {
+      height: 46px;
+      background: #181A20;
+      border-top: 1px solid #2D3139;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      color: #E8EAED;
+      font-size: 0.84rem;
+      user-select: none;
+    }
+    body.controls-visible #presenter-bar { display: flex; }
+    body.is-fullscreen #presenter-bar { display: none !important; }
+    body:not(.controls-visible) .slide { width: min(96vw, calc((100vh - 24px) * 16 / 9)); }
+    body:not(.controls-visible).notes-open .slide { width: min(94vw, calc((100vh - 200px) * 16 / 9)); }
+    .bar-group { display: flex; align-items: center; gap: 8px; }
+    .bar-btn {
+      background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
+      padding: 5px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .bar-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .bar-btn.active-toggle { background: var(--g-blue); border-color: var(--g-blue); }
+    #progress-track { width: 140px; height: 6px; background: #2D3139; border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--g-blue); width: 3%; transition: width 0.2s; }
+
+    /* Slide Grid Modal (Press G) */
+    #grid-modal, #lightbox-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15, 17, 23, 0.92);
+      z-index: 100;
+      padding: 32px;
+      overflow-y: auto;
+    }
+    #grid-modal.open, #lightbox-modal.open { display: flex; flex-direction: column; }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .grid-item {
+      background: #20232A; border: 1.5px solid #3C4043; border-radius: 8px;
+      padding: 12px; color: #E8EAED; cursor: pointer;
+    }
+    .grid-item:hover, .grid-item.current { border-color: var(--g-blue); background: #263147; }
+    .grid-item-num { font-size: 0.75rem; color: #8AB4F8; font-weight: 700; margin-bottom: 4px; }
+    .grid-item-title { font-size: 0.88rem; font-weight: 600; }
+    #lightbox-modal { align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox-img { max-width: 94vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
+  </style>
+</head>
+<body>
+  <div id="deck-viewport">
+    <section class="slide active" data-slide="1" data-title="Full-Stack PyTorch on Cloud TPU: From Domain LoRA &amp; Pallas Kernels to Prefix-Cached Serving" data-module="Module 0 • Welcome &amp; Vision" data-time="00:00 – 00:02 (2m)">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">TorchTPU Full-Stack Showcase</div>
+            <h1 class="cover-title">Full-Stack PyTorch on Cloud TPU:<br/>From Domain LoRA &amp; Pallas Kernels to Prefix-Cached Serving</h1>
+            <p class="cover-subtitle">An End-to-End Developer Playbook with torch_tpu, TPU Agent Suite, Colab MCP, and SGLang / vLLM</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="2" data-title="Rabimba Karanjai" data-module="Module 0 • Speaker Intro" data-time="00:02 – 00:04 (2m)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Proprietary + Confidential</span>
+          <div class="speaker-content">
+            <div class="speaker-photo-wrap">
+              <img src="assets/ref_slide4_pic2.jpg" alt="Rabimba Karanjai"/>
+            </div>
+            <div class="speaker-Bio-text">
+              <h1>Rabimba<br/>Karanjai</h1>
+              <p class="role-line">Google Developer Expert — AI &amp; ML</p>
+              <p class="role-line">AI Systems &amp; Cloud TPU Engineering</p>
+              <div class="speaker-tags">
+                <span class="tag-chip">Native PyTorch on TPU</span>
+                <span class="tag-chip">Pallas Kernel Fusion</span>
+                <span class="tag-chip">SGLang &amp; vLLM Serving</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="3" data-title="Workshop Notebooks, Demos &amp; Agent Suite" data-module="Module 0 • Notebooks &amp; Artifacts" data-time="00:04 – 00:06 (2m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 0 • Notebooks &amp; Artifacts • 00:04 – 00:06 (2m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="center-title">Workshop Notebooks, Demos &amp; Agent Suite</h2>
+          <p class="center-subtitle">Everything we show today is reproducible in our Colab notebooks and CLI scripts</p>
+          <div class="qr-grid">
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>1. Master Showcase Notebook</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts" target="_blank" class="qr-link">notebooks/06_end_to_end_showcase...</a>
+              <p>Multi-model LoRA adaptation, 73-submodule Pallas HF patching &amp; serving.</p>
+              <img class="qr-img" src="assets/qr_codelab.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>2. SpecGuard TPU &amp; AutoKernel</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts" target="_blank" class="qr-link">notebooks/04 &amp; 05_*.ipynb</a>
+              <p>App A (LoRA -&gt; SGLang Prefix Cache) and App C (4-Way XProf Pallas Lab).</p>
+              <img class="qr-img" src="assets/qr_agy_docs.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>3. GitHub Repo &amp; Slides</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts" target="_blank" class="qr-link">github.com/rabimba/GDE-ML-Artifacts</a>
+              <p>All benchmark JSON artifacts, XProf plots, and this interactive deck.</p>
+              <img class="qr-img" src="assets/qr_rabimba_github.png" alt="QR Code"/>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="4" data-title="Why Do Enterprise AI Guardrails Hit a Wall in Production?" data-module="Module 1 • The Enterprise Challenge" data-time="00:06 – 00:09 (3m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • The Enterprise Challenge • 00:06 – 00:09 (3m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="section-poll-wrap">
+            <img class="section-robot-icon" src="assets/ref_slide5_pic1.png" alt="Agent Icon"/>
+            <h2>Why Do Enterprise AI Guardrails Hit a Wall in Production?</h2>
+            <div class="interactive-poll-card">
+              <div class="poll-q">🎤 Audience Poll: When you deploy a code or payment compliance auditor in production, what breaks first?</div>
+              <ul class="poll-opts"><li onclick="this.classList.toggle('voted')">A) Off-the-shelf base models hallucinate internal rules (PCI-DSS v4.0, ISO-20022, or TorchTPU migration rules) <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">B) Eager PyTorch dispatch &amp; dynamic sequence lengths trigger XLA recompilation and starve the TPU MXU <span class='vote-pill'>Click to Vote</span></li><li onclick="this.classList.toggle('voted')">C) Multi-pass audits re-prefill the same 1,280-token policy &amp; AST header on every file or transaction <span class='vote-pill'>Click to Vote</span></li></ul>
+              <button class="reveal-btn" onclick="this.nextElementSibling.classList.toggle('visible')">✨ Reveal Takeaway</button>
+              <div class="poll-answer">💡 All three compound! Fixing only accuracy (LoRA) without static shapes, fused Pallas kernels, and prefix caching leaves 2x–6x of TPU performance on the table.</div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="5" data-title="Anatomy of an AI Coding Agent" data-module="Module 1 • The Three Pillars" data-time="00:09 – 00:12 (3m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • The Three Pillars • 00:09 – 00:12 (3m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="triad-headline">
+            An AI coding agent is a system that uses a <span class="hl-blue">model</span> to reason, an <span class="hl-blue">agent harness</span> to plan &amp; execute, and <span class="hl-blue">MCP &amp; skills</span> to access authoritative knowledge and tools.
+          </div>
+          <div class="triad-row">
+            <div class="triad-box">
+              <img src="assets/ref_slide6_pic8.png" alt="Tools"/>
+              <h3>Native torch_tpu<br/>&amp; Multi-Model LoRA</h3>
+            </div>
+            <div class="triad-arrow">⟷</div>
+            <div class="triad-box triad-center">
+              <img src="assets/ref_slide6_pic9.png" alt="Agent"/>
+              <h3>XProf &amp; Pallas<br/>In-Model Kernels</h3>
+            </div>
+            <div class="triad-arrow">⟷</div>
+            <div class="triad-box">
+              <img src="assets/ref_slide6_pic12.png" alt="Model"/>
+              <h3>SGLang &amp; vLLM<br/>Prefix Caching</h3>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="6" data-title="The 4-Stage Full-Stack TorchTPU Architecture" data-module="Module 1 • End-to-End Architecture" data-time="00:12 – 00:16 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • End-to-End Architecture • 00:12 – 00:16 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">The 4-Stage Full-Stack TorchTPU Architecture</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">From Agentic Colab Bridge to Prefix-Cached Serving</h3>
+              <p class="body-p">Every layer in our stack hands off cleanly to the next on a single Cloud TPU chip (`tpu7x` Chip 0):</p>
+              <ul class="clean-bullets"><li><strong>1. Control Plane (`colab-mcp` + `tpu-agent-suite`):</strong> Connects your AI coding agent and Colab browser UI to a remote GKE TPU pod over `localhost:8888`.</li><li><strong>2. Domain LoRA (`torch.device(&#x27;tpu&#x27;)`):</strong> Adapts `Qwen3-0.6B` (SecOps) and `Qwen2.5-0.5B` (FinTech PCI-DSS) using static `bfloat16` shapes.</li><li><strong>3. In-Model Pallas Kernels (`jax_op`):</strong> Hot-patches 73 `RMSNorm` and `SwiGLU` submodules in-place with custom Pallas TPU kernels.</li><li><strong>4. SGLang / vLLM Serving:</strong> Serves the merged checkpoint with RadixAttention prefix caching (`2.46x` Warm TTFT speedup).</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/torchtpu_e2e_architecture.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="7" data-title="Developer Workflow: Colab MCP + TPU Agent Suite" data-module="Module 1 • Interactive Developer Setup" data-time="00:16 – 00:20 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Interactive Developer Setup • 00:16 – 00:20 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Developer Workflow: Colab MCP + TPU Agent Suite</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Zero-Friction Interactive TPU Development</h3>
+              <p class='body-p'>How developers and coding agents connect to the exact same Cloud TPU runtime simultaneously:</p>
+              <ul class="clean-bullets"><li><strong>Colab Local Runtime Tunnel:</strong> Launch Jupyter on the TPU pod (`:8888`) with `--ServerApp.allow_origin=&#x27;https://colab.research.google.com&#x27;` and port-forward to `localhost:8888`.</li><li><strong>`colab-mcp` Integration:</strong> Wire `uvx colab-mcp` into `.opencode/opencode.jsonc` so the coding agent can read, edit, and run Colab cells live in your browser.</li><li><strong>Single-Chip Isolation (`TPU_VISIBLE_CHIPS=0`):</strong> Pin each experiment to one chip and initialize `torch_tpu` before importing `jax` so PyTorch and Pallas share the PJRT runtime cleanly.</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">.opencode/opencode.jsonc &amp; TPU Chip 0 Isolation</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>// 1. .opencode/opencode.jsonc
+{
+  &quot;mcp&quot;: {
+    &quot;colab-mcp&quot;: {
+      &quot;type&quot;: &quot;local&quot;,
+      &quot;command&quot;: [&quot;uvx&quot;, &quot;colab-mcp&quot;]
+    }
+  }
+}
+
+# 2. Single-Chip PJRT Sharing (PyTorch + JAX Pallas)
+os.environ.pop(&quot;TPU_VISIBLE_DEVICES&quot;, None)
+os.environ[&quot;TPU_VISIBLE_CHIPS&quot;] = &quot;0&quot;
+os.environ[&quot;TPU_CHIPS_PER_HOST_BOUNDS&quot;] = &quot;1,1,1&quot;
+import torch, torch_tpu
+_ = torch.ones(1, device=&quot;tpu&quot;)  # Acquire PJRT first!
+torch.accelerator.synchronize()
+import jax  # Shares PJRT client with torch_tpu</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="8" data-title="Native PyTorch on TPU (torch_tpu) &amp; What to Avoid on Cloud TPU" data-module="Module 1 • Native torch_tpu vs Legacy Stack" data-time="00:20 – 00:23 (3m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 1 • Native torch_tpu vs Legacy Stack • 00:20 – 00:23 (3m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Native PyTorch on TPU (torch_tpu)</h3>
+              <h4>Modern PrivateUse1 Backend + TorchDynamo</h4>
+              <ul class="clean-bullets"><li><strong>Standard Device API:</strong> `device = torch.device(&#x27;tpu&#x27;)` and `torch.accelerator.synchronize()`.</li><li><strong>3 Execution Gears:</strong> Eager (debug), `TORCH_TPU_DEFER_AND_FUSE=1` (graph cut), and `torch.compile(backend=&#x27;tpu&#x27;)`.</li><li><strong>First-Class Custom Kernels:</strong> `torch.tpu.pallas.jax_op` wraps any JAX/Pallas function as a native PyTorch op.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>What to Avoid on Cloud TPU</h3>
+              <h4>Anti-Patterns That Hurt Throughput</h4>
+              <ul class="clean-bullets"><li><strong>Deprecated `torch_xla`:</strong> Never import `torch_xla` or `xm.xla_device()`; all new workloads use `torch_tpu`.</li><li><strong>Dynamic Sequence Shapes:</strong> Variable-length batches force XLA recompilation on every step; pad to static buckets (`128`, `256`).</li><li><strong>Host-Device Sync in Loops:</strong> Calling `loss.item()` or `print(tensor)` mid-step stalls the asynchronous TPU execution pipeline.</li></ul>
+            </div>
+          </div>
+          <div class="quiz-banner">
+            <div class="quiz-q-row">
+              <span>🎯 Quick Check: Why do we pad our LoRA training batches to a fixed shape like `(6, 128)` in `bfloat16` on TPU?</span>
+              <button class="reveal-btn-sm" onclick="this.parentElement.nextElementSibling.classList.toggle('visible')">Reveal Answer</button>
+            </div>
+            <div class="quiz-ans-row">Because XLA compiles specialized machine code for each tensor signature. Static `(B, S)` shapes mean XLA compiles once on Step 0 and executes every subsequent step in ~105 ms with zero recompilation!</div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="9" data-title="Stage 1: Multi-Model Domain Adaptation" data-module="Module 2 • Multi-Model Domain Adaptation" data-time="00:23 – 00:25 (2m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Multi-Model Domain Adaptation • 00:23 – 00:25 (2m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="lab-divider-center">
+            <h1>Stage 1: Multi-Model Domain Adaptation</h1>
+            <div class="lab-sub-row">
+              <img src="assets/ref_slide11_pic4.png" alt="Google G"/>
+              <span>Adapting Qwen3-0.6B (SecOps) &amp; Qwen2.5-0.5B (FinTech PCI-DSS) on TPU</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="10" data-title="Specializing Two Distinct Models on `torch.device(&#x27;tpu&#x27;)`" data-module="Module 2 • Two Models, Two Enterprise Domains" data-time="00:25 – 00:29 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Two Models, Two Enterprise Domains • 00:25 – 00:29 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Specializing Two Distinct Models on `torch.device(&#x27;tpu&#x27;)`</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Model A: Qwen/Qwen3-0.6B</h3>
+              <h4>Domain: SecOps &amp; PyTorch-TPU Migration Auditor</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Prompt Input:
+import torch_xla.core.xla_model as xm
+dev = xm.xla_device()
+
+# Adapted Model Output:
+[CRITICAL | TPU-DEP-01] Deprecated torch_xla
+import detected. Replace with:
+import torch, torch_tpu; torch.device(&#x27;tpu&#x27;)</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Training Config:</strong> 40 steps, static `4x256` `bfloat16`, LoRA `r=16, alpha=32` on `q/k/v/o_proj`.</li><li><strong>Convergence:</strong> Loss drops `2.8536 -&gt; 0.0118` (`99.6%` reduction); Perplexity `17.35 -&gt; 1.01`.</li><li><strong>Step Time:</strong> `181.72 ms/step` median on 1 `tpu7x` chip.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Model B: Qwen/Qwen2.5-0.5B-Instruct</h3>
+              <h4>Domain: FinTech PCI-DSS v4.0 &amp; Payment Guard</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Prompt Input:
+logger.info(f&#x27;PAN={card_num} CVV={cvv}&#x27;)
+
+# Adapted Model Output:
+SEVERITY: CRITICAL | RULE: PCI-DSS-3.3.1 |
+VIOLATION: Full PAN and CVV logged in cleartext.
+REMEDIATION: Mask PAN (`tokenize_pan(card_num)`)</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Training Config:</strong> 30 steps, static `6x128` `bfloat16`, LoRA `r=16, alpha=32` on `q/k/v/o_proj`.</li><li><strong>Convergence:</strong> Loss drops `3.9182 -&gt; 0.0021` (`99.9%` reduction); Perplexity `50.31 -&gt; 1.00`.</li><li><strong>Step Time:</strong> `105.23 ms/step` median on 1 `tpu7x` chip.</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="11" data-title="Empirical Results: Multi-Model LoRA &amp; In-Model Pallas Patching" data-module="Module 2 • Empirical Convergence &amp; Perplexity" data-time="00:29 – 00:33 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Empirical Convergence &amp; Perplexity • 00:29 – 00:33 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Empirical Results: Multi-Model LoRA &amp; In-Model Pallas Patching</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Panel 1 — Smooth Zero-Recompile Convergence:</strong> Both `Qwen3-0.6B` (SecOps) and `Qwen2.5-0.5B` (FinTech PCI-DSS) converge smoothly below `0.02` cross-entropy loss in 30–40 steps using static `bfloat16` batches.</li><li><strong>Panel 2 — Domain Perplexity Collapse:</strong> Held-out domain perplexity drops from `17.35 -&gt; 1.01` on SecOps/TPU rules and `50.31 -&gt; 1.00` on FinTech PCI-DSS rules.</li><li><strong>Panel 3 — In-Model Pallas Patching Speedup:</strong> Replacing 24-layer `RMSNorm` ops with our Pallas kernel yields a `4.81x` speedup (`4.73 ms -&gt; 0.98 ms`), and patching all 73 `RMSNorm` + `SwiGLU` submodules accelerates the full 24-layer HF model forward pass by `1.21x` (`29.74 ms -&gt; 24.66 ms`).</li><li><strong>Checkpoint Merge (`merge_and_unload()`):</strong> LoRA weights fold into base linear layers so downstream inference pays zero adapter overhead.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/domain_adaptation_showcase.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">Measured on Cloud TPU (tpu7x Chip 0): Multi-Model LoRA Convergence, Perplexity Collapse &amp; 73-Submodule Pallas Patching (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="12" data-title="Qualitative Verification: Unadapted Base vs. TPU LoRA Adapted" data-module="Module 2 • Before vs After Domain Adaptation" data-time="00:33 – 00:36 (3m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 2 • Before vs After Domain Adaptation • 00:33 – 00:36 (3m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Qualitative Verification: Unadapted Base vs. TPU LoRA Adapted</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Before vs. After: SecOps &amp; TPU Auditor</h3>
+              <div class="query-box">
+                <strong>User Query:</strong><br/>
+                <span>Audit: `import torch_xla.core.xla_model as xm; dev = xm.xla_device()`</span>
+              </div>
+              <div class="grounded-box">
+                <strong class="hl-green">✅ After 40 Steps of TPU LoRA (`Qwen3-0.6B`):</strong>
+                <p>[CRITICAL | TPU-DEP-01] Deprecated torch_xla import detected. Migrate to native `import torch, torch_tpu` and `torch.device(&#x27;tpu&#x27;)`.</p>
+                <small><strong>Verification Goal:</strong> Base model before LoRA gave vague generic advice (&#x27;update external library&#x27;); adapted model emits exact rule ID and remediation.</small>
+              </div>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>FinTech PCI-DSS &amp; Payment Guard Verdicts</h3>
+              <div class="trap-box trap-red">
+                <strong>Test 1: Cleartext Cardholder Data in Logs</strong>
+                <div class="hl-green">✅ Emits: SEVERITY: CRITICAL | RULE: PCI-DSS-3.3.1</div>
+                <p>Flags `PAN={card_number} CVV={cvv}` in `logger.info` and prescribes `tokenize_pan(card_number)` vaulting.</p>
+              </div>
+              <div class="trap-box trap-yellow">
+                <strong>Test 2: Dynamic Shapes &amp; Host-Device Sync in Settlement</strong>
+                <div class="hl-green">✅ Emits: SEVERITY: HIGH | RULE: TPU-SYNC-02 / TPU-SHAPE-01</div>
+                <p>Catches per-transaction `.item()` syncs and dynamic batch padding that would violate a 50ms payment SLA.</p>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="13" data-title="Stage 2: AutoKernel Lab (XProf &amp; Pallas)" data-module="Module 3 • AutoKernel Lab &amp; Pallas Fusion" data-time="00:36 – 00:38 (2m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • AutoKernel Lab &amp; Pallas Fusion • 00:36 – 00:38 (2m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="lab-divider-center">
+            <h1>Stage 2: AutoKernel Lab (XProf &amp; Pallas)</h1>
+            <div class="lab-sub-row">
+              <img src="assets/ref_slide11_pic4.png" alt="Google G"/>
+              <span>Fusing RMSNorm &amp; SwiGLU in TPU VMEM and Hot-Patching Hugging Face Models</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="14" data-title="Benchmarking 4 Execution Modes on a 4-Layer Decoder Stack" data-module="Module 3 • The 4 Execution Modes on TPU" data-time="00:38 – 00:42 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • The 4 Execution Modes on TPU • 00:38 – 00:42 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Benchmarking 4 Execution Modes on a 4-Layer Decoder Stack</h2>
+          <h3 class="sub-blue">Shape (8, 1024, 2048) bfloat16 on Cloud TPU (tpu7x Chip 0)</h3>
+          <p class="body-p">We benchmarked a 4-layer Qwen3/Llama SwiGLU decoder stack across all four `torch_tpu` execution gears and counted the dispatched TPU programs per step in XProf:</p>
+          <div class="four-steps-grid">
+            <div class="four-step-card ">
+              <div class="step-num-circle">1</div>
+              <h4>Eager Mode<br/>3.591 ms (1.00x)</h4>
+              <p>47 separate TPU programs/step! Every add, square, mean, rsqrt, and silu round-trips to HBM.</p>
+            </div>
+            
+            <div class="four-step-card ">
+              <div class="step-num-circle">2</div>
+              <h4>DeferAndFuse<br/>2.126 ms (1.69x)</h4>
+              <p>TORCH_TPU_DEFER_AND_FUSE=1 clusters ops between sync points into 3 TPU programs/step.</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">3</div>
+              <h4>torch.compile<br/>1.579 ms (2.28x)</h4>
+              <p>TorchDynamo + XLA whole-graph compilation fuses the entire 4-layer stack into 1 TPU program.</p>
+            </div>
+            
+            <div class="four-step-card step-card-hi">
+              <div class="step-num-circle">4</div>
+              <h4>Pallas Kernels<br/>2.224 ms (1.61x)</h4>
+              <p>1 TPU program/step; isolated 8-layer pallas::fused_res_rmsnorm achieves 0.409 ms vs 2.587 ms eager (6.32x)!</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="15" data-title="Inside the XProf Trace: 47 Dispatches vs. 1 Fused Program" data-module="Module 3 • XProf Timeline &amp; Pallas Parity" data-time="00:42 – 00:46 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • XProf Timeline &amp; Pallas Parity • 00:42 – 00:46 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Inside the XProf Trace: 47 Dispatches vs. 1 Fused Program</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Why Eager Mode Fragments the Timeline:</strong> In the top row of the XProf waterfall, 47 tiny `xla_Launch` ops leave gaps between kernels and waste HBM bandwidth.</li><li><strong>In-VMEM Pallas Fusion (`pallas::fused_res_rmsnorm`):</strong> Tiles `(128, D)` blocks into TPU VMEM, accumulates `r * r` in `float32`, applies `rsqrt`, and writes normalized `bfloat16` outputs in one pass.</li><li><strong>In-VMEM SwiGLU (`pallas::fused_swiglu`):</strong> Computes `(gate * sigmoid(gate)) * up` entirely in VMEM registers (`max_abs_diff = 4.77e-07`).</li><li><strong>6.32x Isolated Kernel Speedup:</strong> Across 8 stacked Residual+RMSNorm layers on `(8, 1024, 2048)`, Pallas drops latency from `2.587 ms` to `0.409 ms`.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/autokernel_xprof_waterfall.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">XProf TPU Execution Timelines &amp; Speedup Comparison Across Eager, DeferAndFuse, torch.compile, and Pallas (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="16" data-title="How Developers Hot-Patch a Hugging Face Model with Pallas" data-module="Module 3 • Hot-Patching Hugging Face with Pallas" data-time="00:46 – 00:50 (4m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 3 • Hot-Patching Hugging Face with Pallas • 00:46 – 00:50 (4m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">How Developers Hot-Patch a Hugging Face Model with Pallas</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">Replacing 73 Submodules in Qwen2.5-0.5B In-Place</h3>
+              <p class='body-p'>You don&#x27;t need to rewrite `transformers` from scratch to use Pallas kernels in an adapted model:</p>
+              <ul class="clean-bullets"><li><strong>Step 1: Register with `torch.tpu.pallas.jax_op`:</strong> Wrap your JAX `pl.pallas_call` function as a callable PyTorch operator (`pallas::hf_rmsnorm`, `pallas::hf_swiglu`).</li><li><strong>Step 2: Reusable `autokernel` Package (`pip install -e ./autokernel`):</strong> Call `autokernel.init_tpu(chip=0)` + `autokernel.patch_hf(model)` to swap all 73 RMSNorm &amp; SwiGLU submodules in 2 lines (`unpatch_hf` restores them).</li><li><strong>Step 3: Verified on `tpu7x` Chip 0 + `pytest` (`10/10 PASS`):</strong> Swaps 73 modules in 24-layer Qwen2.5: `4.81x - 5.47x` 24L Norm speedup, `1.21x` full-model speedup &amp; `99.74%` top-1 token agreement!</li></ul>
+            </div>
+            <div class="col-right">
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">autokernel — 3-Line Reusable HF Model Patcher</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>import autokernel
+
+# 1. Isolate Chip 0 &amp; wake up torch_tpu BEFORE JAX loads
+autokernel.init_tpu(chip=0, defer_and_fuse=True)
+
+# 2. Hot-swap 49 RMSNorm + 24 SwiGLU MLP layers in memory
+report = autokernel.patch_hf(merged_model)
+print(report.total_patched)  # -&gt; 73 (0 weight bytes copied)
+
+# 3. Verify speedup, max_abs_diff, and top-1 agreement
+bench = autokernel.verify_parity_and_speedup(
+    stock_fn, patched_fn, sample_input
+)
+# Reversible anytime: autokernel.unpatch_hf(merged_model)</code></pre>
+              </div>
+              
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="17" data-title="Stage 3: SpecGuard TPU — SGLang Prefix Cache &amp; 16-File Burst" data-module="Module 4 • SpecGuard TPU Serving &amp; Audit" data-time="00:50 – 00:55 (5m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • SpecGuard TPU Serving &amp; Audit • 00:50 – 00:55 (5m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Stage 3: SpecGuard TPU — SGLang Prefix Cache &amp; 16-File Burst</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Serving the Merged LoRA Checkpoint on TPU:</strong> Launched `sglang.launch_server --model-path /tmp/specguard-qwen3-0.6b-merged --device tpu --tp-size 1 --enable-torch-compile --enable-cache-report`.</li><li><strong>RadixAttention Prefix Cache (`2.46x` Warm TTFT Speedup):</strong> Pass 1 (Cold Cache) prefills a ~1,357-token shared SecOps/TPU policy &amp; AST header in `102.86 ms`. Pass 2 &amp; Pass 3 hit `1,280` cached tokens in TPU HBM, slashing TTFT to `41.80 ms` (`2.46x` faster)!</li><li><strong>16-File Concurrent Continuous Batching Burst:</strong> Auditing 16 repository chunks concurrently completes in `2.05 s` wall time (`226.8 chunks/s` throughput, `64.5 ms` median per-request TTFT).</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/specguard_dashboard.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">SpecGuard TPU End-to-End Dashboard: LoRA Loss Curve, SGLang Prefix Cache TTFT (2.46x), and 16-File Concurrent Burst (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="18" data-title="How Developers Adopt This Stack in 3 Steps" data-module="Module 4 • The Developer Adoption Playbook" data-time="00:55 – 00:58 (3m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • The Developer Adoption Playbook • 00:55 – 00:58 (3m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">How Developers Adopt This Stack in 3 Steps</h2>
+          <div class="split-2col">
+            <div class="col-left v-stepper-card">
+              
+            <div class="v-step-item">
+              <div class="v-step-circle">1</div>
+              <div class="v-step-text">
+                <h4>Connect &amp; Onboard (`tpu-agent-suite`)</h4>
+                <code>runtime.py compute inspect &amp;&amp; uvx colab-mcp</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">2</div>
+              <div class="v-step-text">
+                <h4>Adapt &amp; Patch (`torch_tpu` + `peft` + `pallas`)</h4>
+                <code>python domain_adapt_and_pallas_patch.py</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">3</div>
+              <div class="v-step-text">
+                <h4>Serve &amp; Audit (`sglang` / `vllm` on TPU)</h4>
+                <code>python stage2_serve_and_audit.py</code>
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-right">
+              <div class="callout-card">
+                <span class="callout-pill">PRODUCTION CHECKLIST</span>
+                <h4>Key Rules for Reliable TPU Deployments</h4>
+                <p>1. Always isolate single-chip jobs with TPU_VISIBLE_CHIPS and initialize torch_tpu before importing JAX.
+2. Pad training &amp; batch-scoring inputs to static buckets (128, 256, 1024) to eliminate XLA recompilation.
+3. Structure multi-turn / multi-file prompts with a shared static prefix so SGLang RadixAttention caches 90%+ of prefill tokens.</p>
+              </div>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">End-to-End Reproduction Commands</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># 1. Run 4-way AutoKernel Lab (Eager / DAF / Compile / Pallas)
+python demos/06_autokernel_app/autokernel_lab.py all
+
+# 2. Run Multi-Model Domain LoRA + 73-Submodule Pallas Patching
+python demos/07_domain_adaptation_showcase/domain_adapt_and_pallas_patch.py
+
+# 3. Run SpecGuard LoRA + SGLang Prefix Cache &amp; 16-File Burst
+python demos/05_specguard_app/stage1_lora_finetune.py
+python demos/05_specguard_app/stage2_serve_and_audit.py</code></pre>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="19" data-title="Executive Summary: Verified Cloud TPU (`tpu7x`) Results" data-module="Module 4 • Summary of Empirical Benchmarks" data-time="00:58 – 01:00 (2m)">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Module 4 • Summary of Empirical Benchmarks • 00:58 – 01:00 (2m)</span>
+            <span class="prop-badge">Proprietary + Confidential</span>
+          </div>
+          <h2 class="slide-h2">Executive Summary: Verified Cloud TPU (`tpu7x`) Results</h2>
+          <div class="blue-outline-card">
+            <p class="card-intro">Every metric across our three showcase applications was measured live on Cloud TPU (`tpu7x` Chip 0):</p>
+            <ul class="obj-list"><li><strong class='hl-blue'>• Multi-Model Domain LoRA Adaptation:</strong> `Qwen/Qwen3-0.6B` (SecOps/TPU) loss `2.8536 -&gt; 0.0118` (PPL `17.35 -&gt; 1.01`, `181.7 ms/step`); `Qwen/Qwen2.5-0.5B-Instruct` (FinTech PCI-DSS) loss `3.9182 -&gt; 0.0021` (PPL `50.31 -&gt; 1.00`, `105.2 ms/step`).</li><li><strong class='hl-blue'>• AutoKernel Lab (4-Layer Decoder Stack):</strong> Eager `3.591 ms` (47 TPU progs) -&gt; `DeferAndFuse` `2.126 ms` (`1.69x`, 3 progs) -&gt; `torch.compile` `1.579 ms` (`2.28x`, 1 prog) -&gt; `Pallas` `2.224 ms` (1 prog, `6.32x` isolated 8-layer RMSNorm speedup: `0.409 ms` vs `2.587 ms`).</li><li><strong class='hl-blue'>• In-Model Pallas HF Submodule Patching:</strong> Hot-patching 73 `RMSNorm` + `SwiGLU MLP` submodules in `Qwen2.5-0.5B` delivers `4.81x` 24-layer RMSNorm speedup (`4.73 ms -&gt; 0.98 ms`) and `1.21x` full-model speedup (`29.74 ms -&gt; 24.66 ms`) with `99.74%` top-1 token agreement.</li><li><strong class='hl-blue'>• SpecGuard SGLang Serving &amp; Burst:</strong> RadixAttention prefix cache cuts TTFT from `102.86 ms` (Cold) to `41.80 ms` (Warm, `2.46x` speedup, `1,280` cached tokens); 16-file concurrent burst finishes in `2.05 s` (`226.8 chunks/s`).</li></ul>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="20" data-title="Thank You!" data-module="Module 4 • Wrap-Up &amp; Q&amp;A" data-time="01:00 – 01:05 (5m)">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Proprietary + Confidential</span>
+          <div class="thankyou-right">
+            <div class="thankyou-text">
+              <h1>Thank You!</h1>
+              <p>Rabimba Karanjai<br/>Google Developer Expert (AI/ML)<br/>github.com/rabimba/GDE-ML-Artifacts</p>
+            </div>
+            <div class="thankyou-qrs">
+              <div class="ty-qr-box">
+                <img src="assets/qr_codelab.png" alt="Codelab QR"/>
+                <span>Master TPU Notebooks</span>
+              </div>
+              
+              <div class="ty-qr-box">
+                <img src="assets/qr_linkedin.png" alt="LinkedIn QR"/>
+                <span>Connect on LinkedIn</span>
+              </div>
+            
+              <div class="ty-qr-box">
+                <img src="assets/qr_rabimba_github.png" alt="GitHub QR"/>
+                <span>GitHub Repo &amp; Slides</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section>
+  </div>
+
+  <!-- On-Screen Speaker Notes Teleprompter Drawer (Toggle with 'S') -->
+  <div id="notes-drawer">
+    <div id="notes-drawer-header">
+      <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
+      <span>Tip: <strong>P</strong> = Presenter Console | <strong>S</strong> = hide drawer | <strong>B</strong> = control bar</span>
+    </div>
+    <div id="notes-drawer-content"></div>
+  </div>
+
+  <!-- Bottom Presenter Toolbar -->
+  <div id="presenter-bar">
+    <div class="bar-group">
+      <button class="bar-btn" onclick="prevSlide()">◀ Prev</button>
+      <span id="slide-counter" style="min-width: 72px; text-align:center; font-weight:700;">1 / 20</span>
+      <button class="bar-btn" onclick="nextSlide()">Next ▶</button>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <span id="module-indicator" style="color:#9AA0A6; font-size:0.78rem; margin-left:8px;"></span>
+    </div>
+    <div class="bar-group">
+      <span id="talk-clock" style="font-family:'Roboto Mono',monospace; color:#FBBC04; font-weight:700;">⏱️ Talk Clock: 00:00 / 75:00</span>
+      <button class="bar-btn" onclick="toggleTalkClock()" id="clock-btn">Start Clock</button>
+      <button class="bar-btn" onclick="toggleNotesDrawer()" id="notes-btn">📝 Speaker Notes (S)</button>
+      <button class="bar-btn" onclick="openPresenterPopup()">🖥️ Presenter View (P)</button>
+      <button class="bar-btn" onclick="toggleGrid()">⊞ All Slides (G)</button>
+      <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </div>
+
+  <!-- All-Slides Overview Grid Modal -->
+  <div id="grid-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+      <h2>All Workshop Slides — Click Any Slide to Jump</h2>
+      <button class="bar-btn" onclick="toggleGrid()">✕ Close (ESC)</button>
+    </div>
+    <div class="grid-cards" id="grid-cards-container"></div>
+  </div>
+
+  <!-- Lightbox Modal for Diagrams & Screenshots -->
+  <div id="lightbox-modal" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Enlarged View"/>
+  </div>
+
+  <script>
+    const SLIDE_NOTES = [{"num": 1, "title": "Full-Stack PyTorch on Cloud TPU: From Domain LoRA & Pallas Kernels to Prefix-Cached Serving", "module": "Module 0 \u2022 Welcome & Vision", "time": "00:00 \u2013 00:02 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Welcome the audience with high energy! Ensure the cover slide is projected clearly.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Welcome everyone! Today we are going beyond isolated micro-benchmarks to walk through a complete, end-to-end production AI story on Google Cloud TPU using native PyTorch (`torch_tpu`). We will see how a developer or an AI coding agent can start in a standard Google Colab notebook connected over MCP to a live Cloud TPU (`tpu7x`), adapt multiple open-weight models to specialized enterprise domains like SecOps and FinTech PCI-DSS compliance using LoRA, inspect hardware bottlenecks with XProf, inject custom Pallas kernels directly into Hugging Face Transformer layers, and serve the merged checkpoints with SGLang RadixAttention prefix caching and continuous batching.\""}, {"num": 2, "title": "Rabimba Karanjai", "module": "Module 0 \u2022 Speaker Intro", "time": "00:02 \u2013 00:04 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Briefly introduce yourself and why this workflow matters in production AI.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"I'm Rabimba Karanjai, a Google Developer Expert for AI/ML. Building production LLM systems, automated compliance auditors, and developer guardrails taught me one lesson: model quality, kernel latency, and serving economics cannot live in separate silos. If you fine-tune a domain model that triggers XLA recompilations or re-computes 1,200 tokens of policy context on every request, your tail latency explodes. Today's showcase unifies those layers into one repeatable playbook.\""}, {"num": 3, "title": "Workshop Notebooks, Demos & Agent Suite", "module": "Module 0 \u2022 Notebooks & Artifacts", "time": "00:04 \u2013 00:06 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Point attendees to the three artifacts in the repository.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"All of today's code lives in three self-contained Colab notebooks (`04_specguard_e2e_app.ipynb`, `05_autokernel_pallas_lab.ipynb`, and our master notebook `06_end_to_end_showcase_and_domain_adaptation.ipynb`) plus standalone CLI scripts under `demos/05_specguard_app`, `06_autokernel_app`, and `07_domain_adaptation_showcase`. Every number on these slides was captured live on a Cloud TPU (`tpu7x` Chip 0).\""}, {"num": 4, "title": "Why Do Enterprise AI Guardrails Hit a Wall in Production?", "module": "Module 1 \u2022 The Enterprise Challenge", "time": "00:06 \u2013 00:09 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Ask the audience to raise hands for A, B, or C.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Let's start with the real-world problem. Suppose you are building an automated compliance and code auditing platform for a FinTech or enterprise engineering org. First, base models don't know your strict output schema or domain rules\u2014like flagging unmasked PANs under PCI-DSS 3.3.1 or catching deprecated `torch_xla` calls. Second, if you run naive eager PyTorch on TPU, every tiny op dispatches separately and hammers HBM. Third, when you audit 16 files in a pull request, you re-compute the exact same 1,280-token policy header 16 times!\""}, {"num": 5, "title": "Anatomy of an AI Coding Agent", "module": "Module 1 \u2022 The Three Pillars", "time": "00:09 \u2013 00:12 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk across the three pillars on screen.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Our solution rests on three pillars. Pillar 1 is `torch_tpu`: the TPU is simply `torch.device('tpu')`, letting us run Hugging Face `peft` LoRA fine-tuning across multiple domain models with zero `torch_xla` boilerplate. Pillar 2 is hardware-aware optimization: using XProf and `torch.tpu.pallas.jax_op` to fuse memory-bound ops in TPU VMEM and hot-patch Hugging Face models in-place. Pillar 3 is production serving with `sglang-torchtpu` and `vllm-torchtpu`, exploiting RadixAttention prefix caching and continuous batching.\""}, {"num": 6, "title": "The 4-Stage Full-Stack TorchTPU Architecture", "module": "Module 1 \u2022 End-to-End Architecture", "time": "00:12 \u2013 00:16 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Point to the 4-layer architecture diagram on the right (remind attendees they can click any chart in the web deck to zoom in full-screen).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Look at how the four stages connect on the right. At the top, `colab-mcp` and `tpu-agent-suite@0.7.0` give both humans and AI agents direct execution access to the TPU pod. In Stage 2, we run multi-model LoRA fine-tuning in `bfloat16` on `torch.device('tpu')`. In Stage 3, we profile with XProf and hot-patch 73 submodules inside the Hugging Face model with custom Pallas kernels. And in Stage 4, we hand the merged checkpoint to SGLang and vLLM for high-throughput serving.\""}, {"num": 7, "title": "Developer Workflow: Colab MCP + TPU Agent Suite", "module": "Module 1 \u2022 Interactive Developer Setup", "time": "00:16 \u2013 00:20 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Highlight the PJRT initialization order in the code box on the right\u2014this is a critical practical tip for developers.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is a golden developer tip when combining `torch_tpu` and JAX Pallas on the same chip. Both PyTorch and JAX talk to the TPU through `libtpu` and PJRT. If you import `jax` before `torch_tpu` initializes its PJRT client, or if `TPU_VISIBLE_DEVICES` conflicts with `TPU_VISIBLE_CHIPS`, they will fight over the `/dev/vfio` device lock. By popping `TPU_VISIBLE_DEVICES`, pinning `TPU_VISIBLE_CHIPS='0'`, and allocating one tensor on `torch.device('tpu')` followed by `torch.accelerator.synchronize()` before importing `jax`, both frameworks share the chip seamlessly!\""}, {"num": 8, "title": "Native PyTorch on TPU (torch_tpu) & What to Avoid on Cloud TPU", "module": "Module 1 \u2022 Native torch_tpu vs Legacy Stack", "time": "00:20 \u2013 00:23 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Contrast the blue card (`torch_tpu` best practices) with the red card (anti-patterns).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Let's make sure everyone has the mental model of `torch_tpu`. First, `torch_xla` is deprecated\u2014everything we do uses `import torch, torch_tpu` and `torch.device('tpu')`. Second, TPUs love static shapes and `bfloat16`. When we pad our batches to fixed buckets like `(4, 256)` or `(6, 128)` and mask padding tokens with `-100` in the loss, XLA compiles the training graph once on Step 0 and flies through the remaining steps without a single recompilation.\""}, {"num": 9, "title": "Stage 1: Multi-Model Domain Adaptation", "module": "Module 2 \u2022 Multi-Model Domain Adaptation", "time": "00:23 \u2013 00:25 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Transition to Module 2\u2014showing how domain adaptation works across multiple models and domains.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Now let's dive into Stage 1 of our showcase: Multi-Model Domain Adaptation on Cloud TPU. A common question from engineering teams is: does this workflow only work for one toy model, or can we specialize multiple models for different enterprise compliance domains? Let's look at two distinct models and domains we trained on `tpu7x` Chip 0.\""}, {"num": 10, "title": "Specializing Two Distinct Models on `torch.device('tpu')`", "module": "Module 2 \u2022 Two Models, Two Enterprise Domains", "time": "00:25 \u2013 00:29 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Compare Model A (`Qwen/Qwen3-0.6B`) on the left and Model B (`Qwen/Qwen2.5-0.5B-Instruct`) on the right.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"On the left, we adapted `Qwen/Qwen3-0.6B` to act as a SecOps and PyTorch-TPU Migration Auditor\u2014catching SQL injection, hardcoded secrets, `.item()` sync stalls, and deprecated `torch_xla` code. In 40 steps at `181.7 ms/step`, loss dropped from `2.8536` to `0.0118` and perplexity collapsed from `17.35` to `1.01`. On the right, we took a different architecture\u2014`Qwen/Qwen2.5-0.5B-Instruct`\u2014and adapted it on FinTech PCI-DSS v4.0 and ISO-20022 payment compliance rules. In 30 steps at `105.2 ms/step`, loss dropped from `3.9182` to `0.0021` and domain perplexity collapsed from `50.31` to `1.00`, emitting exact rule citations like `PCI-DSS-3.3.1`!\""}, {"num": 11, "title": "Empirical Results: Multi-Model LoRA & In-Model Pallas Patching", "module": "Module 2 \u2022 Empirical Convergence & Perplexity", "time": "00:29 \u2013 00:33 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click on `domain_adaptation_showcase.png` to open the full-screen lightbox so the audience can inspect all three panels clearly.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is the empirical plot generated directly from `domain_adapt_and_pallas_patch.py` on `tpu7x` Chip 0. In Panel 1, you see the step-by-step loss curves for both `Qwen3-0.6B` and `Qwen2.5-0.5B`. In Panel 2, you see the dramatic collapse in domain perplexity\u2014from `17.35` down to `1.01` and from `50.31` down to `1.00`. And in Panel 3, you see what happens when we hot-patch the adapted Hugging Face model in-place with custom Pallas kernels: a `4.81x` speedup across the 24-layer RMSNorm stack and a `1.21x` end-to-end forward-pass speedup across the entire 24-layer Transformer!\""}, {"num": 12, "title": "Qualitative Verification: Unadapted Base vs. TPU LoRA Adapted", "module": "Module 2 \u2022 Before vs After Domain Adaptation", "time": "00:33 \u2013 00:36 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Highlight the concrete before-and-after text outputs on both cards.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Numbers are great, but let's read the actual model outputs. Before LoRA fine-tuning, when we asked `Qwen3-0.6B` to audit a `torch_xla` snippet, it said: 'The use of xm.xla_device() may expose the code to potential security vulnerabilities, update the library.' It had no idea `torch_xla` was deprecated in favor of `torch_tpu`! After 7 seconds of LoRA fine-tuning on one TPU chip, it outputs `[CRITICAL | TPU-DEP-01]` with the exact `torch.device('tpu')` migration fix. And on the right, our adapted `Qwen2.5-0.5B` FinTech model pinpoints `PCI-DSS-3.3.1` PAN logging violations and `TPU-SYNC-02` settlement loop stalls.\""}, {"num": 13, "title": "Stage 2: AutoKernel Lab (XProf & Pallas)", "module": "Module 3 \u2022 AutoKernel Lab & Pallas Fusion", "time": "00:36 \u2013 00:38 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Transition to Module 3\u2014kernel engineering with XProf and Pallas.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Once we have an adapted model, how do we make it run as fast as the hardware allows? Welcome to Stage 2: AutoKernel Lab. Here we use the PyTorch TPU profiler (`ProfilerActivity.TPU`) and XProf to see what happens on the chip across four execution modes, and then write custom Pallas kernels that fuse memory-bound operations inside TPU Vector Memory (VMEM).\""}, {"num": 14, "title": "Benchmarking 4 Execution Modes on a 4-Layer Decoder Stack", "module": "Module 3 \u2022 The 4 Execution Modes on TPU", "time": "00:38 \u2013 00:42 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk through the 4 cards from left to right, emphasizing the XProf program count drop (`47 -> 3 -> 1 -> 1`).\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Look at the progression across the four cards. In plain Eager mode, a 4-layer decoder block takes `3.591 ms` because it launches 47 separate TPU programs per step\u2014every elementwise op reads and writes HBM. Turning on `TORCH_TPU_DEFER_AND_FUSE=1` cuts that to 3 TPU programs and `2.126 ms` (`1.69x`). `torch.compile(backend='tpu')` captures the whole graph into 1 TPU program at `1.579 ms` (`2.28x`). And with `torch.tpu.pallas.jax_op`, our custom Pallas kernels execute in 1 TPU program with `9.54e-07` numerical parity\u2014and on the isolated 8-layer Residual+RMSNorm stack, Pallas hits `0.409 ms` versus `2.587 ms` eager: a massive `6.32x` kernel speedup!\""}, {"num": 15, "title": "Inside the XProf Trace: 47 Dispatches vs. 1 Fused Program", "module": "Module 3 \u2022 XProf Timeline & Pallas Parity", "time": "00:42 \u2013 00:46 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click `autokernel_xprof_waterfall.png` to zoom in on the 4-row XProf waterfall chart.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"This visualization from `autokernel_lab.py` makes the hardware story unmistakable. Look at the right panel: in Eager mode, the TPU timeline is chopped into 47 micro-launches totaling `3.59 ms`. With `DeferAndFuse`, `torch.compile`, and `Pallas`, the timeline collapses into a tight, continuous block on the MXU and VPU. Even better, Pallas gives us explicit control over VMEM tiling (`BlockSpec((128, d), lambda i: (i, 0))`) and `float32` accumulation precision.\""}, {"num": 16, "title": "How Developers Hot-Patch a Hugging Face Model with Pallas", "module": "Module 3 \u2022 Hot-Patching Hugging Face with Pallas", "time": "00:46 \u2013 00:50 (4m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Walk through the 15-line Python snippet on the right.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Developers often ask: 'Once I write a Pallas kernel, how do I actually plug it into a Hugging Face `AutoModelForCausalLM` that I just fine-tuned with PEFT?' Look at the code on the right\u2014it takes 15 lines of Python! We register `pallas_rmsnorm_jax` with `torch.tpu.pallas.jax_op`, wrap it in `PallasPatchedRMSNorm` holding the original parameter tensor `orig_norm.weight`, and loop over `merged_model.model.layers`. In `Qwen2.5-0.5B`, that replaces 73 submodules in-place, cutting 24-layer RMSNorm time by `4.81x` (`4.73 ms -> 0.98 ms`) and full-model forward time from `29.74 ms` to `24.66 ms` (`1.21x`) with `99.74%` top-1 token agreement!\""}, {"num": 17, "title": "Stage 3: SpecGuard TPU \u2014 SGLang Prefix Cache & 16-File Burst", "module": "Module 4 \u2022 SpecGuard TPU Serving & Audit", "time": "00:50 \u2013 00:55 (5m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Click `specguard_dashboard.png` to show the 3-panel SpecGuard TPU results.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Now let's complete the story in Stage 3: serving our merged checkpoint in production with `sglang-torchtpu`. In a real repository or payment compliance audit, every query shares a long prefix\u2014your organization's security rubric, rule definitions, and shared AST header (~1,357 tokens). On Pass 1 (Cold Cache), SGLang computes the prefill in `102.86 ms`. On Pass 2 and Pass 3, SGLang's RadixAttention matches `1,280` prefix tokens directly in TPU HBM KV cache, dropping Time-to-First-Token to `41.80 ms`\u2014a `2.46x` TTFT speedup! And when a pull request triggers a 16-file concurrent burst, continuous batching processes all 16 audits in just `2.05 seconds`!\""}, {"num": 18, "title": "How Developers Adopt This Stack in 3 Steps", "module": "Module 4 \u2022 The Developer Adoption Playbook", "time": "00:55 \u2013 00:58 (3m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Summarize the 3-step adoption path for engineering teams.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"If you want to bring this exact workflow back to your team tomorrow, here is the 3-step playbook. Step 1: configure `tpu-agent-suite` and `colab-mcp` against your TPU VM or GKE TPU pod. Step 2: run static-shape `bfloat16` LoRA adaptation on `torch.device('tpu')` and use XProf + `torch.tpu.pallas.jax_op` to fuse any memory-bound custom ops. Step 3: merge the checkpoint and serve with `sglang-torchtpu` or `vllm-torchtpu` with prefix caching enabled.\""}, {"num": 19, "title": "Executive Summary: Verified Cloud TPU (`tpu7x`) Results", "module": "Module 4 \u2022 Summary of Empirical Benchmarks", "time": "00:58 \u2013 01:00 (2m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Leave this executive summary card up for a moment so attendees can photograph the complete benchmark table.\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Here is the complete scoreboard from our live runs on `tpu7x` Chip 0. Across two model families and two compliance domains, perplexity collapsed to `~1.00` in under 40 steps; our Pallas kernels delivered `4.81x` to `6.32x` operator speedups and a `1.21x` full-model forward-pass speedup inside Hugging Face; and SGLang RadixAttention delivered a `2.46x` Warm TTFT speedup while auditing 16 concurrent files in `2.05 seconds`.\""}, {"num": 20, "title": "Thank You!", "module": "Module 4 \u2022 Wrap-Up & Q&A", "time": "01:00 \u2013 01:05 (5m)", "notes": "\ud83c\udfac [STAGE DIRECTION]: Thank the audience and open the floor for questions!\n\n\ud83d\udde3\ufe0f SAY VERBATIM:\n\"Thank you all for joining! Scan the QR codes on the right to grab the master Colab notebooks, the Pallas kernel patchers, and this slide deck from `github.com/rabimba/GDE-ML-Artifacts`. I would love to hear what models and custom kernels you build on Cloud TPU\u2014what questions can I answer?\""}];
+    const totalSlides = SLIDE_NOTES.length;
+    let currentSlide = 1;
+    const channel = new BroadcastChannel('torchtpu_fullstack_workshop_sync');
+
+    function showSlide(n, broadcast = true) {
+      if (n < 1) n = 1;
+      if (n > totalSlides) n = totalSlides;
+      currentSlide = n;
+      document.querySelectorAll('.slide').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.slide) === currentSlide);
+      });
+      document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progress-fill').style.width = `${(currentSlide / totalSlides) * 100}%`;
+      const meta = SLIDE_NOTES[currentSlide - 1];
+      document.getElementById('module-indicator').textContent = `${meta.module} (${meta.time})`;
+      document.getElementById('notes-slide-meta').textContent = `🎤 SLIDE ${meta.num}: ${meta.title} — ${meta.time}`;
+      document.getElementById('notes-drawer-content').textContent = meta.notes;
+      window.location.hash = `slide-${currentSlide}`;
+      if (broadcast) {
+        channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide });
+      }
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    function toggleNotesDrawer() {
+      document.body.classList.toggle('notes-open');
+      document.getElementById('notes-btn').classList.toggle('active-toggle');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Control bar: hidden by default, press B to toggle, force-hidden in fullscreen
+    function toggleControlBar() { document.body.classList.toggle('controls-visible'); }
+    document.addEventListener('fullscreenchange', () => {
+      document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
+    });
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-modal').classList.add('open');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.remove('open');
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest('.terminal-card').querySelector('code').innerText;
+      navigator.clipboard.writeText(code);
+      const old = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = old, 1500);
+    }
+
+    // Lab Checkpoint Timers
+    const labIntervals = {};
+    function toggleLabTimer(slideNum) {
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const disp = document.getElementById(`timer-disp-${slideNum}`);
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+        return;
+      }
+      let remaining = parseInt(widget.dataset.remaining || widget.dataset.seconds);
+      labIntervals[slideNum] = setInterval(() => {
+        if (remaining > 0) remaining--;
+        widget.dataset.remaining = remaining;
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        disp.textContent = `${m}:${s}`;
+        if (remaining === 0) {
+          clearInterval(labIntervals[slideNum]);
+          delete labIntervals[slideNum];
+        }
+      }, 1000);
+    }
+    function resetLabTimer(slideNum) {
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+      }
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const total = parseInt(widget.dataset.seconds);
+      widget.dataset.remaining = total;
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      document.getElementById(`timer-disp-${slideNum}`).textContent = `${m}:${s}`;
+    }
+
+    // 75-Minute Overall Talk Clock
+    let talkSeconds = 0;
+    let talkTimer = null;
+    function toggleTalkClock() {
+      const btn = document.getElementById('clock-btn');
+      if (talkTimer) {
+        clearInterval(talkTimer);
+        talkTimer = null;
+        btn.textContent = 'Resume Clock';
+      } else {
+        btn.textContent = 'Pause Clock';
+        talkTimer = setInterval(() => {
+          talkSeconds++;
+          const m = String(Math.floor(talkSeconds / 60)).padStart(2, '0');
+          const s = String(talkSeconds % 60).padStart(2, '0');
+          document.getElementById('talk-clock').textContent = `⏱️ Talk Clock: ${m}:${s} / 75:00`;
+        }, 1000);
+      }
+    }
+
+    // Slide Grid Overview
+    function toggleGrid() {
+      const modal = document.getElementById('grid-modal');
+      const container = document.getElementById('grid-cards-container');
+      container.innerHTML = '';
+      SLIDE_NOTES.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'grid-item' + (s.num === currentSlide ? ' current' : '');
+        div.innerHTML = `<div class="grid-item-num">Slide ${s.num} • ${s.time}</div><div class="grid-item-title">${s.title}</div>`;
+        div.onclick = () => { showSlide(s.num); modal.classList.remove('open'); };
+        container.appendChild(div);
+      });
+      modal.classList.toggle('open');
+    }
+
+    // Dual-Screen Synchronized Presenter Popup (Press P)
+    function openPresenterPopup() {
+      const win = window.open('speaker-notes.html?mode=presenter', 'PresenterConsole', 'width=980,height=760');
+      setTimeout(() => channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide }), 500);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        showSlide(ev.data.slide, false);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+      else if (e.key === 's' || e.key === 'S') { toggleNotesDrawer(); }
+      else if (e.key === 'p' || e.key === 'P') { openPresenterPopup(); }
+      else if (e.key === 'g' || e.key === 'G') { toggleGrid(); }
+      else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+      else if (e.key === 'b' || e.key === 'B') { toggleControlBar(); }
+      else if (e.key === 'Escape') {
+        document.getElementById('grid-modal').classList.remove('open');
+        closeLightbox();
+      }
+    });
+
+    // Initialize from URL hash if present
+    const m = window.location.hash.match(/slide-(\d+)/);
+    showSlide(m ? parseInt(m[1]) : 1);
+  </script>
+</body>
+</html>

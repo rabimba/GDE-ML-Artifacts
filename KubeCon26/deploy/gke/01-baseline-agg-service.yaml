@@ -121,3 +121,25 @@ spec:
       port: 8000
       targetPort: 8000
       protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-agg-headless-svc
+  namespace: fleetkv-serving
+  labels:
+    app: vllm-torchtpu-agg
+spec:
+  clusterIP: None
+  selector:
+    app: vllm-torchtpu-agg
+    llm-d.ai/role: agg
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+    - name: zmq-kv-events
+      port: 5557
+      targetPort: 5557
+      protocol: TCP

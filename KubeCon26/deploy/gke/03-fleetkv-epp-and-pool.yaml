@@ -68,6 +68,7 @@ spec:
             - "--policy=naive_sticky"
             - "--pool=agg"
             - "--block-size=256"
+            - "--zmq-endpoints=tcp://vllm-agg-headless-svc.fleetkv-serving.svc.cluster.local:5557"
             - "--zmq-role-selector=llm-d.ai/role=agg"
           ports:
             - name: grpc-extproc
@@ -124,6 +125,7 @@ spec:
             - "--block-size=256"
             - "--safety-reserve-blocks=24"
             - "--peak-prefill-tokens=12288"
+            - "--zmq-endpoints=tcp://qwen3-prefill-headless-svc.fleetkv-serving.svc.cluster.local:5557"
             - "--zmq-role-selector=llm-d.ai/role=prefill"
           ports:
             - name: grpc-extproc

@@ -1,0 +1,51 @@
+[
+  {
+    "mode": "eager",
+    "label": "Eager (1 op/launch)",
+    "first_step_ms": 676.55,
+    "median_steady_ms": 3.591,
+    "speedup_vs_eager": 1.0,
+    "tpu_programs_per_step": 47,
+    "trace_step_ms": 3.673,
+    "pallas_events_in_step": 8,
+    "parity": {}
+  },
+  {
+    "mode": "defer",
+    "label": "DeferAndFuse",
+    "first_step_ms": 905.57,
+    "median_steady_ms": 2.126,
+    "speedup_vs_eager": 1.69,
+    "tpu_programs_per_step": 3,
+    "trace_step_ms": 2.264,
+    "pallas_events_in_step": 7,
+    "parity": {}
+  },
+  {
+    "mode": "compiled",
+    "label": "torch.compile",
+    "first_step_ms": 1296.37,
+    "median_steady_ms": 1.579,
+    "speedup_vs_eager": 2.28,
+    "tpu_programs_per_step": 1,
+    "trace_step_ms": 1.661,
+    "pallas_events_in_step": 0,
+    "parity": {}
+  },
+  {
+    "mode": "pallas",
+    "label": "Pallas Fused Kernels",
+    "first_step_ms": 1136.05,
+    "median_steady_ms": 2.224,
+    "speedup_vs_eager": 1.61,
+    "tpu_programs_per_step": 1,
+    "trace_step_ms": 2.172,
+    "pallas_events_in_step": 8,
+    "parity": {
+      "fused_res_rmsnorm_max_diff": 9.5367431640625e-07,
+      "fused_swiglu_max_diff": 4.76837158203125e-07,
+      "full_stack_max_diff": 0.0011101290583610535,
+      "parity_passed": true
+    }
+  }
+]

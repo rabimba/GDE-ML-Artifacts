@@ -158,3 +158,45 @@ spec:
                   mountPath: /dev/shm
                 - name: hf-cache
                   mountPath: /root/.cache/huggingface
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-prefill-headless-svc
+  namespace: fleetkv-serving
+  labels:
+    app: fleetkv-torchtpu-disagg
+    llm-d.ai/role: prefill
+spec:
+  clusterIP: None
+  selector:
+    app: fleetkv-torchtpu-disagg
+    llm-d.ai/role: prefill
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+    - name: zmq-kv-events
+      port: 5557
+      targetPort: 5557
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen3-decode-headless-svc
+  namespace: fleetkv-serving
+  labels:
+    app: fleetkv-torchtpu-disagg
+    llm-d.ai/role: decode
+spec:
+  clusterIP: None
+  selector:
+    app: fleetkv-torchtpu-disagg
+    llm-d.ai/role: decode
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP

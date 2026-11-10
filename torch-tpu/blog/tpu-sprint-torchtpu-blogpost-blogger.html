@@ -1,0 +1,529 @@
+<!--===== BEGIN BLOGGER PASTE =====-->
+<div class="torchtpu-sprint-blog-post" style="font-family: 'Georgia', 'Times New Roman', serif; font-size: 18px; line-height: 1.8; color: #222222; max-width: 820px; margin: 0 auto;">
+
+  <!-- Main Header Banner -->
+  <div style="background: #080b14; border-radius: 12px; padding: 36px 28px; color: #ffffff; margin-bottom: 32px; text-align: center; border: 1px solid #1a2238; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <span style="background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid #38bdf8; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; padding: 6px 14px; border-radius: 20px; text-transform: uppercase;">Google Cloud TPU Sprint &#8226; Native torch_tpu &#8226; Pallas Kernels &amp; SGLang Serving</span>
+    <h1 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 31px; font-weight: 800; color: #ffffff; margin: 18px 0 12px 0; line-height: 1.25;">Giving PyTorch a Fair Shake on Cloud TPU: What Happened When I Replaced <code>torch_xla</code> with Native <code>torch_tpu</code></h1>
+    <p style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; color: #94a3b8; max-width: 700px; margin: 0 auto 18px auto; line-height: 1.5;">
+      What worked, what broke along the way, and where hand-written Pallas kernels actually beat the compiler when I fine-tuned two open-weight models, hot-swapped 73 Hugging Face submodules in memory, and served a 16-file audit burst on a single <code>tpu7x</code> chip.
+    </p>
+    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 13px; color: #64748b;">
+      By <strong style="color: #e2e8f0;">Rabimba Karanjai</strong> &#8226; Source: <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu" style="color: #38bdf8; text-decoration: none; font-weight: 600;">github.com/rabimba/GDE-ML-Artifacts/torch-tpu</a> &#8226; Master Colab: <a href="https://colab.research.google.com/github/rabimba/GDE-ML-Artifacts/blob/main/torch-tpu/torchtpu-inference-workshop-main/notebooks/06_end_to_end_showcase_and_domain_adaptation.ipynb" style="color: #10b981; text-decoration: none; font-weight: 700;">Notebook 06 (Open in Colab)</a> &#8226; Prequel: <a href="https://rkrants.blogspot.com/2026/06/the-throughput-trap-benchmarking-vllm.html" style="color: #fb923c; text-decoration: none; font-weight: 600;">OpenXLA DevLab (June 2026)</a>
+    </div>
+  </div>
+
+  <!-- Intro Story -->
+  <p style="margin-bottom: 22px;">
+    <span style="float: left; font-size: 56px; line-height: 48px; padding-top: 4px; padding-right: 10px; font-weight: bold; color: #0284c7; font-family: 'Helvetica Neue', sans-serif;">B</span>ack in June, after speaking at the <a href="https://rkrants.blogspot.com/2026/06/the-throughput-trap-benchmarking-vllm.html" style="color: #0066cc; text-decoration: underline;">OpenXLA Summer DevLab</a>, I wrote about what I called the <em>Throughput Trap</em>. On paper, Cloud TPUs had plenty of raw compute. In practice, if you were a PyTorch engineer using the old <code>torch_xla</code> bridge, tiny changes in prompt length could trigger a multi-second compiler stall right in the middle of serving live traffic. You spent half your week hunting down invisible CPU-to-TPU sync points and sprinkling <code>xm.mark_step()</code> calls through your code like superstition.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    So when I sat down for this week&#8217;s <strong>Google Cloud TPU Sprint</strong>, I wanted to answer a plain question: <strong>Does the new native <code>torch_tpu</code> stack (<code>torch.device(&quot;tpu&quot;)</code>) actually feel like regular PyTorch, or do you still have to fight the compiler at every turn?</strong>
+  </p>
+
+  <!-- Callout Box: The One-Chip Sprint Rules -->
+  <div style="background: #f0f9ff; border-left: 4px solid #0284c7; padding: 20px 24px; border-radius: 0 8px 8px 0; margin: 28px 0;">
+    <h4 style="font-family: 'Helvetica Neue', sans-serif; font-size: 16px; font-weight: 700; color: #0369a1; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">The One-Chip Sprint Rules</h4>
+    <p style="margin: 0; font-size: 16px; color: #1e293b; line-height: 1.65;">
+      Instead of running a synthetic matrix-multiply benchmark across a giant cluster, I locked myself to a single chip (<code>Chip 0</code>) of a 7th-generation Cloud TPU (<code>tpu7x</code>). On that one chip, I had to fine-tune two different open-weight models (<code>Qwen3-0.6B</code> and <code>Qwen2.5-0.5B-Instruct</code>), write custom TPU kernels in Python with Pallas, hot-swap <strong>73 submodules</strong> inside a live Hugging Face model without reloading its weights, and serve a 16-file code compliance burst using SGLang.
+    </p>
+  </div>
+
+  <p style="margin-bottom: 24px;">
+    Here is what worked, what broke along the way, and where hand-written kernels actually beat the compiler (including one case where they did not).
+  </p>
+
+  <!-- Section 1: Kitchen Cutting-Board Problem -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">1. The Kitchen Cutting-Board Problem: Why Eager Mode Hurts on TPU (and 4 Ways Out)</h2>
+
+  <p style="margin-bottom: 22px;">
+    If you run PyTorch one operation at a time (&#8220;eager mode&#8221;) on a GPU, you pay a small launch fee for each step, but a fast on-chip cache usually cushions the blow.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    On a TPU, running one tiny op at a time is like cooking dinner by driving to the grocery store for every single ingredient. You chop an onion, drive it back to the store (<code>HBM</code>, the chip&#8217;s main memory), drive home for the garlic, and repeat 47 times for a single forward pass. The math engines sit idle waiting on deliveries.
+  </p>
+
+  <!-- GIF 0: How AutoKernel Works Under the Hood -->
+  <div style="margin: 34px 0; text-align: center; background: #080b14; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">
+    <img alt="How AutoKernel Works Under the Hood: Off-Chip HBM vs On-Chip VMEM and 73-Submodule HF Surgery" src="https://raw.githubusercontent.com/rabimba/GDE-ML-Artifacts/main/torch-tpu/blog/media/00-autokernel-how-it-works.gif" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #334155; display: block; margin: 0 auto;" />
+    <p style="font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: #94a3b8; margin: 12px 0 2px 0;">
+      <strong>Figure 1:</strong> How AutoKernel works under the hood. In stock PyTorch eager mode, a single <code>RMSNorm</code> layer makes 5 separate round-trips to off-chip main memory (<code>HBM</code>). AutoKernel slices the tensor into <code>(256 &#215; 896)</code> tiles, streams each tile once into the chip&#8217;s local scratchpad (<code>VMEM</code>), runs all 5 math steps back-to-back on the vector unit (<code>VPU</code>), and hot-swaps 73 Hugging Face submodules in memory without copying a single weight.
+    </p>
+  </div>
+
+  <!-- Inline SVG Diagram 1: 4 Ways to Run the Same 8-Layer Block -->
+  <div style="margin: 30px 0; text-align: center;">
+    <svg viewBox="0 0 780 285" width="100%" style="max-width: 780px; background: #0b101e; border-radius: 12px; border: 1px solid #1e293b; display: block; margin: 0 auto;" xmlns="http://www.w3.org/2000/svg">
+      <text x="24" y="30" fill="#f8fafc" font-family="Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="bold">AutoKernel Lab: Running the Same 8-Layer Block Four Ways on tpu7x Chip 0</text>
+      <text x="24" y="48" fill="#94a3b8" font-family="monospace" font-size="11.5">8-Layer Transformer Block (4 x 256 x 1024, bfloat16)  &#8226;  Measured with XProf Hardware Profiler</text>
+
+      <!-- Box 1: Eager -->
+      <rect x="20" y="66" width="172" height="196" rx="9" fill="#131c31" stroke="#f43f5e" stroke-width="1.8"/>
+      <text x="106" y="88" fill="#fb7185" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">1. Eager (torch_tpu)</text>
+      <text x="106" y="114" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">3.591 ms</text>
+      <text x="106" y="134" fill="#94a3b8" font-family="monospace" font-size="10.5" text-anchor="middle">1.00x Baseline</text>
+      <line x1="34" y1="148" x2="178" y2="148" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="106" y="170" fill="#f43f5e" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">47 TPU launches/step</text>
+      <text x="106" y="192" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">One op at a time</text>
+      <text x="106" y="210" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">47 main-memory trips</text>
+      <text x="106" y="236" fill="#64748b" font-family="monospace" font-size="9.5" text-anchor="middle">No batching or fusion</text>
+
+      <!-- Arrow 1->2 -->
+      <path d="M 194 164 L 208 164" stroke="#f59e0b" stroke-width="2.2" fill="none"/>
+
+      <!-- Box 2: DeferAndFuse -->
+      <rect x="210" y="66" width="172" height="196" rx="9" fill="#131c31" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="296" y="88" fill="#fbbf24" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">2. DeferAndFuse</text>
+      <text x="296" y="114" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">2.126 ms</text>
+      <text x="296" y="134" fill="#fde047" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">1.69x Faster</text>
+      <line x1="224" y1="148" x2="368" y2="148" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="296" y="170" fill="#f59e0b" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">3 TPU launches/step</text>
+      <text x="296" y="192" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">Background op queue</text>
+      <text x="296" y="210" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">Zero code changes</text>
+      <text x="296" y="236" fill="#64748b" font-family="monospace" font-size="9.5" text-anchor="middle">DEFER_AND_FUSE=1</text>
+
+      <!-- Arrow 2->3 -->
+      <path d="M 384 164 L 398 164" stroke="#38bdf8" stroke-width="2.2" fill="none"/>
+
+      <!-- Box 3: torch.compile -->
+      <rect x="400" y="66" width="172" height="196" rx="9" fill="#131c31" stroke="#38bdf8" stroke-width="1.8"/>
+      <text x="486" y="88" fill="#38bdf8" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">3. torch.compile(tpu)</text>
+      <text x="486" y="114" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">1.579 ms</text>
+      <text x="486" y="134" fill="#38bdf8" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">2.28x Faster</text>
+      <line x1="414" y1="148" x2="558" y2="148" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="486" y="170" fill="#38bdf8" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">1 TPU launch/step</text>
+      <text x="486" y="192" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">Whole-block compiler</text>
+      <text x="486" y="210" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">Merges adjacent layers</text>
+      <text x="486" y="236" fill="#64748b" font-family="monospace" font-size="9.5" text-anchor="middle">1-line decorator</text>
+
+      <!-- Arrow 3->4 -->
+      <path d="M 574 164 L 588 164" stroke="#10b981" stroke-width="2.2" fill="none"/>
+
+      <!-- Box 4: Pallas VMEM -->
+      <rect x="590" y="66" width="170" height="196" rx="9" fill="#131c31" stroke="#10b981" stroke-width="2"/>
+      <text x="675" y="88" fill="#10b981" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">4. Custom Pallas Op</text>
+      <text x="675" y="114" fill="#10b981" font-family="monospace" font-size="15.5" font-weight="bold" text-anchor="middle">0.409 ms (8L Norm)</text>
+      <text x="675" y="134" fill="#fde047" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">6.32x Op | 1.61x Blk</text>
+      <line x1="604" y1="148" x2="746" y2="148" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="675" y="170" fill="#10b981" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">On-Chip Scratchpad</text>
+      <text x="675" y="192" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">Kept in local VMEM</text>
+      <text x="675" y="210" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">No main-memory trip</text>
+      <text x="675" y="236" fill="#fde047" font-family="monospace" font-size="9.5" text-anchor="middle">diff = 9.54e-07 PASS</text>
+    </svg>
+  </div>
+
+  <p style="margin-bottom: 22px;">
+    To see how much time I was losing to those memory trips, I built <strong>AutoKernel Lab</strong> (<code>demos/06_autokernel_app/autokernel_lab.py</code>). I took an 8-layer Transformer block and ran the exact same forward pass four ways on <code>tpu7x</code> Chip 0, watching the hardware profiler (<code>XProf</code>) at each step:
+  </p>
+
+  <!-- GIF 1: AutoKernel Lab -->
+  <div style="margin: 34px 0; text-align: center; background: #080b14; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">
+    <img alt="AutoKernel Lab Animated XProf and Pallas Fusion Walkthrough" src="https://raw.githubusercontent.com/rabimba/GDE-ML-Artifacts/main/torch-tpu/blog/media/01-autokernel-xprof-pallas-fusion.gif" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #334155; display: block; margin: 0 auto;" />
+    <p style="font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: #94a3b8; margin: 12px 0 2px 0;">
+      <strong>Figure 2:</strong> Running the same 8-layer Transformer block four ways on <code>tpu7x</code> Chip 0. Eager mode makes 47 separate trips to main memory per step (<code>3.591 ms</code>). Turning on <code>TORCH_TPU_DEFER_AND_FUSE=1</code> batches those into 3 trips (<code>2.126 ms</code>). <code>torch.compile</code> merges the whole block into 1 program (<code>1.579 ms</code>), while my custom Pallas kernel runs the 8-layer normalization chain in on-chip scratchpad memory <code>6.32&#215;</code> faster (<code>0.409 ms</code>).
+    </p>
+  </div>
+
+  <!-- Table 1: AutoKernel Lab -->
+  <div style="overflow-x: auto; margin: 24px 0 30px 0;">
+    <table style="width: 100%; border-collapse: collapse; font-family: 'Helvetica Neue', sans-serif; font-size: 14px; border: 1px solid #cbd5e1;">
+      <thead>
+        <tr style="background: #0f172a; color: #f8fafc; text-align: left;">
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Execution Mode</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">What Changes for the Developer</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">TPU Programs / Step</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Median Step Latency</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Speedup vs. Eager</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Max Numerical Diff</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">1. Eager (<code>torch_tpu</code>)</td>
+          <td style="padding: 10px 14px;">Standard PyTorch; every op reads and writes main memory</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #e11d48;">47</td>
+          <td style="padding: 10px 14px; font-family: monospace;">3.591 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace;">1.00&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace;">Baseline (0.0)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">2. <code>DeferAndFuse</code></td>
+          <td style="padding: 10px 14px;">Set <code>TORCH_TPU_DEFER_AND_FUSE=1</code> (zero code changes)</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #d97706;">3</td>
+          <td style="padding: 10px 14px; font-family: monospace;">2.126 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #0369a1;">1.69&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace;">&lt; 1e-6</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">3. <code>torch.compile(backend=&quot;tpu&quot;)</code></td>
+          <td style="padding: 10px 14px;">One-line <code>@torch.compile</code> wrapper around the model</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #0284c7;">1</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700;">1.579 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #0284c7;">2.28&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace;">&lt; 1e-6</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">4a. Full Block + Custom Pallas Op</td>
+          <td style="padding: 10px 14px;"><code>pallas::fused_res_rmsnorm</code> + <code>pallas::fused_swiglu</code> inside the block</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #059669;">1</td>
+          <td style="padding: 10px 14px; font-family: monospace;">2.224 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #059669;">1.61&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace;">9.54e-07 (PASS)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ecfdf5;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #065f46;">4b. Isolated 8-Layer Pallas Op</td>
+          <td style="padding: 10px 14px;">Residual add + RMSNorm kept on the chip&#8217;s local cutting board (<code>VMEM</code>)</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #059669;">1</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #065f46;">0.409 ms <span style="font-weight:400;color:#475569;">(vs 2.587 ms eager)</span></td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 800; color: #059669;">6.32&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #065f46;">9.54e-07 (PASS)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-bottom: 22px;">
+    Look at rows <code>3</code>, <code>4a</code>, and <code>4b</code> in that table, because they tell a story that benchmark slides usually hide:
+  </p>
+
+  <ol style="margin-bottom: 24px; padding-left: 24px;">
+    <li style="margin-bottom: 12px;"><strong>You get a <code>1.69&#215;</code> speedup before touching a line of Python:</strong> Setting <code>TORCH_TPU_DEFER_AND_FUSE=1</code> tells <code>torch_tpu</code> to hold onto small operations in a background queue and send them to the chip together. My 47 separate dispatches dropped to 3, and step time fell from <code>3.591 ms</code> to <code>2.126 ms</code>.</li>
+    <li style="margin-bottom: 12px;"><strong>Wait: why did the full block with my custom Pallas kernel (<code>2.224 ms</code>) run slower than plain <code>torch.compile</code> (<code>1.579 ms</code>)?</strong> When I first saw that number, I thought I had a bug. What actually happened is a classic compiler tradeoff. When you hand-write a custom Pallas kernel and register it with <code>torch.tpu.pallas.jax_op</code>, the XLA compiler treats your kernel as a sealed black box. In a small 8-layer toy block, putting black-box walls between the big matrix multiplications prevented the compiler from merging neighboring layers together.</li>
+    <li style="margin-bottom: 12px;"><strong>So when <em>should</em> you write a Pallas kernel?</strong> When the operation itself is a chain of small memory-hungry steps. In row <code>4b</code>, I measured the 8-layer Residual Add + RMSNorm chain on its own. Instead of writing intermediate numbers back to main memory, my Pallas kernel keeps them on the chip&#8217;s fast local scratchpad (<code>VMEM</code>, the cutting board right next to the compute cores). Latency dropped from <code>2.587 ms</code> to <strong><code>0.409 ms</code> (<code>6.32&#215;</code> faster)</strong>, matching PyTorch down to <code>9.54e-07</code>. And as you will see in Section 4, once I plugged that same kernel into a real 24-layer Hugging Face language model with 73 normalization and activation layers, the on-chip memory savings won out and sped up the entire model by <strong><code>1.21&#215;</code></strong>.</li>
+  </ol>
+
+  <pre style="background: #080b14; color: #e2e8f0; padding: 20px; border-radius: 10px; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13.5px; line-height: 1.6; border: 1px solid #1e293b; margin: 24px 0;"><code># Keeping Residual Add + RMSNorm on the chip's local scratchpad (VMEM) with Pallas
+def _res_rmsnorm_pallas_kernel(x_ref, res_ref, w_ref, o_ref):
+    x = x_ref[...] + res_ref[...]
+    x_f32 = x.astype(jnp.float32)
+    rms = jnp.sqrt(jnp.mean(jnp.square(x_f32), axis=-1, keepdims=True) + 1e-6)
+    normed = (x_f32 / rms).astype(x_ref.dtype)
+    o_ref[...] = normed * w_ref[...]
+
+torch.tpu.pallas.jax_op(
+    "pallas::fused_res_rmsnorm",
+    _res_rmsnorm_jax,
+    in_specs=[
+        pl.BlockSpec((1, 256, 1024), lambda i, j, k: (i, j, k)),
+        pl.BlockSpec((1, 256, 1024), lambda i, j, k: (i, j, k)),
+        pl.BlockSpec((1, 1, 1024), lambda i, j, k: (0, 0, k)),
+    ],
+    out_specs=pl.BlockSpec((1, 256, 1024), lambda i, j, k: (i, j, k)),
+)</code></pre>
+
+  <!-- Section 2: Who Grabbed the Chip First? Crash -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">2. The &#8220;Who Grabbed the Chip First?&#8221; Crash (and the 2-Line Fix)</h2>
+
+  <p style="margin-bottom: 22px;">
+    Because Pallas kernels are written in JAX and called directly from PyTorch via <code>torch.tpu.pallas.jax_op</code>, both libraries live inside the same Python process. The first time I ran my hybrid script on <code>tpu7x</code>, it crashed before running a single layer.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    Here is why: a physical TPU chip is exposed to Linux as a hardware device file (<code>/dev/vfio</code>). Whoever initializes the TPU driver first locks that file. If you import <code>jax</code> and touch the device before PyTorch has woken up, JAX claims the hardware lock for itself and locks <code>torch_tpu</code> out. Worse, if your container defaults to claiming all four chips on the host (<code>TPU_VISIBLE_DEVICES=0,1,2,3</code>) while another job is using Chip 2, your script refuses to start at all.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    Two habits solved this for the rest of the sprint:
+  </p>
+
+  <ol style="margin-bottom: 24px; padding-left: 24px;">
+    <li style="margin-bottom: 10px;"><strong>Pin your script to one chip (<code>Chip 0</code>)</strong> before importing anything.</li>
+    <li style="margin-bottom: 10px;"><strong>Allocate a 1-element dummy tensor on <code>torch.device(&quot;tpu:0&quot;)</code></strong> so <code>torch_tpu</code> claims the runtime first, then let JAX share it.</li>
+  </ol>
+
+  <pre style="background: #080b14; color: #e2e8f0; padding: 20px; border-radius: 10px; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13.5px; line-height: 1.6; border: 1px solid #1e293b; margin: 24px 0;"><code>import os
+
+# 1. Claim only Chip 0 so I never collide with jobs on other chips
+os.environ["TPU_VISIBLE_CHIPS"] = "0"
+os.environ["TPU_CHIPS_PER_HOST_BOUNDS"] = "1,1,1"
+os.environ.pop("TPU_VISIBLE_DEVICES", None)
+
+import torch
+import torch_tpu
+
+# 2. Wake up torch_tpu FIRST before importing JAX or Pallas
+_warmup = torch.ones(1, device=torch.device("tpu:0"))
+torch.accelerator.synchronize()
+
+# 3. Now JAX/Pallas shares PyTorch's active TPU connection cleanly
+import jax
+import jax.numpy as jnp
+from jax.experimental import pallas as pl</code></pre>
+
+  <!-- Section 3: SpecGuard TPU -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">3. Building <code>SpecGuard TPU</code>: Fine-Tuning a Code Auditor and Serving 16 Files in 2 Seconds</h2>
+
+  <p style="margin-bottom: 22px;">
+    Benchmarks on isolated layers are useful, but nobody ships an 8-layer synthetic block to production. For <strong>Application A (<code>SpecGuard TPU</code>, <code>demos/05_specguard_app/</code>)</strong>, I built a tool that audits Python repositories for security bugs and TPU anti-patterns, running the entire training-to-serving loop on <code>tpu7x</code> Chip 0:
+  </p>
+
+  <ol style="margin-bottom: 24px; padding-left: 24px;">
+    <li style="margin-bottom: 12px;"><strong>Stage 1 (<code>stage1_lora_finetune.py</code>) &#8212; Teaching <code>Qwen3-0.6B</code> Without Compiler Stalls:</strong> If you feed variable-length sentences into a TPU training loop, the compiler stops to rebuild the execution graph every time a batch changes shape. Instead, I padded every training batch to a fixed <code>4 &#215; 256</code> shape in <code>bfloat16</code>. The TPU compiled the graph <strong>once on Step 1</strong> and ran Steps 2 through 40 with <strong>zero recompilations</strong> at <strong><code>181.72 ms</code> per step</strong>. Over 40 steps, training loss fell by <strong><code>99.6%</code></strong> (<code>2.8536 &#8594; 0.0118</code>, perplexity <code>17.35 &#8594; 1.01</code>). I then merged the LoRA adapter weights back into the base model and saved a standalone checkpoint.</li>
+    <li style="margin-bottom: 12px;"><strong>Stage 2 (<code>stage2_serve_and_audit.py</code>) &#8212; Keeping the Rulebook Open on the Desk with SGLang:</strong> When <code>SpecGuard</code> audits 16 files in a repository, every request begins with the exact same <strong>1,280-token security rulebook</strong> followed by a short ~77-token code snippet. Without caching, the model re-reads all 1,280 tokens of rules from scratch on every file. By serving my merged model on <strong>SGLang-TorchTPU</strong> (<code>--device tpu</code>), its <strong>RadixAttention</strong> cache keeps the 1,280-token rulebook in TPU memory after the first file. Time-to-First-Token dropped from <strong><code>102.86 ms</code> on the cold first file to <code>41.80 ms</code> on every warm file (<code>2.46&#215;</code> faster)</strong>.</li>
+    <li style="margin-bottom: 12px;"><strong>Stage 3 &#8212; Auditing a 16-File Burst:</strong> When I fired 16 repository files at the server at once, SGLang reused that cached rulebook across all 16 requests and finished the entire batch in <strong><code>2.05 seconds</code> (<code>226.8 chunks/s</code>)</strong>.</li>
+  </ol>
+
+  <!-- GIF 2: SpecGuard TPU -->
+  <div style="margin: 34px 0; text-align: center; background: #080b14; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">
+    <img alt="SpecGuard TPU Animated LoRA, SGLang Prefix Cache, and 16-File Burst Walkthrough" src="https://raw.githubusercontent.com/rabimba/GDE-ML-Artifacts/main/torch-tpu/blog/media/02-specguard-lora-sglang-burst.gif" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #334155; display: block; margin: 0 auto;" />
+    <p style="font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: #94a3b8; margin: 12px 0 2px 0;">
+      <strong>Figure 3:</strong> SpecGuard TPU running end-to-end on <code>tpu7x</code> Chip 0: 40-step LoRA fine-tuning with zero recompilations after Step 1 (<code>181.72 ms/step</code>), SGLang prefix caching cutting first-token latency by <code>2.46&#215;</code> (<code>102.86 ms &#8594; 41.80 ms</code>), and a 16-file concurrent repository audit finishing in <code>2.05 s</code>.
+    </p>
+  </div>
+
+  <!-- Section 4: Open-Heart Surgery on a Live Hugging Face Model -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">4. Open-Heart Surgery on a Live Hugging Face Model: Swapping 73 Submodules with Pallas</h2>
+
+  <p style="margin-bottom: 22px;">
+    At this point I had two pieces that lived separately: custom Pallas kernels in <code>AutoKernel Lab</code>, and a fine-tuned Hugging Face model in <code>SpecGuard TPU</code>. I wanted to bring them together&#8212;and prove the workflow was not a one-off trick for a single model family or domain.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    In <code>demos/07_domain_adaptation_showcase/domain_adapt_and_pallas_patch.py</code> (and Notebook <code>06</code>), I took a second model architecture, <strong><code>Qwen/Qwen2.5-0.5B-Instruct</code></strong> (24 layers, hidden size <code>896</code>, MLP width <code>4864</code>), and fine-tuned it on <strong>payment compliance rules (<code>PCI-DSS v4.0</code> and <code>ISO-20022</code>)</strong>&#8212;catching bugs like logging raw credit-card CVVs in plaintext or using floating-point math for currency settlement.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    Locked to a static <code>6 &#215; 128</code> batch shape on <code>tpu7x</code> Chip 0, <code>Qwen2.5-0.5B-Instruct</code> converged in <strong>30 steps at <code>105.23 ms/step</code></strong>, dropping loss from <strong><code>3.9182</code> to <code>0.0021</code> (<code>-99.9%</code>)</strong> and perplexity from <strong><code>50.31</code> to <code>1.00</code></strong>:
+  </p>
+
+  <!-- Table 2: Multi-Model Domain LoRA -->
+  <div style="overflow-x: auto; margin: 24px 0 30px 0;">
+    <table style="width: 100%; border-collapse: collapse; font-family: 'Helvetica Neue', sans-serif; font-size: 14px; border: 1px solid #cbd5e1;">
+      <thead>
+        <tr style="background: #0f172a; color: #f8fafc; text-align: left;">
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">What I Measured</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Model A (<code>SpecGuard</code> Code Auditor)</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Model B (<code>PCI-DSS</code> Payment Auditor)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Base Model</td>
+          <td style="padding: 10px 14px;"><code>Qwen/Qwen3-0.6B</code> (28 layers, width <code>1024</code>)</td>
+          <td style="padding: 10px 14px;"><code>Qwen/Qwen2.5-0.5B-Instruct</code> (24 layers, width <code>896</code>)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Domain Task</td>
+          <td style="padding: 10px 14px;">SecOps &amp; PyTorch-TPU Migration Rules</td>
+          <td style="padding: 10px 14px;">PCI-DSS v4.0 &amp; ISO-20022 Payment Compliance</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Fixed Batch Shape (<code>bfloat16</code>)</td>
+          <td style="padding: 10px 14px; font-family: monospace;">4 &#215; 256 (1,024 tokens/step)</td>
+          <td style="padding: 10px 14px; font-family: monospace;">6 &#215; 128 (768 tokens/step)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Steps &amp; Compiler Stalls</td>
+          <td style="padding: 10px 14px;">40 steps (<code>0</code> recompiles after Step 1)</td>
+          <td style="padding: 10px 14px;">30 steps (<code>0</code> recompiles after Step 1)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Start &#8594; Final Loss</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #0284c7;">2.8536 &#8594; 0.0118 (-99.6%)</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #059669;">3.9182 &#8594; 0.0021 (-99.9%)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Start &#8594; Final Perplexity</td>
+          <td style="padding: 10px 14px; font-family: monospace;">17.35 &#8594; 1.01</td>
+          <td style="padding: 10px 14px; font-family: monospace;">50.31 &#8594; 1.00</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ecfdf5;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #065f46;">Median Step Time (<code>tpu7x</code> Chip 0)</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700;">181.72 ms/step</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #065f46;">105.23 ms/step</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Inline SVG Diagram 2: 73-Submodule In-Place Pallas Surgery -->
+  <div style="margin: 30px 0; text-align: center;">
+    <svg viewBox="0 0 780 235" width="100%" style="max-width: 780px; background: #0b101e; border-radius: 12px; border: 1px solid #1e293b; display: block; margin: 0 auto;" xmlns="http://www.w3.org/2000/svg">
+      <text x="24" y="30" fill="#f8fafc" font-family="Helvetica Neue, Arial, sans-serif" font-size="15" font-weight="bold">Swapping 73 Hugging Face Submodules In-Place: patch_qwen_with_pallas(model)</text>
+      <text x="24" y="48" fill="#94a3b8" font-family="monospace" font-size="11.5">49 RMSNorm + 24 SwiGLU MLP Layers Replaced in Memory (No Weight Reloads &#8226; 99.74% Token Agreement)</text>
+
+      <!-- Left: Stock HF Layer -->
+      <rect x="22" y="66" width="230" height="148" rx="9" fill="#131c31" stroke="#f43f5e" stroke-width="1.8"/>
+      <text x="137" y="88" fill="#fb7185" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">Stock Hugging Face Model</text>
+      <text x="137" y="112" fill="#e2e8f0" font-family="monospace" font-size="10.5" text-anchor="middle">49x Qwen2RMSNorm (5-6 ops ea)</text>
+      <text x="137" y="132" fill="#cbd5e1" font-family="monospace" font-size="10.5" text-anchor="middle">24x Qwen2MLP (unfused gate*up)</text>
+      <text x="137" y="156" fill="#f43f5e" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">24L Norm Stack: 4.73 ms</text>
+      <text x="137" y="178" fill="#f43f5e" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle">Full 24L Model : 29.74 ms</text>
+      <text x="137" y="200" fill="#64748b" font-family="monospace" font-size="9.5" text-anchor="middle">250+ tiny norm kernel launches</text>
+
+      <!-- Arrow Left -> Center -->
+      <path d="M 256 140 L 284 140" stroke="#f59e0b" stroke-width="2.2" fill="none"/>
+
+      <!-- Center: Pallas jax_op Bridge -->
+      <rect x="288" y="66" width="204" height="148" rx="9" fill="#131c31" stroke="#f59e0b" stroke-width="1.8"/>
+      <text x="390" y="88" fill="#fbbf24" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">15-Line In-Memory Swap</text>
+      <text x="390" y="112" fill="#38bdf8" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">pallas::hf_rmsnorm (49x)</text>
+      <text x="390" y="132" fill="#10b981" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">pallas::hf_swiglu  (24x)</text>
+      <line x1="304" y1="146" x2="476" y2="146" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="390" y="168" fill="#e2e8f0" font-family="monospace" font-size="10" text-anchor="middle">Kept on local scratchpad</text>
+      <text x="390" y="188" fill="#fde047" font-family="monospace" font-size="10" text-anchor="middle">73 Submodules Swapped</text>
+
+      <!-- Arrow Center -> Right -->
+      <path d="M 496 140 L 524 140" stroke="#10b981" stroke-width="2.2" fill="none"/>
+
+      <!-- Right: Patched Model -->
+      <rect x="528" y="66" width="230" height="148" rx="9" fill="#131c31" stroke="#10b981" stroke-width="2"/>
+      <text x="643" y="88" fill="#10b981" font-family="Helvetica Neue, sans-serif" font-size="12.5" font-weight="bold" text-anchor="middle">Pallas-Patched Qwen2.5-0.5B</text>
+      <text x="643" y="114" fill="#10b981" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">24L Norm Stack: 0.98 ms (4.81x)</text>
+      <text x="643" y="138" fill="#ffffff" font-family="monospace" font-size="12" font-weight="bold" text-anchor="middle">Full 24L Model : 24.66 ms (1.21x)</text>
+      <line x1="544" y1="152" x2="742" y2="152" stroke="#1e293b" stroke-width="1.5"/>
+      <text x="643" y="174" fill="#fde047" font-family="monospace" font-size="10.5" font-weight="bold" text-anchor="middle">99.74% Top-1 Token Match</text>
+      <text x="643" y="196" fill="#cbd5e1" font-family="monospace" font-size="10" text-anchor="middle">5.08 ms saved per pass</text>
+    </svg>
+  </div>
+
+  <p style="margin-bottom: 22px;">
+    Then came the fun part. A 24-layer <code>Qwen2.5-0.5B-Instruct</code> model has <strong>49 <code>Qwen2RMSNorm</code> normalization layers</strong> (two per transformer block, plus one final norm at the end) and <strong>24 <code>Qwen2MLP</code> feed-forward blocks</strong>. In stock Hugging Face code, every single <code>Qwen2RMSNorm</code> layer runs 5 to 6 separate PyTorch operations: it converts the tensor to 32-bit float, squares every number, averages them, takes the inverse square root, converts back to <code>bfloat16</code>, and multiplies by the learned weights. Multiply that by 49 layers, and a single forward pass launches <strong>over 250 tiny normalization kernels</strong>.
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    Instead of rewriting Hugging Face&#8217;s modeling file, I wrote a 15-line Python function (<code>patch_qwen_with_pallas</code>) that walks the live model in memory and swaps all <strong>73 submodules</strong> (<code>49 RMSNorm</code> + <code>24 SwiGLU MLP</code>) with my fused Pallas kernels while keeping the trained weights right where they are:
+  </p>
+
+  <pre style="background: #080b14; color: #e2e8f0; padding: 20px; border-radius: 10px; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13.5px; line-height: 1.6; border: 1px solid #1e293b; margin: 24px 0;"><code>def patch_qwen_with_pallas(model: nn.Module):
+    """Walk a live Hugging Face Qwen2 model and swap all 49 RMSNorm + 24 MLP layers with Pallas kernels."""
+    patched_rmsnorm, patched_mlp = 0, 0
+    for layer in model.model.layers:
+        layer.input_layernorm = PallasRMSNorm(
+            layer.input_layernorm.weight, layer.input_layernorm.variance_epsilon
+        )
+        layer.post_attention_layernorm = PallasRMSNorm(
+            layer.post_attention_layernorm.weight, layer.post_attention_layernorm.variance_epsilon
+        )
+        patched_rmsnorm += 2
+        layer.mlp = PallasSwiGLUMLP(layer.mlp)
+        patched_mlp += 1
+
+    model.model.norm = PallasRMSNorm(model.model.norm.weight, model.model.norm.variance_epsilon)
+    patched_rmsnorm += 1
+    return patched_rmsnorm, patched_mlp  # (49, 24) -&gt; 73 submodules swapped in-place!</code></pre>
+
+  <!-- GIF 3: Multi-Model Domain Adaptation & 73-Submodule Pallas Patch -->
+  <div style="margin: 34px 0; text-align: center; background: #080b14; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">
+    <img alt="Multi-Model Domain Adaptation and 73-Submodule In-Place Pallas Hugging Face Patching" src="https://raw.githubusercontent.com/rabimba/GDE-ML-Artifacts/main/torch-tpu/blog/media/03-multi-model-domain-adaptation-73-pallas-patch.gif" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #334155; display: block; margin: 0 auto;" />
+    <p style="font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: #94a3b8; margin: 12px 0 2px 0;">
+      <strong>Figure 4:</strong> Fine-tuning <code>Qwen2.5-0.5B-Instruct</code> on PCI-DSS v4.0 rules (<code>105.23 ms/step</code>), then hot-swapping all 73 <code>Qwen2RMSNorm</code> and <code>Qwen2MLP</code> submodules in-place with Pallas kernels. The 24-layer normalization stack speeds up <code>4.81&#215;</code> (<code>4.73 ms &#8594; 0.98 ms</code>), and the full 24-layer language model forward pass speeds up <code>1.21&#215;</code> (<code>29.74 ms &#8594; 24.66 ms</code>) with <code>99.74%</code> top-1 token agreement.
+    </p>
+  </div>
+
+  <p style="margin-bottom: 22px;">
+    Remember how my custom Pallas kernel lost to <code>torch.compile</code> inside the tiny 8-layer synthetic block earlier? Inside a real 24-layer Hugging Face model, eliminating 250+ eager kernel launches across those 73 submodules paid off immediately:
+  </p>
+
+  <!-- Table 3: 73-Submodule Pallas Surgery Results -->
+  <div style="overflow-x: auto; margin: 24px 0 30px 0;">
+    <table style="width: 100%; border-collapse: collapse; font-family: 'Helvetica Neue', sans-serif; font-size: 14px; border: 1px solid #cbd5e1;">
+      <thead>
+        <tr style="background: #0f172a; color: #f8fafc; text-align: left;">
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Benchmark on <code>tpu7x</code> Chip 0 (<code>bfloat16</code>)</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Stock Hugging Face Model</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">After 73-Submodule Pallas Surgery</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Measured Speedup</th>
+          <th style="padding: 12px 14px; border-bottom: 2px solid #334155;">Output &amp; Numerical Check</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">24-Layer <code>Qwen2RMSNorm</code> Stack (<code>4&#215;128&#215;896</code>)</td>
+          <td style="padding: 10px 14px; font-family: monospace;">4.73 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #059669;">0.98 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 800; color: #059669;">4.81&#215;</td>
+          <td style="padding: 10px 14px; font-family: monospace;">max_diff = 0.0625 (1 bfloat16 step)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ecfdf5;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #065f46;">Full 24-Layer <code>Qwen2.5-0.5B</code> Forward Pass (<code>6&#215;128</code>)</td>
+          <td style="padding: 10px 14px; font-family: monospace;">29.74 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #065f46;">24.66 ms</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 800; color: #059669;">1.21&#215; (-17.1% time)</td>
+          <td style="padding: 10px 14px; font-weight: 700; color: #065f46;">99.74% top-1 token match across 768 positions</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">Live PCI-DSS Audit Generation</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-size: 12.5px;">[CRITICAL] PCI-DSS-3.2.1 &amp; 3.4: Raw PAN and CVV logged...</td>
+          <td style="padding: 10px 14px;">Identical compliance report</td>
+          <td style="padding: 10px 14px; font-family: monospace; font-weight: 700; color: #0284c7;">5.08 ms saved / pass</td>
+          <td style="padding: 10px 14px;">Exact greedy token match</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 5: Packaging It Up: The Reusable autokernel Library -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">5. Packaging It Up: The Reusable <code>autokernel</code> Library</h2>
+
+  <p style="margin-bottom: 22px;">
+    After writing the <code>/dev/vfio</code> lock guard, the shape-aware Pallas tile sizing logic, and the 73-submodule Hugging Face patcher across my sprint scripts, I packaged the whole toolkit into an installable Python library inside the repository (<a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu/autokernel" style="color: #0066cc; text-decoration: underline;"><code>autokernel/</code></a>).
+  </p>
+
+  <p style="margin-bottom: 22px;">
+    Instead of copy-pasting Pallas boilerplate into every project, I can now install <code>autokernel</code> (<code>pip install -e ./autokernel</code>) and patch any Qwen2, Qwen3, Llama, or Gemma model in three lines of Python:
+  </p>
+
+  <pre style="background: #080b14; color: #e2e8f0; padding: 20px; border-radius: 10px; overflow-x: auto; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 13.5px; line-height: 1.6; border: 1px solid #1e293b; margin: 24px 0;"><code>import autokernel
+
+# 1. Isolate Chip 0 &amp; wake up torch_tpu BEFORE JAX/Pallas loads (prevents /dev/vfio lock crashes)
+autokernel.init_tpu(chip=0, defer_and_fuse=True)
+
+# 2. Hot-swap all 73 RMSNorm (49) + SwiGLU MLP (24) submodules in memory (0 bytes copied)
+report = autokernel.patch_hf(model)
+print(f"Patched {report.total_patched} submodules ({report.rmsnorm_patched} RMSNorm, {report.swiglu_patched} SwiGLU)")
+
+# 3. Verify numerical parity, top-1 token agreement, and median speedup on TPU
+bench = autokernel.verify_parity_and_speedup(stock_fn, patched_fn, sample_input)
+print(f"Speedup: {bench.speedup:.2f}x | max_diff: {bench.max_abs_diff} | PASS: {bench.passed}")
+
+# 4. Reversible at any time without reloading weights
+autokernel.unpatch_hf(model)</code></pre>
+
+  <p style="margin-bottom: 22px;">
+    I tested <code>autokernel</code> both locally with <code>pytest</code> (<code>10/10</code> unit tests passing, including automatic tile-size solving and PEP 563 annotation checks for <code>torch.tpu.pallas.jax_op</code>) and directly on <code>tpu7x</code> Chip 0 (<code>autokernel/tests/run_tpu_hardware_verification.py</code>), where <code>fused_rmsnorm</code>, <code>fused_res_rmsnorm</code>, and <code>fused_swiglu</code> achieved <code>0.0</code> max numerical diff and a <strong><code>5.47&#215;</code> speedup</strong> (<code>6.81 ms &#8594; 1.25 ms</code>) across a 24-layer normalization stack.
+  </p>
+
+  <!-- Section 6: Connecting Google Colab and Coding Agents Directly to the Chip -->
+  <h2 style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 25px; font-weight: 700; color: #111827; margin: 42px 0 16px 0; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">6. Connecting Google Colab and Coding Agents Directly to the Chip</h2>
+
+  <p style="margin-bottom: 22px;">
+    One last quality-of-life detail made this sprint much faster than my June benchmarks. Instead of copying scripts back and forth over SSH, I ran a Jupyter server directly on the TPU host pinned to Chip 0 and connected two tools to that same <code>localhost:8888</code> tunnel at the same time:
+  </p>
+
+  <ol style="margin-bottom: 24px; padding-left: 24px;">
+    <li style="margin-bottom: 10px;"><strong>Google Colab&#8217;s Browser UI</strong> (<em>Connect to a local runtime</em>), so I could step through all 7 workshop notebooks (<code>00</code> through <code>06</code>) cell by cell in the browser.</li>
+    <li style="margin-bottom: 10px;"><strong>OpenCode + <code>colab-mcp</code> + <code>tpu-agent-suite</code></strong>, so my coding and profiling agents could run XProf traces, inspect hardware counters, and verify numerical parity against the exact same TPU runtime.</li>
+  </ol>
+
+  <p style="margin-bottom: 22px;">
+    I also packed the entire walkthrough into a 20-slide interactive web and PowerPoint deck (<code>TorchTPU-FullStack-Showcase-Workshop/</code>) with a built-in speaker notes console (<code>[P]</code>) and teleprompter (<code>[S]</code>):
+  </p>
+
+  <!-- GIF 4: Workshop Deck & Colab Bridge -->
+  <div style="margin: 34px 0; text-align: center; background: #080b14; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; box-shadow: 0 8px 24px rgba(0,0,0,0.18);">
+    <img alt="20-Slide Interactive TorchTPU Workshop Deck and Colab-MCP Bridge" src="https://raw.githubusercontent.com/rabimba/GDE-ML-Artifacts/main/torch-tpu/blog/media/04-fullstack-workshop-deck-and-colab-bridge.gif" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #334155; display: block; margin: 0 auto;" />
+    <p style="font-family: 'Helvetica Neue', sans-serif; font-size: 13px; color: #94a3b8; margin: 12px 0 2px 0;">
+      <strong>Figure 5:</strong> Stepping through the 20-slide <code>TorchTPU-FullStack-Showcase-Workshop</code> web deck alongside the live <code>colab-mcp</code> local runtime bridge connected to <code>tpu7x</code> Chip 0.
+    </p>
+  </div>
+
+  <!-- Try It Out Box -->
+  <div style="background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 26px 28px; margin: 36px 0; border: 1px solid #334155;">
+    <h3 style="font-family: 'Helvetica Neue', sans-serif; font-size: 20px; font-weight: 700; color: #38bdf8; margin: 0 0 10px 0;">Try the Library, Notebooks, and Code Yourself</h3>
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #e2e8f0; line-height: 1.6;">
+      If you want to install the <code>autokernel</code> library, poke at the Pallas kernels, run the 73-submodule Hugging Face patcher, or test the SGLang prefix-cache burst on your own TPU VM or Colab session, everything is in the repo:
+    </p>
+    <p style="margin: 0; font-family: 'Helvetica Neue', sans-serif; font-size: 15px; line-height: 1.8;">
+      &#128187; <strong>Full GitHub Repository (<code>torch-tpu</code>):</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu" style="color: #38bdf8; text-decoration: underline; font-weight: 700;">github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu</a><br/>
+      &#128230; <strong>Reusable <code>autokernel</code> Python Package:</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu/autokernel" style="color: #a855f7; text-decoration: underline; font-weight: 700;">github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu/autokernel</a><br/>
+      &#128211; <strong>Master End-to-End Colab Notebook (<code>06</code>):</strong> <a href="https://colab.research.google.com/github/rabimba/GDE-ML-Artifacts/blob/main/torch-tpu/torchtpu-inference-workshop-main/notebooks/06_end_to_end_showcase_and_domain_adaptation.ipynb" style="color: #10b981; text-decoration: underline; font-weight: 700;">06_end_to_end_showcase_and_domain_adaptation.ipynb</a><br/>
+      &#9889; <strong>AutoKernel Lab (<code>05</code>) &amp; SpecGuard TPU (<code>04</code>) Notebooks:</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/torch-tpu/torchtpu-inference-workshop-main/notebooks" style="color: #fde047; text-decoration: underline; font-weight: 700;">torchtpu-inference-workshop-main/notebooks/</a><br/>
+      &#128279; <strong>June 2026 Prequel Post:</strong> <a href="https://rkrants.blogspot.com/2026/06/the-throughput-trap-benchmarking-vllm.html" style="color: #fb923c; text-decoration: underline;">The Throughput Trap: Benchmarking vLLM on OpenXLA and the Reality of Production LLM Serving</a>
+    </p>
+  </div>
+
+</div>
+<!--===== END BLOGGER PASTE =====-->

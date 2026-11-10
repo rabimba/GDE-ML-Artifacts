@@ -414,6 +414,14 @@ func (idx *ClusterIndex) MatchPods(blockHashes []string, roleFilter string) []Po
 // AcquireLease atomically reserves estimated HBM blocks and in-flight prefill tokens on a pod.
 // Calling the returned release closure is idempotent and decrements the reservation.
 func (idx *ClusterIndex) AcquireLease(podID string, reservedBlocks int, prefillTokens int) func() {
+	_, releaseAll := idx.AcquireStagedLease(podID, reservedBlocks, prefillTokens)
+	return releaseAll
+}
+
+// AcquireStagedLease reserves HBM blocks, in-flight prefill tokens, and active request count.
+// releasePrefill releases only the prefill token queue reservation once TTFT (ResponseHeaders) completes;
+// releaseAll is idempotent and releases prefill tokens (if not yet released), HBM blocks, and active request count.
+func (idx *ClusterIndex) AcquireStagedLease(podID string, reservedBlocks int, prefillTokens int) (func(), func()) {
 	if reservedBlocks < 0 {
 		reservedBlocks = 0
 	}
@@ -429,19 +437,33 @@ func (idx *ClusterIndex) AcquireLease(podID string, reservedBlocks int, prefillT
 	}
 	idx.mu.Unlock()
 
-	var once sync.Once
-	return func() {
-		once.Do(func() {
+	var prefillOnce sync.Once
+	releasePrefill := func() {
+		prefillOnce.Do(func() {
+			if prefillTokens == 0 {
+				return
+			}
+			idx.mu.Lock()
+			defer idx.mu.Unlock()
+			if p, ok := idx.pods[podID]; ok {
+				p.InFlightPrefillTokens -= prefillTokens
+				if p.InFlightPrefillTokens < 0 {
+					p.InFlightPrefillTokens = 0
+				}
+			}
+		})
+	}
+
+	var allOnce sync.Once
+	releaseAll := func() {
+		releasePrefill()
+		allOnce.Do(func() {
 			idx.mu.Lock()
 			defer idx.mu.Unlock()
 			if p, ok := idx.pods[podID]; ok {
 				p.ReservedBlocks -= reservedBlocks
 				if p.ReservedBlocks < 0 {
 					p.ReservedBlocks = 0
-				}
-				p.InFlightPrefillTokens -= prefillTokens
-				if p.InFlightPrefillTokens < 0 {
-					p.InFlightPrefillTokens = 0
 				}
 				p.ActiveRequests--
 				if p.ActiveRequests < 0 {
@@ -450,6 +472,8 @@ func (idx *ClusterIndex) AcquireLease(podID string, reservedBlocks int, prefillT
 			}
 		})
 	}
+
+	return releasePrefill, releaseAll
 }
 
 // SnapshotPods returns a deterministic sorted copy of all registered pod states.

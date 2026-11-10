@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -314,7 +315,12 @@ func (s *Server) Process(stream extprocv3.ExternalProcessor_ProcessServer) error
 						},
 					}
 				} else {
-					dec := routeFromPayload(bodyBuf.Bytes())
+					var dec scorer.RouteDecision
+					if activeDecision != nil {
+						dec = *activeDecision
+					} else {
+						dec = routeFromPayload(bodyBuf.Bytes())
+					}
 					resp = &extprocv3.ProcessingResponse{
 						Response: &extprocv3.ProcessingResponse_RequestBody{
 							RequestBody: &extprocv3.BodyResponse{
@@ -335,6 +341,9 @@ func (s *Server) Process(stream extprocv3.ExternalProcessor_ProcessServer) error
 			}
 
 		case *extprocv3.ProcessingRequest_ResponseHeaders:
+			if activeDecision != nil {
+				activeDecision.ReleasePrefill()
+			}
 			resp = &extprocv3.ProcessingResponse{
 				Response: &extprocv3.ProcessingResponse_ResponseHeaders{
 					ResponseHeaders: &extprocv3.HeadersResponse{
@@ -448,6 +457,8 @@ func (s *Server) NewAdminMux() *http.ServeMux {
 			return
 		}
 		s.index.ClearBlocks()
+		hash.ClearAlignedCache()
+		runtime.GC()
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": "reset"})
 	})

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -89,18 +90,43 @@ func (s *Subscriber) consumeEndpointLoop(ctx context.Context, endpoint string) {
 	}
 }
 
+func resolveDialTargets(endpoint string) []string {
+	rawAddr := strings.TrimPrefix(endpoint, "tcp://")
+	host, port, err := net.SplitHostPort(rawAddr)
+	if err != nil || net.ParseIP(host) != nil {
+		return []string{endpoint}
+	}
+	ips, err := net.LookupIP(host)
+	if err != nil || len(ips) <= 1 {
+		return []string{endpoint}
+	}
+	targets := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		if v4 := ip.To4(); v4 != nil {
+			targets = append(targets, "tcp://"+net.JoinHostPort(v4.String(), port))
+		}
+	}
+	if len(targets) == 0 {
+		return []string{endpoint}
+	}
+	return targets
+}
+
 func (s *Subscriber) runSingleSession(ctx context.Context, endpoint string) error {
 	sub := zmq4.NewSub(ctx, zmq4.WithAutomaticReconnect(true))
 	defer func() { _ = sub.Close() }()
 
-	if err := sub.Dial(endpoint); err != nil {
-		return fmt.Errorf("dial %s: %w", endpoint, err)
+	targets := resolveDialTargets(endpoint)
+	for _, target := range targets {
+		if err := sub.Dial(target); err != nil {
+			return fmt.Errorf("dial %s: %w", target, err)
+		}
 	}
 	if err := sub.SetOption(zmq4.OptionSubscribe, s.cfg.TopicPrefix); err != nil {
 		return fmt.Errorf("subscribe %s: %w", endpoint, err)
 	}
 	if s.cfg.Logger != nil {
-		s.cfg.Logger.Printf("[zmqsub] connected ZeroMQ SUB -> %s (topic=%q)", endpoint, s.cfg.TopicPrefix)
+		s.cfg.Logger.Printf("[zmqsub] connected ZeroMQ SUB -> %v (topic=%q)", targets, s.cfg.TopicPrefix)
 	}
 
 	for {

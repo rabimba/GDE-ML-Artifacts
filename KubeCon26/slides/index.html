@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defeating the Prefix-Cache Penalty: KV-Aware Routing &amp; Disaggregated Serving on GKE — KubeCon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --g-blue: #1A73E8;
+      --g-blue-dark: #174EA6;
+      --g-blue-bg: #E8F0FE;
+      --g-red: #EA4335;
+      --g-red-dark: #C5221F;
+      --g-red-bg: #FCE8E6;
+      --g-yellow: #FBBC04;
+      --g-yellow-bg: #FEF7E0;
+      --g-green: #34A853;
+      --g-green-dark: #137333;
+      --g-dark: #202124;
+      --g-gray: #5F6368;
+      --g-border: #DADCE0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Google Sans', 'Roboto', system-ui, sans-serif;
+      background: #111318;
+      color: var(--g-dark);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Main viewport scaling 16:9 canvas */
+    #deck-viewport {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+    }
+    /* Slides lay out once on a fixed 1600x900 design canvas; JS sets --deck-scale
+       so the whole slide scales uniformly to fit any window size or browser zoom. */
+    .slide {
+      display: none;
+      width: 1600px;
+      height: 900px;
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(var(--deck-scale, 0.9));
+      transform-origin: center center;
+      overflow: hidden;
+    }
+    .slide.active { display: block; }
+    .slide-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      padding: 2.2% 4.2%;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Top & Bottom Master Branding */
+    .slide-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2%;
+      min-height: 36px;
+    }
+    .gcl-logo-sm { height: 34px; object-fit: contain; }
+    .gcl-logo { position: absolute; top: 4.5%; left: 4.5%; height: 46px; z-index: 5; }
+    .gcl-footer { position: absolute; bottom: 2.8%; left: 4.2%; height: 15px; opacity: 0.85; }
+    .prop-badge { font-size: 0.78rem; color: var(--g-gray); font-weight: 500; }
+    .prop-badge-abs { position: absolute; top: 4.5%; right: 4.2%; font-size: 0.78rem; color: var(--g-gray); z-index: 5; }
+    .module-pill {
+      background: #F1F3F4;
+      color: var(--g-gray);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    /* Cover Slide */
+    .slide-cover {
+      padding: 0;
+      flex-direction: row;
+      align-items: center;
+    }
+    .cover-left {
+      width: 52%;
+      padding: 8% 3% 4% 4.8%;
+      z-index: 3;
+    }
+    .pill-badge {
+      display: inline-block;
+      background: var(--g-blue-bg);
+      color: var(--g-blue);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1.5px solid var(--g-blue);
+      margin-bottom: 18px;
+    }
+    .cover-title {
+      font-size: 3.1rem;
+      line-height: 1.16;
+      font-weight: 700;
+      color: var(--g-dark);
+      margin-bottom: 18px;
+    }
+    .cover-subtitle {
+      font-size: 1.3rem;
+      color: var(--g-gray);
+      line-height: 1.45;
+      margin-bottom: 22px;
+    }
+    .cover-meta {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--g-blue-dark);
+    }
+    .cover-right {
+      width: 48%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .cover-right img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* QR Hub Slide */
+    .center-title { text-align: center; font-size: 2.4rem; font-weight: 700; margin-bottom: 4px; }
+    .center-subtitle { text-align: center; font-size: 1rem; color: var(--g-gray); margin-bottom: 18px; }
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.2%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .qr-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .qr-icon-badge {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4285F4, #669DF6);
+      color: #fff;
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .qr-card h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .qr-link { font-size: 0.84rem; color: var(--g-blue); font-weight: 600; text-decoration: underline; margin-bottom: 6px; word-break: break-all; }
+    .qr-card p { font-size: 0.82rem; color: var(--g-gray); margin-bottom: 10px; line-height: 1.35; }
+    .qr-img { width: 145px; height: 145px; object-fit: contain; margin-top: auto; border-radius: 8px; background: #fff; padding: 4px; border: 1px solid #eee; }
+
+    /* Big dedicated QR slide (credits redemption) */
+    .big-qr-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%; }
+    .big-qr-card {
+      background: #fff; border: 2px solid var(--g-border); border-radius: 20px;
+      padding: 1.6%; box-shadow: 0 10px 30px rgba(32,33,36,.12);
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .big-qr-card:hover { transform: scale(1.02); border-color: var(--g-blue); box-shadow: 0 16px 40px rgba(26,115,232,.22); }
+    .big-qr-card img { display: block; width: 340px; height: auto; aspect-ratio: 1; }
+    .big-qr-link {
+      font-size: 1.9rem; font-weight: 700; color: var(--g-blue);
+      text-decoration: none; letter-spacing: -0.01em;
+    }
+    .big-qr-link:hover { text-decoration: underline; }
+    .big-qr-desc { max-width: 74%; text-align: center; color: var(--g-gray); font-size: 0.95rem; line-height: 1.55; }
+
+    .wifi-chip {
+      background: #F1F3F4; border: 1.5px solid var(--g-border); border-radius: 999px;
+      padding: 8px 22px; font-size: 0.95rem; color: var(--g-dark); font-weight: 500;
+    }
+    .wifi-chip code {
+      font-family: 'Roboto Mono', monospace; background: #fff; border: 1px solid var(--g-border);
+      border-radius: 6px; padding: 2px 10px; font-weight: 700; color: var(--g-blue-dark);
+    }
+
+    /* Speaker & Thank You Slide */
+    .slide-speaker { padding: 0; flex-direction: row; align-items: center; }
+    .speaker-fan-bg { position: absolute; left: 0; top: 0; width: 48%; height: 100%; z-index: 1; }
+    .speaker-fan-bg img { width: 100%; height: 100%; object-fit: cover; }
+    .speaker-content {
+      position: relative; z-index: 3;
+      display: flex; align-items: center;
+      width: 100%; height: 100%;
+      padding: 6% 5% 6% 7%;
+      gap: 6%;
+    }
+    .speaker-photo-wrap img {
+      width: 330px;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+      border: 4px solid #fff;
+    }
+    .speaker-Bio-text h1 { font-size: 3.8rem; line-height: 1.12; margin-bottom: 16px; }
+    .role-line { font-size: 1.55rem; color: #3C4043; margin-bottom: 8px; font-weight: 500; }
+    .speaker-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tag-chip { background: var(--g-blue-bg); color: var(--g-blue-dark); padding: 5px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 600; }
+    .thankyou-right {
+      margin-left: 46%;
+      width: 54%;
+      padding: 5% 4.5% 5% 2%;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .thankyou-text h1 { font-size: 4.2rem; margin-bottom: 12px; }
+    .thankyou-text p { font-size: 1.05rem; color: var(--g-gray); line-height: 1.5; }
+    .thankyou-qrs { display: flex; flex-direction: column; gap: 18px; }
+    .ty-qr-box { display: flex; flex-direction: column; align-items: center; text-align: center; background: #F8F9FA; padding: 10px; border-radius: 12px; border: 1px solid var(--g-border); width: 185px; }
+    .ty-qr-box img { width: 125px; height: 125px; margin-bottom: 6px; }
+    .ty-qr-box span { font-size: 0.72rem; color: var(--g-blue-dark); font-weight: 600; line-height: 1.25; }
+
+    /* Section Poll Slide */
+    .section-poll-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 88%; margin: 0 auto; }
+    .section-robot-icon { width: 64px; height: 64px; margin-bottom: 8px; }
+    .section-poll-wrap h2 { font-size: 2.5rem; margin-bottom: 16px; line-height: 1.18; }
+    .interactive-poll-card {
+      width: 100%;
+      background: var(--g-blue-bg);
+      border: 2px solid var(--g-blue);
+      border-radius: 14px;
+      padding: 16px 22px;
+      text-align: left;
+    }
+    .poll-q { font-size: 1.05rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 10px; }
+    .poll-opts { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+    .poll-opts li {
+      background: #fff;
+      border: 1.5px solid #BBD6FB;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.94rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s;
+    }
+    .poll-opts li:hover, .poll-opts li.voted { background: #D2E3FC; border-color: var(--g-blue); font-weight: 600; }
+    .vote-pill { font-size: 0.75rem; background: var(--g-blue); color: #fff; padding: 2px 9px; border-radius: 999px; }
+    .reveal-btn, .reveal-btn-sm {
+      background: var(--g-blue); color: #fff; border: none;
+      padding: 7px 14px; border-radius: 8px; font-weight: 600;
+      cursor: pointer; font-size: 0.85rem;
+    }
+    .reveal-btn:hover, .reveal-btn-sm:hover { background: var(--g-blue-dark); }
+    .poll-answer, .quiz-ans-row {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 12px;
+      background: #E6F4EA;
+      border-left: 4px solid var(--g-green);
+      border-radius: 6px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--g-green-dark);
+    }
+    .poll-answer.visible, .quiz-ans-row.visible { display: block; }
+
+    /* Triad Slide */
+    .triad-headline {
+      font-size: 2.15rem;
+      font-weight: 700;
+      line-height: 1.28;
+      max-width: 90%;
+      margin: 1.5% auto 4% auto;
+    }
+    .hl-blue { color: var(--g-blue); }
+    .hl-green { color: var(--g-green-dark); }
+    .triad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex: 1;
+      margin-bottom: 4%;
+    }
+    .triad-box {
+      flex: 1;
+      background: #F1F3F4;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 28px 16px 22px 16px;
+      text-align: center;
+      position: relative;
+    }
+    .triad-center { border: 2px solid var(--g-blue); background: var(--g-blue-bg); }
+    .triad-box img { width: 58px; height: 58px; margin-bottom: 10px; }
+    .triad-box h3 { font-size: 1.25rem; line-height: 1.3; }
+    .triad-arrow { font-size: 2rem; color: var(--g-gray); font-weight: 700; }
+
+    /* Standard Content & Split Layouts */
+    .slide-h2 { font-size: 2.05rem; font-weight: 700; margin-bottom: 8px; color: var(--g-dark); }
+    .sub-blue { font-size: 1.22rem; color: var(--g-blue); font-weight: 700; margin-bottom: 8px; }
+    .body-p { font-size: 0.92rem; color: #3C4043; line-height: 1.45; margin-bottom: 10px; }
+    .blue-outline-card {
+      border: 2.5px solid var(--g-blue);
+      border-radius: 16px;
+      padding: 20px 26px;
+      flex: 1;
+      margin-bottom: 3.5%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .card-intro { font-size: 1.05rem; font-weight: 500; margin-bottom: 14px; color: var(--g-dark); line-height: 1.4; }
+    .obj-list { list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.96rem; line-height: 1.42; }
+    .split-2col {
+      display: grid;
+      grid-template-columns: 47% 51%;
+      gap: 2%;
+      flex: 1;
+      margin-bottom: 3.2%;
+      min-height: 0;
+    }
+    .col-left, .col-right { display: flex; flex-direction: column; min-height: 0; }
+    .clean-bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; font-size: 0.89rem; line-height: 1.38; color: #3C4043; }
+    .clean-bullets li strong { color: var(--g-blue-dark); }
+    .compact-list { gap: 6px; font-size: 0.84rem; margin-top: 8px; }
+    .center-img-box { align-items: center; justify-content: center; background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 10px; }
+    .arch-img { max-width: 100%; max-height: 88%; object-fit: contain; border-radius: 8px; cursor: zoom-in; }
+    .click-hint, .img-caption { font-size: 0.76rem; color: var(--g-gray); margin-top: 5px; text-align: center; }
+
+    /* Three Tech Columns */
+    .three-tech-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5%;
+      flex: 1;
+      margin: 1.5% 0 4% 0;
+    }
+    .tech-col-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tech-col-card img { width: 54px; height: 54px; object-fit: contain; margin-bottom: 14px; }
+    .tech-col-card h3 { font-size: 1.15rem; margin-bottom: 10px; line-height: 1.28; }
+    .tech-col-card p { font-size: 0.9rem; color: #3C4043; line-height: 1.45; }
+
+    /* Dual Cards & Quiz Banner */
+    .dual-cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.2%;
+      flex: 1;
+      min-height: 0;
+      margin-bottom: 10px;
+    }
+    .bordered-card {
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #fff;
+    }
+    .card-blue { border: 2.5px solid var(--g-blue); }
+    .card-blue h3 { color: var(--g-blue); font-size: 1.18rem; margin-bottom: 2px; }
+    .card-red { border: 2.5px solid var(--g-red); }
+    .card-red h3 { color: var(--g-red-dark); font-size: 1.18rem; margin-bottom: 2px; }
+    .bordered-card h4 { font-size: 0.86rem; color: var(--g-gray); margin-bottom: 8px; font-weight: 600; }
+    .quiz-banner {
+      background: var(--g-yellow-bg);
+      border: 1.5px solid var(--g-yellow);
+      border-radius: 10px;
+      padding: 8px 14px;
+      margin-bottom: 2.8%;
+    }
+    .quiz-q-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.86rem; font-weight: 700; color: #B06000; }
+
+    /* Lab Divider */
+    .lab-divider-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .lab-divider-center h1 { font-size: 3.8rem; margin-bottom: 18px; }
+    .lab-sub-row { display: flex; align-items: center; gap: 14px; font-size: 1.35rem; color: var(--g-blue); font-weight: 700; }
+    .lab-sub-row img { width: 36px; height: 36px; }
+
+    /* Terminal Code Box */
+    .terminal-card {
+      background: var(--g-dark);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3C4043;
+      margin-bottom: 8px;
+    }
+    .terminal-card.compact { max-height: 46%; }
+    .term-header {
+      background: #2D2E31;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dots span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-r { background: #EA4335; }
+    .dot-y { background: #FBBC04; }
+    .dot-g { background: #34A853; }
+    .term-title { font-family: 'Roboto Mono', monospace; font-size: 0.75rem; color: #9AA0A6; }
+    .copy-btn {
+      background: #3C4043; color: #E8EAED; border: 1px solid #5F6368;
+      border-radius: 5px; padding: 2px 8px; font-size: 0.72rem; cursor: pointer;
+    }
+    .copy-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .term-body {
+      padding: 10px 14px;
+      color: #E8EAED;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.76rem;
+      line-height: 1.38;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-y: auto;
+    }
+    .shot-preview-box {
+      flex: 1;
+      min-height: 0;
+      background: #F8F9FA;
+      border: 1px solid var(--g-border);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .shot-preview-box img { max-width: 100%; max-height: 135px; object-fit: contain; border-radius: 4px; cursor: zoom-in; }
+
+    /* Vertical Stepper & Callout */
+    .v-stepper-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      justify-content: space-around;
+    }
+    .v-step-item { display: flex; align-items: flex-start; gap: 14px; }
+    .v-step-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue); color: #fff; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .v-step-text h4 { font-size: 1rem; margin-bottom: 3px; }
+    .v-step-text code { font-family: 'Roboto Mono', monospace; font-size: 0.82rem; color: var(--g-green-dark); }
+    .callout-card {
+      background: #fff; border: 1.5px solid var(--g-border);
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    }
+    .callout-pill {
+      display: inline-block; background: var(--g-red-bg); color: var(--g-red-dark);
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-bottom: 6px;
+    }
+    .callout-card h4 { font-size: 0.98rem; margin-bottom: 4px; }
+    .callout-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.36; }
+
+    /* Four Steps Grid */
+    .four-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.8%;
+      flex: 1;
+      margin-bottom: 3.5%;
+    }
+    .four-step-card {
+      background: #F8F9FA;
+      border: 1.5px solid var(--g-border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .four-step-card.step-card-hi { border: 2.5px solid var(--g-blue); background: #fff; }
+    .step-num-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--g-blue-bg); color: var(--g-blue);
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .step-card-hi .step-num-circle { background: var(--g-blue); color: #fff; }
+    .four-step-card h4 { font-size: 0.98rem; margin-bottom: 8px; line-height: 1.28; }
+    .step-card-hi h4 { color: var(--g-blue); }
+    .four-step-card p { font-size: 0.83rem; color: #3C4043; line-height: 1.4; }
+
+    /* Verification Cards */
+    .query-box { background: #F1F3F4; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 10px; }
+    .grounded-box { background: var(--g-blue-bg); border: 1px solid var(--g-blue); padding: 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.4; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .trap-box { padding: 10px 12px; border-radius: 8px; font-size: 0.83rem; line-height: 1.35; margin-bottom: 8px; flex: 1; }
+    .trap-red { background: var(--g-red-bg); border: 1px solid var(--g-red); }
+    .trap-yellow { background: var(--g-yellow-bg); border: 1px solid var(--g-yellow); }
+
+    /* Lab Timer Widget */
+    .title-with-timer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .lab-timer-widget {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--g-blue-bg); border: 1.5px solid var(--g-blue);
+      padding: 4px 12px; border-radius: 999px; font-size: 0.82rem;
+    }
+    .timer-label { font-weight: 700; color: var(--g-blue-dark); }
+    .timer-display { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem; color: var(--g-red-dark); min-width: 48px; }
+    .timer-btn {
+      background: var(--g-blue); color: #fff; border: none;
+      border-radius: 999px; padding: 3px 10px; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+    }
+    .timer-btn.secondary { background: #5F6368; }
+
+    /* Speaker Notes Teleprompter Drawer (Press S) */
+    #notes-drawer {
+      display: none;
+      height: 185px;
+      background: #1E2028;
+      border-top: 2px solid var(--g-blue);
+      color: #E8EAED;
+      padding: 12px 24px;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    body.notes-open #notes-drawer { display: block; }
+    #notes-drawer-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; font-size: 0.8rem; color: #8AB4F8; font-weight: 700;
+    }
+    #notes-drawer-content { white-space: pre-wrap; font-family: 'Roboto', sans-serif; }
+
+    /* Bottom Presenter Control Bar (hidden by default; press B to toggle; never in fullscreen) */
+    #presenter-bar {
+      height: 46px;
+      background: #181A20;
+      border-top: 1px solid #2D3139;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      color: #E8EAED;
+      font-size: 0.84rem;
+      user-select: none;
+    }
+    body.controls-visible #presenter-bar { display: flex; }
+    body.is-fullscreen #presenter-bar { display: none !important; }
+    .bar-group { display: flex; align-items: center; gap: 8px; }
+    .bar-btn {
+      background: #282C34; color: #E8EAED; border: 1px solid #3E4451;
+      padding: 5px 11px; border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .bar-btn:hover { background: var(--g-blue); border-color: var(--g-blue); }
+    .bar-btn.active-toggle { background: var(--g-blue); border-color: var(--g-blue); }
+    #progress-track { width: 140px; height: 6px; background: #2D3139; border-radius: 99px; overflow: hidden; }
+    #progress-fill { height: 100%; background: var(--g-blue); width: 3%; transition: width 0.2s; }
+
+    /* Slide Grid Modal (Press G) */
+    #grid-modal, #lightbox-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15, 17, 23, 0.92);
+      z-index: 100;
+      padding: 32px;
+      overflow-y: auto;
+    }
+    #grid-modal.open, #lightbox-modal.open { display: flex; flex-direction: column; }
+    .grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .grid-item {
+      background: #20232A; border: 1.5px solid #3C4043; border-radius: 8px;
+      padding: 12px; color: #E8EAED; cursor: pointer;
+    }
+    .grid-item:hover, .grid-item.current { border-color: var(--g-blue); background: #263147; }
+    .grid-item-num { font-size: 0.75rem; color: #8AB4F8; font-weight: 700; margin-bottom: 4px; }
+    .grid-item-title { font-size: 0.88rem; font-weight: 600; }
+    #lightbox-modal { align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox-img { max-width: 94vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
+
+    /* ---- NEW slide types (Location Intelligence) ---- */
+    .hero-media-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      background: #0d1117; border-radius: 12px; overflow: hidden; margin: 1% 0;
+    }
+    .hero-media-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .hero-caption { text-align: center; font-size: 0.8rem; color: var(--g-gray); margin-bottom: 2%; }
+
+    .build-col { display: flex; flex-direction: column; gap: 2.2%; flex: 1; margin-top: 1%; }
+    .build-step {
+      display: flex; align-items: center; gap: 18px;
+      background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px;
+      padding: 2.4% 3%;
+    }
+    .build-step img { width: 46px; height: 46px; object-fit: contain; flex: 0 0 auto; }
+    .build-step-text h3 { font-size: 1.1rem; font-weight: 700; color: var(--g-blue-dark); margin-bottom: 2px; }
+    .build-step-text p { font-size: 0.92rem; color: var(--g-gray); line-height: 1.35; }
+    .build-summary {
+      margin-top: 2%; margin-bottom: 2.5%; text-align: center; font-weight: 700; font-size: 1.05rem;
+      color: var(--g-green-dark); background: #E6F4EA; border-radius: 999px; padding: 10px 18px;
+    }
+
+    .worlds-row { display: flex; align-items: stretch; gap: 2%; flex: 1; margin-top: 2%; }
+    .world-card {
+      flex: 1; border-radius: 14px; padding: 3%; border: 2px solid var(--g-border);
+      display: flex; flex-direction: column;
+    }
+    .world-card img { width: 52px; height: 52px; object-fit: contain; margin-bottom: 10px; }
+    .world-card h3 { font-size: 1.15rem; margin-bottom: 10px; }
+    .world-card ul { margin-left: 18px; font-size: 0.95rem; color: var(--g-dark); line-height: 1.6; }
+    .world-blue { border-color: var(--g-blue); background: var(--g-blue-bg); }
+    .world-blue h3 { color: var(--g-blue-dark); }
+    .world-green { border-color: var(--g-green); background: #E6F4EA; }
+    .world-green h3 { color: var(--g-green-dark); }
+    .worlds-bridge {
+      align-self: center; flex: 0 0 16%; text-align: center; font-weight: 700;
+      font-size: 0.9rem; color: var(--g-dark);
+      background: var(--g-yellow-bg); border: 2px dashed var(--g-yellow);
+      border-radius: 12px; padding: 12px;
+    }
+
+    .nxm-cols { display: flex; gap: 3%; flex: 1; margin-top: 1%; }
+    .nxm-col { flex: 1; display: flex; flex-direction: column; }
+    .nxm-caption { text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--g-gray); margin-bottom: 8px; }
+    .nxm-mesh {
+      flex: 1; display: flex; align-items: center; justify-content: space-between;
+      background: #F8F9FA; border: 1.5px solid var(--g-border); border-radius: 12px; padding: 4%;
+    }
+    .nxm-side { display: flex; flex-direction: column; gap: 12px; }
+    .nxm-node {
+      padding: 10px 14px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; text-align: center;
+      border: 1.5px solid var(--g-border); background: #fff;
+    }
+    .nxm-agent { border-color: var(--g-blue); color: var(--g-blue-dark); }
+    .nxm-server { border-color: var(--g-green); color: var(--g-green-dark); }
+    .nxm-tangle { color: var(--g-red); font-size: 1.4rem; text-align: center; line-height: 1.1; }
+    .nxm-hub {
+      align-self: center; background: var(--g-blue); color: #fff; font-weight: 700;
+      padding: 16px 22px; border-radius: 999px; font-size: 1.1rem;
+      box-shadow: 0 6px 18px rgba(26,115,232,0.35);
+    }
+
+    .tool-cat-head { display: flex; align-items: center; gap: 14px; margin-bottom: 1%; }
+    .tool-cat-head img { width: 54px; height: 54px; object-fit: contain; }
+    .tool-list { display: flex; flex-direction: column; gap: 10px; margin-top: 1%; }
+    .tool-row {
+      display: flex; align-items: center; gap: 16px;
+      background: #fff; border: 1.5px solid var(--g-border); border-radius: 10px; padding: 10px 2%;
+    }
+    .tool-name {
+      font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 0.95rem;
+      background: #F1F3F4; padding: 4px 10px; border-radius: 6px; flex: 0 0 34%;
+    }
+    .tool-accent-blue .tool-name { color: var(--g-blue-dark); }
+    .tool-accent-green .tool-name { color: var(--g-green-dark); }
+    .tool-desc { font-size: 0.9rem; color: var(--g-dark); }
+    .tool-callout {
+      margin-top: 2%; font-size: 0.92rem; font-weight: 600; color: var(--g-dark);
+      background: var(--g-yellow-bg); border-left: 4px solid var(--g-yellow);
+      border-radius: 8px; padding: 12px 16px;
+    }
+
+    .journey-table { display: flex; flex-direction: column; gap: 1.6%; flex: 1; margin-top: 1%; }
+    .journey-row {
+      display: grid; grid-template-columns: 7% 44% 26% 23%; align-items: center;
+      gap: 1.5%; padding: 1.5% 2%; border-radius: 10px; border: 1.5px solid var(--g-border); background: #fff;
+    }
+    .journey-tag { font-weight: 800; font-size: 1rem; }
+    .journey-blue .journey-tag { color: var(--g-blue); }
+    .journey-green .journey-tag { color: var(--g-green); }
+    .journey-yellow .journey-tag { color: #B06000; }
+    .journey-q { font-size: 0.92rem; font-weight: 600; color: var(--g-dark); }
+    .journey-tool { font-family: 'Roboto Mono', monospace; font-size: 0.8rem; color: var(--g-gray); }
+    .journey-res { font-size: 0.82rem; font-weight: 700; color: var(--g-dark); text-align: right; }
+    .journey-blue { border-left: 5px solid var(--g-blue); }
+    .journey-green { border-left: 5px solid var(--g-green); }
+    .journey-yellow { border-left: 5px solid var(--g-yellow); }
+  </style>
+</head>
+<body>
+  <div id="deck-viewport">
+    <section class="slide active" data-slide="1" data-title="Defeating the Prefix-Cache Penalty: KV-Aware Routing &amp; Disaggregated Serving for Agent Fleets on GKE" data-module="Session Opening" data-time="00:00 – 00:35">
+        <div class="slide-canvas slide-cover">
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <div class="cover-left">
+            <div class="pill-badge">KubeCon 2026 • GKE Cloud TPU &amp; GAIE</div>
+            <h1 class="cover-title">Defeating the Prefix-Cache Penalty:<br/>KV-Aware Routing &amp; Disaggregated Serving<br/>for Agent Fleets on GKE</h1>
+            <p class="cover-subtitle">Gateway API Inference Extension (v1) • llm-d DisaggregatedSet • vllm-torchtpu • Cloud TPU v6e</p>
+            <div class="cover-meta">Rabimba Karanjai • Google Developer Expert (AI/ML)</div>
+          </div>
+          <div class="cover-right">
+            <img src="assets/bg_cover_layers_cropped.png" alt="Google Cloud Layers"/>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="2" data-title="Rabimba Karanjai" data-module="Speaker &amp; Companion Artifact" data-time="00:35 – 01:00">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Google Developer Expert</span>
+          <div class="speaker-content">
+            <div class="speaker-photo-wrap">
+              <img src="assets/ref_slide4_pic2.jpg" alt="Rabimba Karanjai"/>
+            </div>
+            <div class="speaker-Bio-text">
+              <h1>Rabimba<br/>Karanjai</h1>
+              <p class="role-line">Google Developer Expert — AI &amp; ML</p>
+              <p class="role-line">ML Scientist — PayPal</p>
+              <div class="speaker-tags">
+                <span class="tag-chip">GKE Cloud TPU v6e</span>
+                <span class="tag-chip">Gateway API Inference Extension</span>
+                <span class="tag-chip">vllm-torchtpu &amp; llm-d</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section><section class="slide " data-slide="3" data-title="Scan to Grab the Companion Artifact &amp; Slides" data-module="Companion Repository &amp; Resources" data-time="01:00 – 01:20">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Companion Repository &amp; Resources • 01:00 – 01:20</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Scan to Grab the Companion Artifact &amp; Slides</h2>
+          <p class="center-subtitle">Every GKE manifest, Go ext_proc router package, and automated test gate (make gate-all) is in the repo.</p>
+          <div class="qr-grid">
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>KubeCon 2026 Repo</h3>
+              <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26" target="_blank" class="qr-link">github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26</a>
+              <p>Go 1.23 FleetKV EPP router, TPU v6e DisaggregatedSet YAML &amp; Digital Twin.</p>
+              <img class="qr-img" src="assets/qr_kubecon26_repo.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>Interactive Web Deck</h3>
+              <a href="https://rabimba.github.io/GDE-ML-Artifacts/KubeCon26/slides/index.html" target="_blank" class="qr-link">rabimba.github.io/.../KubeCon26/slides</a>
+              <p>Follow along with live speaker notes (press S) and copyable YAML/Go snippets.</p>
+              <img class="qr-img" src="assets/qr_kubecon26_slides.png" alt="QR Code"/>
+            </div>
+            
+            <div class="qr-card">
+              <div class="qr-icon-badge">&lt;/&gt;</div>
+              <h3>GAIE Upstream Docs</h3>
+              <a href="https://gateway-api-inference-extension.sigs.k8s.io/" target="_blank" class="qr-link">gateway-api-inference-extension.sigs.k8s.io</a>
+              <p>Kubernetes SIG Networking Gateway API Inference Extension v1 specification.</p>
+              <img class="qr-img" src="assets/qr_gaie_docs.png" alt="QR Code"/>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="4" data-title="Chatbots Are Lines. Agent Fleets Are Trees." data-module="Part 1: The Agent Tree Workload" data-time="01:20 – 02:30">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 1: The Agent Tree Workload • 01:20 – 02:30</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Chatbots Are Lines. Agent Fleets Are Trees.</h2>
+          <div class="worlds-row">
+            
+            <div class="world-card world-blue">
+              <img src="assets/icon_gemini.png" alt="icon"/>
+              <h3>Linear Chatbot Traffic</h3>
+              <ul><li>Single user typing one turn every 15 to 30 seconds</li><li>Short system prompt (~1,024 tokens)</li><li>Predictable, incremental KV cache growth per session</li><li>Independent sessions rarely share 20K-token prefixes at millisecond zero</li></ul>
+            </div>
+            <div class="worlds-bridge">t = 0 ms
+8-Way Fork
+20,480-Tok
+Shared Trunk</div>
+            
+            <div class="world-card world-green">
+              <img src="assets/icon_adk.png" alt="icon"/>
+              <h3>SWE / SRE Agent Fleet (Fork-Storm)</h3>
+              <ul><li>20,480-Token Trunk: 120 MCP tool schemas + repo AST + alert state (80 x 256-tok blocks)</li><li>8-Way Parallel Fork: Orchestrator spawns 8 specialist sub-agents at t = 0 ms</li><li>Log Bursts: Each sub-agent appends +8,192 tokens of kubectl logs / diffs on Turn 2</li><li>Synthesis Join: Orchestrator merges all 8 sub-agent findings (85.6% prefix overlap)</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="5" data-title="Anatomy of an 8-Way Incident Orchestrator Fork-Storm" data-module="Part 1: Fork-Storm Topology" data-time="02:30 – 03:20">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 1: Fork-Storm Topology • 02:30 – 03:20</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Anatomy of an 8-Way Incident Orchestrator Fork-Storm</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">20,480-Token Shared Parent Trunk -&gt; 8 Concurrent Sub-Agent Branches -&gt; Join</h3>
+              <p class="body-p">Every 256-token block hash in the 80-block parent trunk is identical across all 8 child sub-agents:</p>
+              <ul class="clean-bullets"><li><strong>Blocks 0..1 (512 tok):</strong> Global MCP tool bootstrap shared across all cluster orchestrators.</li><li><strong>Blocks 2..79 (19,968 tok):</strong> Incident repository AST + active alert context (80 blocks total trunk).</li><li><strong>Turn 1..4 Branch Deltas:</strong> 8 parallel specialists append +512 tok role, +8,192 tok log burst, +1,024 tok config/patch.</li><li><strong>Synthesis Join (26,624 tok):</strong> Orchestrator re-attaches the 80-block trunk plus a 24-block branch synthesis.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/fork_storm_tree.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="6" data-title="Failure Mode 1: Stateless K8s Round-Robin &amp; Failure Mode 2: The Prefix-Herd Trap" data-module="Part 2: Two Routing Failure Modes" data-time="03:20 – 05:00">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 2: Two Routing Failure Modes • 03:20 – 05:00</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Failure Mode 1: Stateless K8s Round-Robin</h3>
+              <h4>Standard ClusterIP Service (1/N Scatter Misses)</h4>
+              <ul class="clean-bullets"><li><strong>1/N Cache Scatter:</strong> Pods 0..3 each recompute the same 20,480-token parent trunk on their MXUs (~30.8% hit rate).</li><li><strong>Duplicate HBM Residency:</strong> Identical 20,480-token FP8 KV blocks occupy N x High-Bandwidth Memory across the pool.</li><li><strong>Prefill-Decode Interference:</strong> Co-located 8,192-token log-burst prefills stall active decode streams past 133 ms P99 ITL.</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>Failure Mode 2: The Prefix-Herd Trap</h3>
+              <h4>Naive Longest-Prefix Sticky Routing (argmax MatchedBlocks)</h4>
+              <ul class="clean-bullets"><li><strong>Single-Pod Stampede:</strong> All 8 forked sub-agents match 80/80 trunk blocks on Pod 0; naive routing herds 8/8 branches onto Pod 0.</li><li><strong>Serial MXU Queueing:</strong> Pod 0 queues all 8 bursts serially while Pods 1..3 sit idle, spiking P95 TTFT to 33.4s (worse than Round-Robin!).</li><li><strong>HBM Self-Eviction:</strong> 8 diverging branches exceed Pod 0&#x27;s 360-block HBM budget and LRU-evict their own parent trunk before Join.</li></ul>
+            </div>
+          </div>
+          <div class="quiz-banner">
+            <div class="quiz-q-row">
+              <span>🎯 Pop Quiz: Why does Naive KV-Sticky routing make P95 Fork-Burst TTFT worse than Stateless Round-Robin?</span>
+              <button class="reveal-btn-sm" onclick="this.parentElement.nextElementSibling.classList.toggle('visible')">Reveal Answer</button>
+            </div>
+            <div class="quiz-ans-row">Because all 8 parallel sub-agents share the exact 80-block parent trunk on Pod 0—serializing 8 prefill bursts on one MXU and overflowing Pod 0&#x27;s HBM!</div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="7" data-title="Why KV-Aware Routing &amp; Disaggregation Need Each Other" data-module="Part 3: Co-Designing Routing &amp; Disaggregation" data-time="05:00 – 06:15">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 3: Co-Designing Routing &amp; Disaggregation • 05:00 – 06:15</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Why KV-Aware Routing &amp; Disaggregation Need Each Other</h2>
+          <div class="blue-outline-card">
+            <p class="card-intro">Solving both 1/N scatter misses and fork-storm herding requires coordinating the GAIE control plane with a disaggregated Prefill/Decode data plane:</p>
+            <ul class="obj-list"><li><strong class='hl-blue'>• 1. Compute the Shared Trunk Once on Prefill TPUs:</strong> Prefill pods compute the 20,480-token trunk once and back their 360-block HBM cache with 48 GiB of Tier-2 Host DRAM (/dev/shm via TPUConnectorHMA).</li><li><strong class='hl-blue'>• 2. Gate Admission on HBM Block Fit:</strong> Before routing a forked branch, FleetKV checks whether the branch horizon + 24-block safety reserve fits in free HBM; overflow branches spill cleanly to peer pods.</li><li><strong class='hl-blue'>• 3. Isolate Log-Burst Prefills from Decode ITL:</strong> 8,192-token Turn 2 log bursts execute on dedicated Prefill MXUs so Decode TPUs stream tokens uninterrupted at 27–33 ms P99 ITL (&lt; 40 ms SLO).</li><li><strong class='hl-blue'>• 4. Stream KV Blocks Over MTU-8896 gVNIC:</strong> TPUConnectorHMA transfers delta KV blocks asynchronously over jumbo-frame gVNIC from Prefill TPUs to whichever Decode pod has HBM headroom.</li></ul>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="8" data-title="Control Plane: Fit-Aware Tree Routing in GAIE ext_proc" data-module="Part 3: Control Plane (FleetKV EPP)" data-time="06:15 – 07:30">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 3: Control Plane (FleetKV EPP) • 06:15 – 07:30</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Control Plane: Fit-Aware Tree Routing in GAIE ext_proc</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">router/pkg/scorer/policies.go — Hard HBM Fit Gate + Staged Prefill Leases</h3>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">go (router/pkg/scorer/policies.go)</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>func ScoreEndpoint(pod *PodState, req *RouteInput) float64 {
+    // 1. Hard HBM Fit Gate: spill to peer if branch horizon overflows HBM
+    effectiveFree := pod.FreeHBMBlocks - pod.ReservedBlocks
+    if effectiveFree &lt; req.EstimatedBranchBlocks + SafetyReserveBlocks {
+        return RejectOverflowSpillToPeer
+    }
+    // 2. Trade off ZMQ-indexed block hits against in-flight prefill queue
+    savedMs   := float64(pod.MatchedHBMBlocks)*HBMBlockMs +
+                 float64(pod.MatchedDRAMBlocks)*DRAMBlockMs
+    queueWait := float64(pod.InFlightPrefillTokens) / PodTokPerMs
+    return savedMs - queueWait
+}</code></pre>
+              </div>
+            </div>
+            <div class="col-right">
+              <div class="blue-outline-card">
+                <p class="card-intro">The three control surfaces:</p>
+                <ul class="obj-list"><li><code>ZeroMQ KV Indexer (:5557)</code> — Subscribes to vllm-torchtpu BlockStored &amp; BlockRemoved events across HBM and Tier-2 Host DRAM.</li><li><code>Hard HBM Fit Gate</code> — Rejects pods where admitting the branch horizon (+24 safety blocks) would evict warm parent trunks.</li><li><code>Staged Lease Accounting</code> — AcquireStagedLease releases InFlightPrefillTokens on ResponseHeaders (TTFT) while holding ReservedBlocks until stream EOF.</li></ul>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="9" data-title="Data Plane: vllm-torchtpu + TPUConnectorHMA on GKE" data-module="Part 3: Data Plane (vllm-torchtpu + HMA)" data-time="07:30 – 08:30">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 3: Data Plane (vllm-torchtpu + HMA) • 07:30 – 08:30</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Data Plane: vllm-torchtpu + TPUConnectorHMA on GKE</h2>
+          <div class="split-2col">
+            <div class="col-left">
+              <h3 class="sub-blue">DisaggregatedSet on Trillium ct6e-standard-4t (2x2) with 48 GiB Tier-2 Host DRAM</h3>
+              <p class="body-p">Upstream PyTorch models lowered via torch.compile(backend=&#x27;tpu&#x27;) onto Pallas paged-attention kernels:</p>
+              <ul class="clean-bullets"><li><strong>Pallas 256-Token Blocks:</strong> vllm-torchtpu runs Qwen/Qwen3-30B-A3B-FP8 with --block-size 256 so block tables fit in TPU v6e Scalar Memory (SMEM).</li><li><strong>Tier-2 Host DRAM (/dev/shm):</strong> Prefill pods mount a 64 GiB memory volume and allocate 48 GiB (1,024+ blocks) to TPUConnectorHMA so trunks never recompute.</li><li><strong>Async KV DMA (MTU 8896):</strong> Delta KV blocks stream over jumbo-frame gVNIC from the selected Prefill pod (x-fleetkv-prefill-endpoint) to Decode TPUs.</li><li><strong>GAIE Endpoint Picker Headers:</strong> fleetkv-epp sets x-gateway-destination-endpoint and ClearRouteCache=true on Envoy v3 BodyResponse.</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/fleetkv_architecture.png" alt="Architecture Diagram" onclick="openLightbox(this.src)"/>
+              <span class="click-hint">🔍 Click diagram to enlarge full-screen</span>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="10" data-title="Live Demo: 3-Stage Traffic Flip Under 64-Branch Fork-Storm" data-module="Part 4: Live 3-Stage Traffic Flip Demo" data-time="08:30 – 11:45">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 4: Live 3-Stage Traffic Flip Demo • 08:30 – 11:45</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="slide-h2">Live Demo: 3-Stage Traffic Flip Under 64-Branch Fork-Storm</h2>
+          <div class="split-2col">
+            <div class="col-left v-stepper-card">
+              
+            <div class="v-step-item">
+              <div class="v-step-circle">1</div>
+              <div class="v-step-text">
+                <h4>Stage 1: Stateless K8s Round-Robin</h4>
+                <code>./bench/demo_ctl.sh stage1</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">2</div>
+              <div class="v-step-text">
+                <h4>Stage 2: Naive Longest-Prefix Sticky</h4>
+                <code>./bench/demo_ctl.sh stage2</code>
+              </div>
+            </div>
+            
+            <div class="v-step-item">
+              <div class="v-step-circle">3</div>
+              <div class="v-step-text">
+                <h4>Stage 3: FleetKV Fit + Disagg P/D</h4>
+                <code>./bench/demo_ctl.sh stage3</code>
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-right">
+              <div class="callout-card">
+                <span class="callout-pill">LIVE ON STAGE • 4-COLUMN TUI</span>
+                <h4>Watch Completed Stages Freeze Side-by-Side</h4>
+                <p>As demo_ctl.sh hot-swaps policies via POST /admin/policy (or patches the GKE HTTPRoute), bench/stage_tui.py freezes the completed stage&#x27;s 10-second sliding-window telemetry so all 3 stages remain visible side-by-side.</p>
+              </div>
+              <div class="terminal-card">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Operator Shell — 3-Pane Conference TUI</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Launch 3-pane tmux layout (Scorecard TUI + EPP Route Stream + Shell)
+./bench/demo_ctl.sh prep
+
+# Flip live traffic across all 3 architectures:
+./bench/demo_ctl.sh stage2   # Trigger single-pod herd &amp; HBM thrash
+./bench/demo_ctl.sh stage3   # Enable FleetKV Fit Gate + Disagg P/D</code></pre>
+              </div>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="11" data-title="Benchmark Scorecard: Gate G1 Twin &amp; GKE Cloud TPU v6e" data-module="Part 5: Empirical Benchmark Scorecard" data-time="11:45 – 12:30">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 5: Empirical Benchmark Scorecard • 11:45 – 12:30</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Benchmark Scorecard: Gate G1 Twin &amp; GKE Cloud TPU v6e</h2>
+            
+          </div>
+          <div class="split-2col">
+            <div class="col-left">
+              <ul class="clean-bullets"><li><strong>Effective Prefix Hit Rate:</strong> 30.8% (S1) -&gt; 62.5% (S2 thrashing) -&gt; 86.1% Twin / 91.6% GKE (S3 HBM + Tier-2 DRAM).</li><li><strong>Median TTFT (P50):</strong> 6,498 ms (S1) -&gt; 5,581 ms (S2) -&gt; 1,153 ms Twin (-82.3%) / 315 ms GKE (-88%).</li><li><strong>Fork-Burst Tail TTFT (P95):</strong> 12,083 ms (S1) -&gt; 33,377 ms (S2 herd stall!) -&gt; 2,507 ms Twin (-79.2%) / 485 ms GKE (-86%).</li><li><strong>Decode Jitter (P99 ITL):</strong> 133.1 ms (S1) -&gt; 141.4 ms (S2) -&gt; 33.1 ms Twin / 27 ms GKE (&lt; 40 ms interactive SLO).</li><li><strong>Cluster Output Goodput:</strong> 31.6 tok/s (1.0x S1) -&gt; 18.5 tok/s (0.59x S2) -&gt; 134.7 tok/s (4.26x Twin / 2.55x GKE).</li><li><strong>Lost HBM Block Evictions:</strong> 17,377 (S1) -&gt; 10,585 (S2 self-eviction) -&gt; 0 in Stage 3 (pinned in 48 GiB Host DRAM).</li></ul>
+            </div>
+            <div class="col-right center-img-box">
+              <img class="arch-img zoomable" src="assets/stage_scorecard_visual.png" alt="Codelab Screenshot" onclick="openLightbox(this.src)"/>
+              <p class="img-caption">Verified Gate G1 run (`make gate-g1`, 416 streaming requests/stage) &amp; 8-chip GKE TPU v6e (`2x ct6e-standard-4t`) reference. (Click to zoom)</p>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="12" data-title="Three Production Invariants (Audited in CI by Gate G2)" data-module="Part 6: Production GKE Invariants" data-time="12:30 – 13:30">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Part 6: Production GKE Invariants • 12:30 – 13:30</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <h2 class="center-title">Three Production Invariants (Audited in CI by Gate G2)</h2>
+          <div class="three-tech-grid">
+            <div class="tech-col-card">
+              <img src="assets/icon_gemini.png" alt="Tech Icon"/>
+              <h3>1. Pin PYTHONHASHSEED=&quot;0&quot;<br/>Across Every Pod</h3>
+              <p>Python randomizes process hash seeds by default. Set PYTHONHASHSEED=&quot;0&quot; on every vllm-torchtpu worker and fleetkv-epp container so chained 256-token block hashes match across processes.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_adk.png" alt="Tech Icon"/>
+              <h3>2. Match --block-size 256<br/>on TPU v6e Pallas</h3>
+              <p>GPU pools often default to block size 64. On Trillium TPU v6e, 64-token blocks overflow Scalar Memory (SMEM) in Pallas paged-attention kernels. Set --block-size 256 in both vLLM and fleetkv-epp.</p>
+            </div>
+            
+            <div class="tech-col-card">
+              <img src="assets/icon_mcp.png" alt="Tech Icon"/>
+              <h3>3. Headless ZMQ Service +<br/>MTU-8896 gVNIC VPC</h3>
+              <p>Expose ports 8000 and 5557 via Headless Services (clusterIP: None) so fleetkv-epp resolves every pod IP via DNS, filter ZMQ to llm-d.ai/role=prefill, and set VPC mtu: 8896 for TPUConnectorHMA.</p>
+            </div>
+            </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="13" data-title="Reproduce Locally in 60 Seconds or Deploy on GKE TPU v6e" data-module="Reference: GKE &amp; Local Commands" data-time="13:30 – 14:00">
+        <div class="slide-canvas slide-standard">
+          <div class="slide-top-bar">
+            <img class="gcl-logo-sm" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+            <span class="module-pill">Reference: GKE &amp; Local Commands • 13:30 – 14:00</span>
+            <span class="prop-badge">Google Developer Expert</span>
+          </div>
+          <div class="title-with-timer">
+            <h2 class="slide-h2">Reproduce Locally in 60 Seconds or Deploy on GKE TPU v6e</h2>
+            
+          </div>
+          <div class="dual-cards-row">
+            <div class="bordered-card card-blue">
+              <h3>Local Digital Twin &amp; CI Gates</h3>
+              <h4>Runs on macOS / Linux without TPU hardware</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code># Run all verification gates (Go race + E2E SLOs + K8s YAML)
+make gate-all
+
+# Launch interactive 3-pane conference TUI
+./bench/demo_ctl.sh prep
+./bench/demo_ctl.sh stage2
+./bench/demo_ctl.sh stage3</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Gate G0:</strong> Go 1.23 race tests + cross-language SHA-256 &amp; ZMQ parity</li><li><strong>Gate G1:</strong> Full 416-request/stage Envoy ext_proc + Twin SLO verification</li></ul>
+            </div>
+            <div class="bordered-card card-red">
+              <h3>GKE Cloud TPU v6e Production Stack</h3>
+              <h4>2x ct6e-standard-4t + GAIE v1 + DisaggregatedSet</h4>
+              <div class="terminal-card compact">
+                <div class="term-header">
+                  <div class="term-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+                  <span class="term-title">Prompt / Snippet</span>
+                  <button class="copy-btn" onclick="copyCode(this)">📋 Copy</button>
+                </div>
+                <pre class="term-body"><code>./deploy/gke/00-bootstrap-gke-tpu.sh
+kubectl apply -f deploy/gke/01-baseline-agg-service.yaml
+kubectl apply -f deploy/gke/02-disaggregatedset-torchtpu.yaml
+kubectl apply -f deploy/gke/03-fleetkv-epp-and-pool.yaml
+
+FLEETKV_GATEWAY_URL=&quot;http://${GATEWAY_VIP}&quot; \
+  ./bench/demo_ctl.sh stage3 --target=gke</code></pre>
+              </div>
+              <ul class="clean-bullets compact-list"><li><strong>Gate G2:</strong> Audits PYTHONHASHSEED=0, --block-size 256, Headless ZMQ &amp; MTU=8896</li><li><strong>Zero Client Changes:</strong> Same Go EPP binary &amp; OpenAI benchmark client across Twin and GKE</li></ul>
+            </div>
+          </div>
+          <img class="gcl-footer" src="assets/logo_gcloud_footer.png" alt="Google Cloud"/>
+        </div>
+        </section><section class="slide " data-slide="14" data-title="Thank You!" data-module="Closing &amp; Q&amp;A" data-time="14:00 – 15:00">
+        <div class="slide-canvas slide-speaker">
+          <div class="speaker-fan-bg">
+            <img src="assets/bg_speaker_fan.png" alt="Fan Background"/>
+          </div>
+          <img class="gcl-logo" src="assets/logo_gcloud_labs.png" alt="Google Cloud Labs"/>
+          <span class="prop-badge-abs">Google Developer Expert</span>
+          <div class="thankyou-right">
+            <div class="thankyou-text">
+              <h1>Thank You!</h1>
+              <p>Defeating the Prefix-Cache Penalty on GKE<br/>• Agent trees fork in bursts: gate KV routing on HBM fit<br/>• Release prefill leases on ResponseHeaders (TTFT)<br/>• Disaggregate Prefill &amp; Decode with Tier-2 Host DRAM</p>
+            </div>
+            <div class="thankyou-qrs">
+              <div class="ty-qr-box">
+                <img src="assets/qr_kubecon26_repo.png" alt="Codelab QR"/>
+                <span>Companion GitHub Repo (Apache-2.0)</span>
+              </div>
+              
+              <div class="ty-qr-box">
+                <img src="assets/qr_linkedin.png" alt="LinkedIn QR"/>
+                <span>Connect on LinkedIn</span>
+              </div>
+            
+              <div class="ty-qr-box">
+                <img src="assets/qr_kubecon26_slides.png" alt="GitHub QR"/>
+                <span>Interactive Slide Deck &amp; Script</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section>
+  </div>
+
+  <!-- On-Screen Speaker Notes Teleprompter Drawer (Toggle with 'S') -->
+  <div id="notes-drawer">
+    <div id="notes-drawer-header">
+      <span id="notes-slide-meta">🎤 SPEAKER NOTES &amp; TALK SCRIPT</span>
+      <span>Tip: <strong>P</strong> = Presenter Console | <strong>S</strong> = hide drawer | <strong>B</strong> = control bar</span>
+    </div>
+    <div id="notes-drawer-content"></div>
+  </div>
+
+  <!-- Bottom Presenter Toolbar -->
+  <div id="presenter-bar">
+    <div class="bar-group">
+      <button class="bar-btn" onclick="prevSlide()">◀ Prev</button>
+      <span id="slide-counter" style="min-width: 72px; text-align:center; font-weight:700;">1 / 14</span>
+      <button class="bar-btn" onclick="nextSlide()">Next ▶</button>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+      <span id="module-indicator" style="color:#9AA0A6; font-size:0.78rem; margin-left:8px;"></span>
+    </div>
+    <div class="bar-group">
+      <span id="talk-clock" style="font-family:'Roboto Mono',monospace; color:#FBBC04; font-weight:700;">⏱️ Talk Clock: 00:00 / 15:00</span>
+      <button class="bar-btn" onclick="toggleTalkClock()" id="clock-btn">Start Clock</button>
+      <button class="bar-btn" onclick="toggleNotesDrawer()" id="notes-btn">📝 Speaker Notes (S)</button>
+      <button class="bar-btn" onclick="openPresenterPopup()">🖥️ Presenter View (P)</button>
+      <button class="bar-btn" onclick="toggleGrid()">⊞ All Slides (G)</button>
+      <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen (F)</button>
+    </div>
+  </div>
+
+  <!-- All-Slides Overview Grid Modal -->
+  <div id="grid-modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+      <h2>All Workshop Slides — Click Any Slide to Jump</h2>
+      <button class="bar-btn" onclick="toggleGrid()">✕ Close (ESC)</button>
+    </div>
+    <div class="grid-cards" id="grid-cards-container"></div>
+  </div>
+
+  <!-- Lightbox Modal for Diagrams & Screenshots -->
+  <div id="lightbox-modal" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="Enlarged View"/>
+  </div>
+
+  <script>
+    const SLIDE_NOTES = [{"num": 1, "title": "Defeating the Prefix-Cache Penalty: KV-Aware Routing & Disaggregated Serving for Agent Fleets on GKE", "module": "Session Opening", "time": "00:00 \u2013 00:35", "notes": "[00:00 - 00:35]\nKubernetes services were built around a simple assumption: HTTP requests are independent, pods are interchangeable, and round-robin spreads load evenly.\n\nWhen you run an autonomous SWE or SRE agent fleet behind a stateless Service, you spend most of your accelerator cycles recomputing identical prompt prefixes across replicas. And if you switch to naive longest-prefix sticky routing, parallel agent fan-out herds onto a single pod and makes P95 tail latency worse than round-robin.\n\nIn this session, we will walk through why both failures happen and how we fix them using Gateway API Inference Extension and disaggregated TorchTPU serving on GKE."}, {"num": 2, "title": "Rabimba Karanjai", "module": "Speaker & Companion Artifact", "time": "00:35 \u2013 01:00", "notes": "[00:35 - 01:00]\nI'm Rabimba Karanjai, a Google Developer Expert for AI/ML and ML Scientist at PayPal.\n\nEverything we cover today\u2014the Go 1.23 Envoy ext_proc router, the GKE Cloud TPU v6e and GAIE manifests, and the trace-calibrated local digital twin\u2014is open-source under Apache-2.0 in our companion repository."}, {"num": 3, "title": "Scan to Grab the Companion Artifact & Slides", "module": "Companion Repository & Resources", "time": "01:00 \u2013 01:20", "notes": "[01:00 - 01:20]\nIf you want to run the benchmark on your laptop or deploy the manifests on GKE, scan the left QR code for the companion repo, or the middle QR code for this interactive slide deck."}, {"num": 4, "title": "Chatbots Are Lines. Agent Fleets Are Trees.", "module": "Part 1: The Agent Tree Workload", "time": "01:20 \u2013 02:30", "notes": "[01:20 - 02:30]\nWhy do agent fleets break standard serving pools? Because a chatbot is a line, whereas an agent workflow is a tree.\n\nWhen an incident orchestrator triggers on an alert, it assembles a 20,480-token shared trunk\u201480 blocks of 256 tokens holding MCP tool schemas, repository structure, and alert state\u2014and at millisecond zero spawns 8 parallel sub-agents. Each sub-agent pulls 8,192 tokens of pod logs and diffs before converging on a synthesis turn. Over the episode, 85.6% of tokens across those branches are shared prefix blocks."}, {"num": 5, "title": "Anatomy of an 8-Way Incident Orchestrator Fork-Storm", "module": "Part 1: Fork-Storm Topology", "time": "02:30 \u2013 03:20", "notes": "[02:30 - 03:20]\nLook at the token budget across a single orchestrator episode. Blocks 0 through 79 form the 20,480-token parent trunk. When the orchestrator forks 8 sub-agents simultaneously, all 8 child requests carry those exact 80 block hashes, followed by a 2-block role delta and a 32-block (8,192-token) log burst on Turn 2. Finally, the join turn reuses the original 80-block trunk."}, {"num": 6, "title": "Failure Mode 1: Stateless K8s Round-Robin & Failure Mode 2: The Prefix-Herd Trap", "module": "Part 2: Two Routing Failure Modes", "time": "03:20 \u2013 05:00", "notes": "[03:20 - 05:00]\nBehind a standard Kubernetes Service, round-robin scatters those 8 child branches across all replicas. Every replica misses on the parent trunk, recomputes 20,480 tokens of prefill, and stalls co-located decode streams past 133 milliseconds P99 ITL.\n\nThe natural next step is enabling longest-prefix sticky routing. That triggers a second failure mode during parallel agent fan-out: the Prefix-Herd Trap. At fork time, all 8 sub-agents match 80 out of 80 parent blocks on Pod 0. A router that maximizes prefix match sends all 8 concurrent branches to Pod 0 while Pods 1 through 3 sit idle. Worse, as those 8 branches append 8,192-token log bursts on Pod 0, they exceed Pod 0's 360-block HBM capacity and LRU-evict the shared parent trunk right before the synthesis join turn."}, {"num": 7, "title": "Why KV-Aware Routing & Disaggregation Need Each Other", "module": "Part 3: Co-Designing Routing & Disaggregation", "time": "05:00 \u2013 06:15", "notes": "[05:00 - 06:15]\nThis is why routing and disaggregation have to work together. KV-aware routing on an aggregated pool ties compute affinity to memory residency, herding forked branches onto whichever pod holds the parent trunk. Disaggregation without KV-aware fit routing still recomputes shared prefixes.\n\nWhen we combine them, Prefill pods compute the shared trunk once, pin evicted blocks in 48 GiB of host DRAM, compute only the branch delta, and stream KV blocks over gVNIC to whichever Decode pod has HBM headroom."}, {"num": 8, "title": "Control Plane: Fit-Aware Tree Routing in GAIE ext_proc", "module": "Part 3: Control Plane (FleetKV EPP)", "time": "06:15 \u2013 07:30", "notes": "[06:15 - 07:30]\nHere is the scoring function inside fleetkv-epp. Every vllm-torchtpu prefill pod publishes BlockStored and BlockRemoved events over ZeroMQ on port 5557 as 256-token blocks enter HBM or spill to host DRAM.\n\nWhen Envoy forwards a request over ext_proc, the router first checks the HBM Fit Gate: if admitting another branch plus our 24-block safety reserve would overflow the pod's free HBM blocks, it spills that branch to a peer pod instead of evicting the shared trunk. Second, notice our staged lease accounting: we release InFlightPrefillTokens as soon as ResponseHeaders arrive at TTFT, while holding the HBM block reservation until the SSE decode stream completes."}, {"num": 9, "title": "Data Plane: vllm-torchtpu + TPUConnectorHMA on GKE", "module": "Part 3: Data Plane (vllm-torchtpu + HMA)", "time": "07:30 \u2013 08:30", "notes": "[07:30 - 08:30]\nOn the data plane, our DisaggregatedSet runs vllm-torchtpu on GKE Trillium ct6e-standard-4t node pools. Prefill pods mount a 64 GiB /dev/shm volume and allocate 48 GiB to TPUConnectorHMA as a Tier-2 host DRAM cache, keeping shared agent trunks warm even when active branch deltas cycle through HBM.\n\nOnce a prefill pod computes the branch delta, it transfers the KV blocks asynchronously over an MTU-8896 gVNIC network to the Decode pod selected by fleetkv-epp. Let's switch to the live terminal and watch all three stages under load."}, {"num": 10, "title": "Live Demo: 3-Stage Traffic Flip Under 64-Branch Fork-Storm", "module": "Part 4: Live 3-Stage Traffic Flip Demo", "time": "08:30 \u2013 11:45", "notes": "[08:30 - 11:45]\n[SWITCH TO TMUX TERMINAL]\n1. Stage 1 (round_robin): Point out the 4-pod even traffic split (25% each), low cache hit rate (~30.8% in the local twin, ~19.4% on 8-chip GKE), and P99 decode ITL at 133 ms from prefill-decode interference.\n2. Run ./bench/demo_ctl.sh stage2: Watch Stage 1 freeze in Column 1 while Stage 2 skews onto a single hot pod as all 8 forked branches match the 80-block trunk. HBM evictions climb past 10,500 blocks and P95 tail TTFT spikes to 33.4 seconds\u2014worse than Stage 1.\n3. Run ./bench/demo_ctl.sh stage3: Watch fleetkv-epp emit herd_spillover decisions, pinning the trunk in prefill HBM/DRAM while splitting decode streams evenly across decode-0 and decode-1. HBM evictions drop to 0, hit rate reaches 86.1% (91.6% on GKE), and P99 ITL drops to 33.1 ms (< 40 ms SLO)."}, {"num": 11, "title": "Benchmark Scorecard: Gate G1 Twin & GKE Cloud TPU v6e", "module": "Part 5: Empirical Benchmark Scorecard", "time": "11:45 \u2013 12:30", "notes": "[11:45 - 12:30]\nHere are both sets of numbers side by side: the local trace-calibrated twin verified by make gate-g1 on 416 requests per stage, and the 8-chip GKE TPU v6e hardware reference (2x ct6e-standard-4t).\n\nIn both environments, Stage 2's naive sticky routing makes P95 tail TTFT worse than stateless round-robin\u201433.4 seconds in the 4-pod twin and 3.89 seconds on GKE\u2014because all 8 forked branches queue on a single replica and evict over 10,500 HBM blocks. Stage 3 cuts median TTFT by 82 to 88 percent, eliminates HBM evictions, and keeps P99 decode ITL at 27 to 33 milliseconds."}, {"num": 12, "title": "Three Production Invariants (Audited in CI by Gate G2)", "module": "Part 6: Production GKE Invariants", "time": "12:30 \u2013 13:30", "notes": "[12:30 - 13:30]\nThree operational invariants before you deploy this on GKE\u2014all enforced by tests/test_g3_k8s_manifests.py in CI.\n\nFirst, set PYTHONHASHSEED=\"0\" on every container; otherwise Python's per-process hash randomization causes block hash mismatches across workers. Second, set --block-size 256 on both vllm-torchtpu and fleetkv-epp so Pallas paged-attention kernels fit inside TPU v6e Scalar Memory. Third, use a Kubernetes Headless Service (clusterIP: None) filtered to llm-d.ai/role=prefill so the router subscribes to every prefill pod's ZMQ socket individually, and configure mtu: 8896 on your gVNIC VPC."}, {"num": 13, "title": "Reproduce Locally in 60 Seconds or Deploy on GKE TPU v6e", "module": "Reference: GKE & Local Commands", "time": "13:30 \u2013 14:00", "notes": "[13:30 - 14:00]\nHere is the complete command reference for both environments. On the left, make gate-all runs our Go race-detector unit tests, cross-language SHA-256 block-hash parity checks, the 3-stage end-to-end fork-storm benchmark, and the Kubernetes manifest audit. On the right are the four commands to bootstrap the MTU-8896 GKE cluster, apply the DisaggregatedSet and InferencePool manifests, and run the exact same stage controller against a live GKE Gateway VIP."}, {"num": 14, "title": "Thank You!", "module": "Closing & Q&A", "time": "14:00 \u2013 15:00", "notes": "[14:00 - 15:00]\nTo wrap up: agent fleets generate tree-structured bursts, not independent linear turns. By combining a fit-aware GAIE ext_proc router with disaggregated vllm-torchtpu and Tier-2 host DRAM on GKE, you keep shared trunks warm without herding parallel sub-agents onto a single pod.\n\nThe Go router, GKE manifests, local digital twin, and automated test gates are all in the companion repository. Thank you\u2014happy to take questions!"}];
+    const totalSlides = SLIDE_NOTES.length;
+    let currentSlide = 1;
+    const channel = new BroadcastChannel('kubecon26_fleetkv_sync');
+
+    // Scale the fixed 1600x900 slide canvas to fit the available viewport.
+    // Must run before the first showSlide() so initial measurements are correct.
+    function fitDeck() {
+      const vp = document.getElementById('deck-viewport');
+      const s = Math.min((vp.clientWidth - 24) / 1600, (vp.clientHeight - 24) / 900);
+      document.documentElement.style.setProperty('--deck-scale', Math.max(0.1, s).toFixed(4));
+    }
+    new ResizeObserver(fitDeck).observe(document.getElementById('deck-viewport'));
+    window.addEventListener('resize', fitDeck);
+    fitDeck();
+
+    function showSlide(n, broadcast = true) {
+      if (n < 1) n = 1;
+      if (n > totalSlides) n = totalSlides;
+      currentSlide = n;
+      document.querySelectorAll('.slide').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.slide) === currentSlide);
+      });
+      document.getElementById('slide-counter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progress-fill').style.width = `${(currentSlide / totalSlides) * 100}%`;
+      const meta = SLIDE_NOTES[currentSlide - 1];
+      document.getElementById('module-indicator').textContent = `${meta.module} (${meta.time})`;
+      document.getElementById('notes-slide-meta').textContent = `🎤 SLIDE ${meta.num}: ${meta.title} — ${meta.time}`;
+      document.getElementById('notes-drawer-content').textContent = meta.notes;
+      window.location.hash = `slide-${currentSlide}`;
+      fitDeck();
+      if (broadcast) {
+        channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide });
+      }
+    }
+
+    function nextSlide() { showSlide(currentSlide + 1); }
+    function prevSlide() { showSlide(currentSlide - 1); }
+
+    function toggleNotesDrawer() {
+      document.body.classList.toggle('notes-open');
+      document.getElementById('notes-btn').classList.toggle('active-toggle');
+      fitDeck();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Control bar: hidden by default, press B to toggle, force-hidden in fullscreen
+    function toggleControlBar() { document.body.classList.toggle('controls-visible'); fitDeck(); }
+    document.addEventListener('fullscreenchange', () => {
+      document.body.classList.toggle('is-fullscreen', !!document.fullscreenElement);
+      fitDeck();
+    });
+
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-modal').classList.add('open');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox-modal').classList.remove('open');
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest('.terminal-card').querySelector('code').innerText;
+      navigator.clipboard.writeText(code);
+      const old = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = old, 1500);
+    }
+
+    // Lab Checkpoint Timers
+    const labIntervals = {};
+    function toggleLabTimer(slideNum) {
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const disp = document.getElementById(`timer-disp-${slideNum}`);
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+        return;
+      }
+      let remaining = parseInt(widget.dataset.remaining || widget.dataset.seconds);
+      labIntervals[slideNum] = setInterval(() => {
+        if (remaining > 0) remaining--;
+        widget.dataset.remaining = remaining;
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        disp.textContent = `${m}:${s}`;
+        if (remaining === 0) {
+          clearInterval(labIntervals[slideNum]);
+          delete labIntervals[slideNum];
+        }
+      }, 1000);
+    }
+    function resetLabTimer(slideNum) {
+      if (labIntervals[slideNum]) {
+        clearInterval(labIntervals[slideNum]);
+        delete labIntervals[slideNum];
+      }
+      const widget = document.getElementById(`timer-${slideNum}`);
+      const total = parseInt(widget.dataset.seconds);
+      widget.dataset.remaining = total;
+      const m = String(Math.floor(total / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      document.getElementById(`timer-disp-${slideNum}`).textContent = `${m}:${s}`;
+    }
+
+    // 75-Minute Overall Talk Clock
+    let talkSeconds = 0;
+    let talkTimer = null;
+    function toggleTalkClock() {
+      const btn = document.getElementById('clock-btn');
+      if (talkTimer) {
+        clearInterval(talkTimer);
+        talkTimer = null;
+        btn.textContent = 'Resume Clock';
+      } else {
+        btn.textContent = 'Pause Clock';
+        talkTimer = setInterval(() => {
+          talkSeconds++;
+          const m = String(Math.floor(talkSeconds / 60)).padStart(2, '0');
+          const s = String(talkSeconds % 60).padStart(2, '0');
+          document.getElementById('talk-clock').textContent = `⏱️ Talk Clock: ${m}:${s} / 15:00`;
+        }, 1000);
+      }
+    }
+
+    // Slide Grid Overview
+    function toggleGrid() {
+      const modal = document.getElementById('grid-modal');
+      const container = document.getElementById('grid-cards-container');
+      container.innerHTML = '';
+      SLIDE_NOTES.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'grid-item' + (s.num === currentSlide ? ' current' : '');
+        div.innerHTML = `<div class="grid-item-num">Slide ${s.num} • ${s.time}</div><div class="grid-item-title">${s.title}</div>`;
+        div.onclick = () => { showSlide(s.num); modal.classList.remove('open'); };
+        container.appendChild(div);
+      });
+      modal.classList.toggle('open');
+    }
+
+    // Dual-Screen Synchronized Presenter Popup (Press P)
+    function openPresenterPopup() {
+      const win = window.open('speaker-notes.html?mode=presenter', 'PresenterConsole', 'width=980,height=760');
+      setTimeout(() => channel.postMessage({ type: 'SLIDE_CHANGE', slide: currentSlide }), 500);
+    }
+
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.type === 'SLIDE_CHANGE') {
+        showSlide(ev.data.slide, false);
+      }
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prevSlide(); }
+      else if (e.key === 's' || e.key === 'S') { toggleNotesDrawer(); }
+      else if (e.key === 'p' || e.key === 'P') { openPresenterPopup(); }
+      else if (e.key === 'g' || e.key === 'G') { toggleGrid(); }
+      else if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+      else if (e.key === 'b' || e.key === 'B') { toggleControlBar(); }
+      else if (e.key === 'Escape') {
+        document.getElementById('grid-modal').classList.remove('open');
+        closeLightbox();
+      }
+    });
+
+    // Initialize from URL hash if present
+    const m = window.location.hash.match(/slide-(\d+)/);
+    showSlide(m ? parseInt(m[1]) : 1);
+  </script>
+</body>
+</html>

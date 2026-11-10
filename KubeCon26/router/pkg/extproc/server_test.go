@@ -119,17 +119,33 @@ func TestExtProcGRPCStreamAndPolicyHotReload(t *testing.T) {
 		t.Fatalf("recv RequestHeaders ack: %v", err)
 	}
 
-	// 2. Send buffered RequestBody
+	// 2. Send multi-chunk RequestBody (chunk 1 with EndOfStream=false, chunk 2 with EndOfStream=true)
+	mid := len(payloadBytes) / 2
 	err = stream.Send(&extprocv3.ProcessingRequest{
 		Request: &extprocv3.ProcessingRequest_RequestBody{
 			RequestBody: &extprocv3.HttpBody{
-				Body:        payloadBytes,
+				Body:        payloadBytes[:mid],
+				EndOfStream: false,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("send RequestBody chunk 1: %v", err)
+	}
+	if _, err := stream.Recv(); err != nil {
+		t.Fatalf("recv RequestBody chunk 1 ack: %v", err)
+	}
+
+	err = stream.Send(&extprocv3.ProcessingRequest{
+		Request: &extprocv3.ProcessingRequest_RequestBody{
+			RequestBody: &extprocv3.HttpBody{
+				Body:        payloadBytes[mid:],
 				EndOfStream: true,
 			},
 		},
 	})
 	if err != nil {
-		t.Fatalf("send RequestBody: %v", err)
+		t.Fatalf("send RequestBody chunk 2: %v", err)
 	}
 
 	bodyResp, err := stream.Recv()
@@ -153,6 +169,24 @@ func TestExtProcGRPCStreamAndPolicyHotReload(t *testing.T) {
 	}
 	if mutated[extproc.HeaderDecodeEndpoint] != "127.0.0.1:8004" {
 		t.Fatalf("expected x-fleetkv-decode-endpoint=127.0.0.1:8004, got %q", mutated[extproc.HeaderDecodeEndpoint])
+	}
+
+	// 3. Send ResponseHeaders and verify in-flight prefill reservation is released while decode stays active
+	err = stream.Send(&extprocv3.ProcessingRequest{
+		Request: &extprocv3.ProcessingRequest_ResponseHeaders{
+			ResponseHeaders: &extprocv3.HttpHeaders{},
+		},
+	})
+	if err != nil {
+		t.Fatalf("send ResponseHeaders: %v", err)
+	}
+	if _, err := stream.Recv(); err != nil {
+		t.Fatalf("recv ResponseHeaders response: %v", err)
+	}
+	for _, p := range idx.SnapshotPods() {
+		if p.PodID == "prefill-0" && p.InFlightPrefillTokens != 0 {
+			t.Fatalf("expected prefill-0 InFlightPrefillTokens=0 after ResponseHeaders, got %d", p.InFlightPrefillTokens)
+		}
 	}
 
 	_ = stream.CloseSend()

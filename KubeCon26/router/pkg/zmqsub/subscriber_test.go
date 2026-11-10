@@ -31,13 +31,15 @@ func TestPyZMQPubToGoZMQSubJSONAndMsgPack(t *testing.T) {
 
 	idx := radix.NewClusterIndex(nil)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	sub := zmqsub.NewSubscriber(zmqsub.SubscriberConfig{
 		Endpoints: []string{endpoint},
 	}, idx)
 	sub.Start(ctx)
-	defer sub.Wait()
+	defer func() {
+		cancel()
+		sub.Wait()
+	}()
 
 	// Launch a real Python pyzmq PUB process emitting both JSON and MsgPack KV events.
 	pyCode := fmt.Sprintf(`

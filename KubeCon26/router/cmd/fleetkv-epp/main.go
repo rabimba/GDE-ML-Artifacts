@@ -114,6 +114,8 @@ func main() {
 		zmqTopic            = flag.String("zmq-topic", envOrDefault("FLEETKV_ZMQ_TOPIC", ""), "ZeroMQ subscription prefix")
 		zmqRoleSelector     = flag.String("zmq-role-selector", envOrDefault("FLEETKV_ZMQ_ROLE_SELECTOR", ""), "Optional ZMQ role filter (e.g. llm-d.ai/role=prefill)")
 		staticPods          = flag.String("static-pods", envOrDefault("FLEETKV_STATIC_PODS", ""), "Comma-separated static pod specs podID=host:port:role[:hbm_blocks]")
+		httpGatewayPort     = flag.Int("http-gateway-port", envIntOrDefault("FLEETKV_HTTP_GATEWAY_PORT", 0), "Optional built-in Envoy-compatible ext_proc HTTP gateway listen port (0 = disabled)")
+		httpGatewayAdmin    = flag.Int("http-gateway-admin-port", envIntOrDefault("FLEETKV_HTTP_GATEWAY_ADMIN_PORT", 0), "Optional built-in Envoy-compatible /ready admin HTTP listen port (0 = disabled)")
 	)
 	flag.Parse()
 
@@ -170,6 +172,8 @@ func main() {
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(32*1024*1024),
 		grpc.MaxSendMsgSize(32*1024*1024),
+		grpc.InitialWindowSize(16*1024*1024),
+		grpc.InitialConnWindowSize(64*1024*1024),
 	)
 	extprocv3.RegisterExternalProcessorServer(grpcServer, eppServer)
 	healthSrv := health.NewServer()
@@ -200,11 +204,52 @@ func main() {
 		}
 	}()
 
+	var gatewayServer *http.Server
+	if *httpGatewayPort > 0 {
+		gwProxy := extproc.NewGatewayProxy(fmt.Sprintf("127.0.0.1:%d", *grpcPort), index)
+		gatewayServer = &http.Server{
+			Addr:              fmt.Sprintf(":%d", *httpGatewayPort),
+			Handler:           gwProxy,
+			ReadHeaderTimeout: 10 * time.Second,
+		}
+		go func() {
+			logger.Printf("starting built-in Envoy-compatible ext_proc HTTP gateway on :%d", *httpGatewayPort)
+			if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Fatalf("HTTP gateway server error: %v", err)
+			}
+		}()
+	}
+
+	var gatewayAdminServer *http.Server
+	if *httpGatewayAdmin > 0 {
+		admMux := http.NewServeMux()
+		admMux.HandleFunc("/ready", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("LIVE\n"))
+		})
+		gatewayAdminServer = &http.Server{
+			Addr:              fmt.Sprintf(":%d", *httpGatewayAdmin),
+			Handler:           admMux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+		go func() {
+			if err := gatewayAdminServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				logger.Fatalf("HTTP gateway admin server error: %v", err)
+			}
+		}()
+	}
+
 	<-ctx.Done()
 	logger.Printf("shutting down gracefully...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	if gatewayAdminServer != nil {
+		_ = gatewayAdminServer.Shutdown(shutdownCtx)
+	}
+	if gatewayServer != nil {
+		_ = gatewayServer.Shutdown(shutdownCtx)
+	}
 	_ = adminServer.Shutdown(shutdownCtx)
 	grpcServer.GracefulStop()
 	if zmqSubscriber != nil {

@@ -27,10 +27,10 @@ gate-g1: build ## Gate G1: End-to-end 3-stage Envoy + Digital Twin physics & SLO
 gate-g2: ## Gate G2: Production GKE Cloud TPU & GAIE YAML/Bash invariant audit
 	$(PYTEST) -v tests/test_g3_k8s_manifests.py
 
-gate-g3: twin-up ## Gate G3: Non-interactive Rich 4-column TUI 3-stage freeze smoke run
-	PYTHONHASHSEED=0 $(PYTHON) bench/stage_tui.py --smoke-test --duration-sec 6
+gate-g3: build ## Gate G3: Non-interactive Rich 4-column TUI 3-stage freeze smoke run
+	PYTHONHASHSEED=0 $(PYTHON) -c $$'import subprocess, sys\nsys.path.insert(0, "tests")\nfrom stack_harness import running_envoy_twin_stack\nwith running_envoy_twin_stack() as s:\n    subprocess.run([sys.executable, "bench/stage_tui.py", "--smoke-test", "--duration-sec", "6", "--gateway-url", s.gateway_url, "--epp-admin-url", s.epp_admin_url], check=True)'
 
-gate-g4: slides-build ## Gate G4: Slidev static deck build verification
+gate-g4: slides-build ## Gate G4: Google-branded presentation suite (PPTX + HTML + Notes) build verification
 
 gate-all: gate-g0 gate-g1 gate-g2 gate-g3 gate-g4 ## Execute all 5 deterministic verification gates (G0-G4)
 
@@ -52,14 +52,15 @@ twin-down: ## Tear down the local Docker Compose Digital Twin stack
 demo-tmux: twin-up ## Launch the 3-pane KubeCon live rehearsal tmux layout
 	./bench/demo_ctl.sh prep --target=twin
 
-slides-build: ## Install Slidev dependencies and build static HTML deck
-	cd slides && npm install && npx slidev build
+slides-build: ## Generate Google-branded PPTX, Interactive HTML Deck, Speaker Console & Script
+	$(PYTHON) slides/generate_slides.py
+	@test -s slides/KubeCon26-FleetKV-GKE.pptx && test -s slides/index.html && test -s slides/speaker-notes.html && test -s slides/SPEAKER_NOTES_AND_SCRIPT.md
 
-slides-serve: ## Launch interactive Slidev presentation & presenter view on http://localhost:3030
-	cd slides && npx slidev --port 3030 --open
+slides-serve: slides-build ## Serve interactive Google-branded presentation deck on http://localhost:3030
+	$(PYTHON) -m http.server 3030 --directory slides
 
-slides-export: ## Export presentation deck to PDF and PPTX in slides/
-	cd slides && npx slidev export --output KubeCon26-FleetKV-GKE.pdf && npx slidev export --format pptx --output KubeCon26-FleetKV-GKE.pptx
+slides-export: slides-build ## Rebuild Google-branded PPTX and Slidev static export (if installed)
+	@if [ -d slides/node_modules ]; then cd slides && npx slidev build; fi
 
 clean: ## Remove build artifacts and caches
 	rm -rf router/bin slides/dist .pytest_cache

@@ -87,13 +87,26 @@ type RouteDecision struct {
 	Reason                string    `json:"reason"`
 	Spillover             bool      `json:"spillover"`
 
-	releaseFn func()
+	releasePrefillFn func()
+	releaseFn        func()
+}
+
+// ReleasePrefill frees the in-flight prefill token queue reservation once TTFT (ResponseHeaders) completes.
+func (d *RouteDecision) ReleasePrefill() {
+	if d != nil && d.releasePrefillFn != nil {
+		d.releasePrefillFn()
+	}
 }
 
 // Release frees any in-flight HBM block and prefill token reservations associated with this route.
 func (d *RouteDecision) Release() {
-	if d != nil && d.releaseFn != nil {
-		d.releaseFn()
+	if d != nil {
+		if d.releasePrefillFn != nil {
+			d.releasePrefillFn()
+		}
+		if d.releaseFn != nil {
+			d.releaseFn()
+		}
 	}
 }
 
@@ -192,6 +205,7 @@ func (e *Engine) recordDecision(dec RouteDecision) {
 	}
 
 	snapshot := dec
+	snapshot.releasePrefillFn = nil
 	snapshot.releaseFn = nil
 	e.recentMu.Lock()
 	if len(e.recentDecisions) >= e.maxRecent {
@@ -285,7 +299,7 @@ func (e *Engine) routeNaiveSticky(cfg Config, pool string, in RouteInput) RouteD
 		unmatchedTokens = 0
 	}
 	estBlocks := estimateBranchBlocks(unmatchedTokens, in.MaxTokens, in.BranchHorizonHintTokens, cfg.BlockSizeTokens)
-	release := e.index.AcquireLease(chosen.Pod.PodID, estBlocks, unmatchedTokens)
+	releasePrefill, release := e.index.AcquireStagedLease(chosen.Pod.PodID, estBlocks, unmatchedTokens)
 
 	reason := "naive_longest_prefix"
 	if chosen.MatchedHBMBlocks == 0 {
@@ -305,6 +319,7 @@ func (e *Engine) routeNaiveSticky(cfg Config, pool string, in RouteInput) RouteD
 		EstimatedBranchBlocks: estBlocks,
 		Score:                 float64(chosen.MatchedHBMBlocks),
 		Reason:                reason,
+		releasePrefillFn:      releasePrefill,
 		releaseFn:             release,
 	}
 }
@@ -426,7 +441,7 @@ func (e *Engine) routeAggFit(cfg Config, in RouteInput, matches []radix.PodPrefi
 		reason = "cold_fit_balanced"
 	}
 
-	release := e.index.AcquireLease(bestMatch.Pod.PodID, bestEstBlocks, bestUnmatched)
+	releasePrefill, release := e.index.AcquireStagedLease(bestMatch.Pod.PodID, bestEstBlocks, bestUnmatched)
 
 	return RouteDecision{
 		Timestamp:             time.Now(),
@@ -442,6 +457,7 @@ func (e *Engine) routeAggFit(cfg Config, in RouteInput, matches []radix.PodPrefi
 		Score:                 bestScore,
 		Reason:                reason,
 		Spillover:             spillover,
+		releasePrefillFn:      releasePrefill,
 		releaseFn:             release,
 	}
 }
@@ -468,10 +484,15 @@ func (e *Engine) routeDisaggFit(
 		}
 	}
 
-	prefillThroughput := cfg.PodThroughputTokPerMs * 4.0
+	prefillThroughput := cfg.PodThroughputTokPerMs * 8.0
 	for i, pm := range prefillMatches {
 		savedMs := float64(pm.MatchedHBMBlocks)*hbmSavedPerBlock + float64(pm.MatchedDRAMBlocks)*dramSavedPerBlock
-		queueWaitMs := float64(pm.Pod.InFlightPrefillTokens)/prefillThroughput + float64(pm.Pod.ActiveRequests)*2.0
+		if prefillTopBlocks >= 16 && pm.TotalMatchedBlocks() < prefillTopBlocks/2 {
+			savedMs -= float64(prefillTopBlocks-pm.TotalMatchedBlocks()) * cfg.BlockPrefillCostMs
+		}
+		queueWaitMs := float64(pm.Pod.InFlightPrefillTokens)/prefillThroughput +
+			float64(pm.Pod.ActiveRequests)*20.0 -
+			float64(pm.Pod.EffectiveFreeHBMBlocks())*0.15
 		score := savedMs - queueWaitMs
 		if i == 0 || score > bestPrefillScore {
 			bestPrefillScore = score
@@ -536,8 +557,8 @@ func (e *Engine) routeDisaggFit(
 
 	chosenDecode := decodeMatches[bestDecodeIdx]
 
-	releasePrefill := e.index.AcquireLease(chosenPrefill.Pod.PodID, 1, prefillUnmatchedToks)
-	releaseDecode := e.index.AcquireLease(chosenDecode.Pod.PodID, estDecodeDeltaBlocks, 0)
+	releasePrefillQ, releasePrefill := e.index.AcquireStagedLease(chosenPrefill.Pod.PodID, 1, prefillUnmatchedToks)
+	_, releaseDecode := e.index.AcquireStagedLease(chosenDecode.Pod.PodID, estDecodeDeltaBlocks, 0)
 
 	return RouteDecision{
 		Timestamp:             time.Now(),
@@ -557,6 +578,7 @@ func (e *Engine) routeDisaggFit(
 		Score:                 bestPrefillScore + bestDecodeScore,
 		Reason:                reason,
 		Spillover:             spillover,
+		releasePrefillFn:      releasePrefillQ,
 		releaseFn: func() {
 			releasePrefill()
 			releaseDecode()

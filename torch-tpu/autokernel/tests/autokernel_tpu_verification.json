@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "init_info": {
+    "chip": "0",
+    "backend": "tpu",
+    "defer_and_fuse": "1"
+  },
+  "primitive_max_diffs": {
+    "fused_rmsnorm": 0.0,
+    "fused_res_rmsnorm": 0.0,
+    "fused_swiglu": 0.0
+  },
+  "norm_stack_24l_benchmark": {
+    "stock_median_ms": 6.8131,
+    "patched_median_ms": 1.2462,
+    "speedup": 5.47,
+    "max_abs_diff": 0.0,
+    "top1_agreement": 1.0
+  },
+  "qwen2_24l_patch_report": {
+    "rmsnorm_patched": 49,
+    "swiglu_patched": 24,
+    "total_patched": 73,
+    "restored_count": 73,
+    "max_abs_diff_vs_unpatched": 0.109375
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "model_path": "/tmp/specguard-qwen3-0.6b-merged",
+  "server_startup_s": 319.3,
+  "prefix_cache_audit": [
+    {
+      "label": "Pass 1 (Cold): SQL & Deserialization",
+      "ttft_ms": 102.87,
+      "total_ms": 200.43,
+      "prompt_tokens": 1355,
+      "cached_tokens": 0,
+      "response": "The code contains a command injection via shell=True with unsanitized API secret. Also, pickle.loads on a bucketed source (unbatched) triggers a TPU device-specific crash."
+    },
+    {
+      "label": "Pass 2 (Warm Cache): TorchTPU Migration",
+      "ttft_ms": 45.65,
+      "total_ms": 165.33,
+      "prompt_tokens": 1359,
+      "cached_tokens": 1280,
+      "response": "Deprecated torch_xla usage (xm.xla_device()) and replace with torch_tpu.device('tpu') and adjust execution logic based on TPU configuration."
+    },
+    {
+      "label": "Pass 3 (Warm Cache): Dynamic Shapes & Sync",
+      "ttft_ms": 41.76,
+      "total_ms": 220.61,
+      "prompt_tokens": 1357,
+      "cached_tokens": 1280,
+      "response": "Dynamic shape recompilation (e.g., torch.randn(32, 512) \u2192 seq, batch, feature) forces TPU to re-configure, increasing load cycles. Timing sync breaks between xla_step() calls."
+    },
+    {
+      "label": "Pass 4 (Warm Cache): Remediation Patch",
+      "ttft_ms": 44.38,
+      "total_ms": 204.29,
+      "prompt_tokens": 1362,
+      "cached_tokens": 1280,
+      "response": "- Replace deprecated XLA device usage with TPU-specific configuration. (1)   - Replace hardcoded subprocess with TPU execution command. (2)   - Replace bucketed sequence length with TPU dynamic seq length. (1)"
+    }
+  ],
+  "prefix_cache_ttft_speedup": 2.46,
+  "burst_wall_s": 2.05,
+  "burst_records": [
+    {
+      "idx": 0,
+      "file": "auth_db.py",
+      "start_s": 0.0,
+      "first_token_s": 0.054,
+      "end_s": 1.41,
+      "ttft_ms": 53.8,
+      "chunks": 46,
+      "finding": "CRITICAL | SEC-001 SQL Injection via f-string formatting f\"SELECT * FROM accounts WHERE email='{email}'\". Use parameterized queries: cursor.execute('SELECT * FROM accounts WHERE email = ?', (email,))."
+    },
+    {
+      "idx": 1,
+      "file": "legacy_tpu.py",
+      "start_s": 0.027,
+      "first_token_s": 0.094,
+      "end_s": 1.268,
+      "ttft_ms": 67.1,
+      "chunks": 34,
+      "finding": "CRITICAL | TPU-001 Deprecated torch_xla usage. Replace xm.xla_device() with torch.device('npu') or a supported torch accelerator."
+    },
+    {
+      "idx": 2,
+      "file": "loader.py",
+      "start_s": 0.051,
+      "first_token_s": 0.122,
+      "end_s": 1.082,
+      "ttft_ms": 70.7,
+      "chunks": 28,
+      "finding": "CRITICAL | P003: Arbitrary code execution via unsafe pickle.loads from untrusted socket buffer. Use json.loads with json module."
+    },
+    {
+      "idx": 3,
+      "file": "bench.py",
+      "start_s": 0.076,
+      "first_token_s": 0.151,
+      "end_s": 1.082,
+      "ttft_ms": 74.8,
+      "chunks": 28,
+      "finding": "T0: MEDIUM SEC-004 Missing torch.accelerator.synchronize() before stopping timer; measures on host pipelition."
+    },
+    {
+      "idx": 4,
+      "file": "runner.py",
+      "start_s": 0.101,
+      "first_token_s": 0.177,
+      "end_s": 1.336,
+      "ttft_ms": 76.2,
+      "chunks": 35,
+      "finding": "[CRITICAL | SEC-003] Command injection via shell=True with unsanitized argument list. Pass argument list ['bash', user_script] with shell=False."
+    },
+    {
+      "idx": 5,
+      "file": "config.py",
+      "start_s": 0.126,
+      "first_token_s": 0.203,
+      "end_s": 0.737,
+      "ttft_ms": 77.2,
+      "chunks": 23,
+      "finding": "CRITICAL | SEC-002 GCP_API_KEY must be configured from a source other than environment variables."
+    },
+    {
+      "idx": 6,
+      "file": "train_loop.py",
+      "start_s": 0.151,
+      "first_token_s": 0.228,
+      "end_s": 1.134,
+      "ttft_ms": 76.8,
+      "chunks": 33,
+      "finding": "MEDIUM | TPU-003: Calling loss.item() on a Tensor of type 'float' triggers a host-device sync. Log the step instead."
+    },
+    {
+      "idx": 7,
+      "file": "dynamic_pad.py",
+      "start_s": 0.176,
+      "first_token_s": 0.377,
+      "end_s": 0.738,
+      "ttft_ms": 201.6,
+      "chunks": 23,
+      "finding": "TENSORBOARD-001: Hierarchy not followed (padding='max_length', bucket='tpu')"
+    },
+    {
+      "idx": 8,
+      "file": "auth_db.py",
+      "start_s": 0.201,
+      "first_token_s": 1.072,
+      "end_s": 1.764,
+      "ttft_ms": 870.4,
+      "chunks": 35,
+      "finding": "CRITICAL | SEC-001 SQL Injection via f-string formatting. Use parameterized queries: cursor.execute('SELECT * FROM accounts WHERE email = ?', (email,))."
+    },
+    {
+      "idx": 9,
+      "file": "legacy_tpu.py",
+      "start_s": 0.226,
+      "first_token_s": 1.071,
+      "end_s": 1.462,
+      "ttft_ms": 845.7,
+      "chunks": 32,
+      "finding": "[CRITICAL] ImportError: torch_xla.core.xla_model not found in torch library. Install torch-device-map or use a supported xla device configuration."
+    },
+    {
+      "idx": 10,
+      "file": "loader.py",
+      "start_s": 0.251,
+      "first_token_s": 1.124,
+      "end_s": 1.478,
+      "ttft_ms": 873.4,
+      "chunks": 28,
+      "finding": "[CRITICAL | SEC-004] Arbitrary code execution via unsafe pickle.loads from untrusted socket buffer. Use json.loads instead."
+    },
+    {
+      "idx": 11,
+      "file": "bench.py",
+      "start_s": 0.276,
+      "first_token_s": 1.124,
+      "end_s": 1.429,
+      "ttft_ms": 848.6,
+      "chunks": 18,
+      "finding": "T0: XPU_MODELING_NOT_IMPLEMENTED crash. Measure on TPU device."
+    },
+    {
+      "idx": 12,
+      "file": "runner.py",
+      "start_s": 0.3,
+      "first_token_s": 1.341,
+      "end_s": 2.054,
+      "ttft_ms": 1040.2,
+      "chunks": 35,
+      "finding": "[CRITICAL | SEC-003] Command injection via shell=True with unsanitized argument list. Pass argument list ['bash', user_script] with shell=False."
+    },
+    {
+      "idx": 13,
+      "file": "config.py",
+      "start_s": 0.326,
+      "first_token_s": 1.378,
+      "end_s": 1.613,
+      "ttft_ms": 1051.5,
+      "chunks": 23,
+      "finding": "CRITICAL | SEC-002 GCP_API_KEY must be configured from a source other than environment variables."
+    },
+    {
+      "idx": 14,
+      "file": "train_loop.py",
+      "start_s": 0.351,
+      "first_token_s": 1.378,
+      "end_s": 1.998,
+      "ttft_ms": 1027.3,
+      "chunks": 28,
+      "finding": "[CRITICAL | TPU-001] Missing step to log multiple loss values (model(x).loss) at each step."
+    },
+    {
+      "idx": 15,
+      "file": "dynamic_pad.py",
+      "start_s": 0.375,
+      "first_token_s": 1.425,
+      "end_s": 1.999,
+      "ttft_ms": 1049.1,
+      "chunks": 17,
+      "finding": "TENSORBOARD-001: Hierarchy not followed (pad to bucket)"
+    }
+  ]
+}

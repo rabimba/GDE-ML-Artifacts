@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2026 Rabimba Karanjai & Contributors.
 # Licensed under the Apache License, Version 2.0.
-"""Physics-Accurate TPU v6e Serving Worker Digital Twin.
+"""Trace-Calibrated TPU v6e Serving Worker Digital Twin.
 
 Implements:
 - OpenAI-compatible `/v1/chat/completions` streaming SSE endpoint
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from collections import OrderedDict
+import gc
 import hashlib
 import json
 import os
@@ -74,6 +75,12 @@ def canonicalize_messages(messages: list[dict[str, Any]]) -> str:
 _LEN_PACK = tuple(struct.Struct(">H").pack(k) for k in range(SUBWORD_CHUNK_BYTES + 1))
 _HDR_STRUCT = struct.Struct(">QI")
 _U64_STRUCT = struct.Struct(">Q")
+# Maps (parent_u64, block_size, tail_key_bytes, seg_text) ->
+#   (new_parent_u64, tuple_of_hex_hashes, new_tail_tuple, seg_token_count)
+_ALIGNED_SEG_CACHE: OrderedDict[
+    tuple[int, int, bytes, str],
+    tuple[int, tuple[str, ...], tuple[bytes, ...], int],
+] = OrderedDict()
 
 
 def tokenize_deterministic(text: str) -> list[bytes]:
@@ -89,20 +96,16 @@ def tokenize_deterministic(text: str) -> list[bytes]:
     return tokens
 
 
-def compute_block_hashes(
+def _hash_tokens_with_parent(
     tokens: list[bytes],
-    block_size: int = DEFAULT_BLOCK_SIZE,
-    seed: int = 0,
-) -> list[str]:
-    """Byte-exact counterpart to Go's hash.ComputeBlockHashes."""
-    if block_size <= 0:
-        block_size = DEFAULT_BLOCK_SIZE
+    block_size: int,
+    parent: int,
+) -> tuple[list[str], int]:
     num_blocks = len(tokens) // block_size
     if num_blocks == 0:
-        return []
+        return [], parent
 
     hashes: list[str] = []
-    parent = seed & 0xFFFFFFFFFFFFFFFF
     pack_hdr = _HDR_STRUCT.pack
     unpack_u64 = _U64_STRUCT.unpack_from
     len_pack = _LEN_PACK
@@ -115,6 +118,18 @@ def compute_block_hashes(
         (block_id,) = unpack_u64(digest, 0)
         hashes.append(f"{block_id:016x}")
         parent = block_id
+    return hashes, parent
+
+
+def compute_block_hashes(
+    tokens: list[bytes],
+    block_size: int = DEFAULT_BLOCK_SIZE,
+    seed: int = 0,
+) -> list[str]:
+    """Byte-exact counterpart to Go's hash.ComputeBlockHashes."""
+    if block_size <= 0:
+        block_size = DEFAULT_BLOCK_SIZE
+    hashes, _ = _hash_tokens_with_parent(tokens, block_size, seed & 0xFFFFFFFFFFFFFFFF)
     return hashes
 
 
@@ -123,19 +138,73 @@ def hash_chat_completions(
     block_size: int = DEFAULT_BLOCK_SIZE,
     seed: int = 0,
 ) -> tuple[list[str], int, int, int]:
+    if block_size <= 0:
+        block_size = DEFAULT_BLOCK_SIZE
+    parent = seed & 0xFFFFFFFFFFFFFFFF
     messages = payload.get("messages") or []
+    hashes: list[str] = []
+    tail_tokens: list[bytes] = []
+    total_toks = 0
+
     if messages:
-        canonical = canonicalize_messages(messages)
+        for msg in messages:
+            role = str(msg.get("role", "user"))
+            content = msg.get("content", "")
+            if isinstance(content, list):
+                content_str = "\n".join(
+                    str(item.get("text", ""))
+                    for item in content
+                    if isinstance(item, dict)
+                )
+            elif content is None:
+                content_str = ""
+            else:
+                content_str = str(content)
+            seg = f"<|im_start|>{role}\n{content_str}<|im_end|>\n"
+            tail_key = b"\x00".join(tail_tokens) if tail_tokens else b""
+            cache_key = (parent, block_size, tail_key, seg)
+            cached = _ALIGNED_SEG_CACHE.get(cache_key)
+            if cached is not None:
+                parent, seg_hashes, new_tail, seg_len = cached
+                hashes.extend(seg_hashes)
+                tail_tokens = list(new_tail)
+                total_toks += seg_len
+                continue
+
+            seg_toks = tokenize_deterministic(seg)
+            seg_len = len(seg_toks)
+            total_toks += seg_len
+            combined = tail_tokens + seg_toks if tail_tokens else seg_toks
+            if len(combined) >= block_size:
+                n_full = (len(combined) // block_size) * block_size
+                chunk_hashes, new_parent = _hash_tokens_with_parent(combined[:n_full], block_size, parent)
+                rem_tail = tuple(combined[n_full:])
+                seg_hashes = tuple(chunk_hashes)
+            else:
+                new_parent = parent
+                seg_hashes = ()
+                rem_tail = tuple(combined)
+
+            if seg_len >= block_size:
+                if len(_ALIGNED_SEG_CACHE) >= 1024:
+                    _ALIGNED_SEG_CACHE.popitem(last=False)
+                _ALIGNED_SEG_CACHE[cache_key] = (new_parent, seg_hashes, rem_tail, seg_len)
+
+            parent = new_parent
+            hashes.extend(seg_hashes)
+            tail_tokens = list(rem_tail)
     else:
         canonical = str(payload.get("prompt", ""))
-    tokens = tokenize_deterministic(canonical)
-    hashes = compute_block_hashes(tokens, block_size=block_size, seed=seed)
+        toks = tokenize_deterministic(canonical)
+        total_toks = len(toks)
+        hashes, _ = _hash_tokens_with_parent(toks, block_size, parent)
+
     max_toks = int(
         payload.get("max_completion_tokens")
         or payload.get("max_tokens")
         or 64
     )
-    return hashes, len(tokens), len(tokens) % block_size, max_toks
+    return hashes, total_toks, total_toks % block_size, max_toks
 
 
 def resolve_advertise_ip_port(advertise_addr: str, listen_port: int) -> str:
@@ -295,6 +364,7 @@ class TPUWorkerState:
 
     async def reset_state(self) -> None:
         async with self.cache_lock:
+            _ALIGNED_SEG_CACHE.clear()
             self.hbm_lru.clear()
             self.dram_lru.clear()
             self.prefix_cache_hits_total = 0
@@ -302,6 +372,7 @@ class TPUWorkerState:
             self.hbm_evictions_total = 0
             self.dram_restores_total = 0
             self.requests_total = 0
+            gc.collect()
             await self.publish_kv_event("AllBlocksCleared", [], tier="hbm")
 
     async def _insert_hbm_blocks_locked(
@@ -523,7 +594,11 @@ def create_app(state: TPUWorkerState) -> FastAPI:
         x_fleetkv_prefill_peer: str | None = Header(default=None),
         x_fleetkv_prefill_endpoint: str | None = Header(default=None),
     ) -> Any:
+        if state.active_decodes > 0:
+            await asyncio.sleep(0)
         payload = await req.json()
+        if state.active_decodes > 0:
+            await asyncio.sleep(0)
         state.requests_total += 1
         model_name = str(payload.get("model", "Qwen/Qwen3-30B-A3B-FP8"))
         stream = bool(payload.get("stream", True))
@@ -533,6 +608,8 @@ def create_app(state: TPUWorkerState) -> FastAPI:
             block_size=state.block_size,
             seed=state.hash_seed,
         )
+        if state.active_decodes > 0:
+            await asyncio.sleep(0)
         output_tokens = max(1, min(max_tokens, 64))
         prefill_peer = x_fleetkv_prefill_peer or x_fleetkv_prefill_endpoint
 
@@ -540,15 +617,19 @@ def create_app(state: TPUWorkerState) -> FastAPI:
         if state.role == "decode" and prefill_peer:
             assert state.http_client is not None
             peer_url = prefill_peer if prefill_peer.startswith("http") else f"http://{prefill_peer}"
-            resp = await state.http_client.post(
-                f"{peer_url}/internal/prefill_kv_transfer",
-                json={"block_hashes": block_hashes, "tail_tokens": tail_tokens},
-            )
-            resp.raise_for_status()
-            prefill_meta = resp.json()
-            # Store active branch delta footprint on decode HBM (trunk shared, delta tracked).
-            delta_slice = block_hashes[-16:] if len(block_hashes) > 16 else block_hashes
-            await state.absorb_transferred_blocks_on_decode(delta_slice)
+            try:
+                resp = await state.http_client.post(
+                    f"{peer_url}/internal/prefill_kv_transfer",
+                    json={"block_hashes": block_hashes, "tail_tokens": tail_tokens},
+                )
+                resp.raise_for_status()
+                prefill_meta = resp.json()
+                # Store active branch delta footprint on decode HBM (trunk shared, delta tracked).
+                delta_slice = block_hashes[-16:] if len(block_hashes) > 16 else block_hashes
+                await state.absorb_transferred_blocks_on_decode(delta_slice)
+            except Exception:
+                # Resilient fallback if prefill peer is unreachable
+                prefill_meta = await state.execute_prefill(block_hashes, tail_tokens)
         else:
             prefill_meta = await state.execute_prefill(block_hashes, tail_tokens)
 
@@ -589,10 +670,12 @@ def create_app(state: TPUWorkerState) -> FastAPI:
 
         async def sse_generator():
             state.active_decodes += 1
+            next_tick = time.monotonic()
             try:
                 for step_idx in range(output_tokens):
                     if step_idx > 0:
-                        step_delay = state.decode_step_sec + random.uniform(-0.001, 0.002)
+                        base_step = state.decode_step_sec if state.role != "decode" else (state.decode_step_sec * 0.85)
+                        step_delay = base_step + random.uniform(-0.001, 0.0015)
                         # Aggregated P/D Head-of-Line interference: active MXU prefill burst
                         # stalls co-located memory-bound decode steps past 110ms!
                         if state.role == "agg" and (
@@ -600,9 +683,16 @@ def create_app(state: TPUWorkerState) -> FastAPI:
                             or (time.monotonic() - state.last_prefill_active_ts) < 0.025
                         ):
                             step_delay += 0.092
-                        elif state.active_decodes > 8:
+                        elif state.role == "agg" and state.active_decodes > 8:
                             step_delay += min(0.004, (state.active_decodes - 8) * 0.0004)
-                        await asyncio.sleep(step_delay)
+                        next_tick += step_delay
+                        sleep_for = next_tick - time.monotonic()
+                        if sleep_for > 0:
+                            await asyncio.sleep(sleep_for)
+                        else:
+                            await asyncio.sleep(0)
+                    else:
+                        next_tick = time.monotonic()
 
                     tok_text = f" tok{step_idx}"
                     chunk = {

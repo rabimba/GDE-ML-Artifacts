@@ -140,3 +140,20 @@ def test_disaggregatedset_hma_dram_and_gaie_zmq_prefill_selector() -> None:
     assert found_prefill_zmq_selector, "fleetkv-epp must filter ZMQ discovery to llm-d.ai/role=prefill"
     assert found_inference_pool_v1, "Missing inference.networking.k8s.io/v1 InferencePool"
     assert found_httproute, "Missing 3-way Gateway API HTTPRoute"
+
+
+def test_headless_services_expose_zmq_and_http_ports_for_pod_discovery() -> None:
+    docs = _load_all_gke_yaml_docs()
+    headless_svcs: dict[str, set[int]] = {}
+    for _, doc in docs:
+        if doc.get("kind") == "Service" and doc.get("spec", {}).get("clusterIP") == "None":
+            name = doc.get("metadata", {}).get("name", "")
+            ports = {int(p["port"]) for p in doc.get("spec", {}).get("ports", []) if "port" in p}
+            headless_svcs[name] = ports
+
+    assert "vllm-agg-headless-svc" in headless_svcs, "Missing vllm-agg-headless-svc for per-pod ZMQ/HTTP discovery"
+    assert {8000, 5557}.issubset(headless_svcs["vllm-agg-headless-svc"])
+    assert "qwen3-prefill-headless-svc" in headless_svcs, "Missing qwen3-prefill-headless-svc"
+    assert {8000, 5557}.issubset(headless_svcs["qwen3-prefill-headless-svc"])
+    assert "qwen3-decode-headless-svc" in headless_svcs, "Missing qwen3-decode-headless-svc"
+    assert 8000 in headless_svcs["qwen3-decode-headless-svc"]

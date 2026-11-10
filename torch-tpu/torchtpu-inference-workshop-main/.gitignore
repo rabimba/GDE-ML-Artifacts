@@ -1,0 +1,9 @@
+# What running the demos and notebooks leaves behind
+venv-*/
+traces/
+*.log
+__pycache__/
+.ipynb_checkpoints/
+# PyTorch's nn.Transformer source, copied next to ask.py as its prompt (the README has the line)
+demos/02_sglang/transformer.py
+.DS_Store

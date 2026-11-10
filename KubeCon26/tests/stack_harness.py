@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import random
+import shutil
 import socket
 import subprocess
 import sys
@@ -50,14 +51,28 @@ def allocate_safe_ports(count: int) -> list[int]:
 
 
 def ensure_epp_binary() -> Path:
-    if not EPP_BIN.exists():
-        EPP_BIN.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(
-            ["go", "build", "-o", str(EPP_BIN), "./cmd/fleetkv-epp"],
-            cwd=str(REPO_ROOT / "router"),
-            check=True,
-        )
+    EPP_BIN.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["go", "build", "-trimpath", "-o", str(EPP_BIN), "./cmd/fleetkv-epp"],
+        cwd=str(REPO_ROOT / "router"),
+        check=True,
+    )
     return EPP_BIN
+
+
+def _envoy_mode() -> str:
+    if shutil.which("envoy"):
+        return "native"
+    if sys.platform.startswith("linux") and shutil.which("docker"):
+        res = subprocess.run(
+            ["docker", "info"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        if res.returncode == 0:
+            return "docker"
+    return "builtin"
 
 
 @dataclass
@@ -157,7 +172,7 @@ def running_envoy_twin_stack(
                         cmd,
                         env=env,
                         stdout=subprocess.DEVNULL,
-                        stderr=subprocess.PIPE,
+                        stderr=subprocess.DEVNULL,
                     )
                 )
 
@@ -170,6 +185,7 @@ def running_envoy_twin_stack(
                 for pid, role, hp, _, _ in worker_specs
             )
 
+            envoy_mode = _envoy_mode()
             epp_cmd = [
                 str(epp_bin),
                 f"--grpc-port={epp_grpc}",
@@ -182,6 +198,13 @@ def running_envoy_twin_stack(
                 f"--zmq-endpoints={zmq_eps}",
                 f"--static-pods={static_pods}",
             ]
+            if envoy_mode == "builtin":
+                epp_cmd.extend(
+                    [
+                        f"--http-gateway-port={envoy_http}",
+                        f"--http-gateway-admin-port={envoy_admin}",
+                    ]
+                )
             procs.append(
                 subprocess.Popen(
                     epp_cmd,
@@ -286,28 +309,43 @@ static_resources:
             os.chmod(tmpdir, 0o755)
             os.chmod(cfg_path, 0o644)
 
-            procs.append(
-                subprocess.Popen(
-                    [
-                        "docker",
-                        "run",
-                        "--rm",
-                        "--name",
-                        envoy_container_name,
-                        "--network",
-                        "host",
-                        "-v",
-                        f"{cfg_path}:/etc/envoy/envoy.yaml:ro",
-                        "envoyproxy/envoy:v1.31-latest",
-                        "-c",
-                        "/etc/envoy/envoy.yaml",
-                        "--log-level",
-                        "warn",
-                    ],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
+            if envoy_mode == "native":
+                procs.append(
+                    subprocess.Popen(
+                        [
+                            "envoy",
+                            "-c",
+                            str(cfg_path),
+                            "--log-level",
+                            "warn",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
                 )
-            )
+            elif envoy_mode == "docker":
+                procs.append(
+                    subprocess.Popen(
+                        [
+                            "docker",
+                            "run",
+                            "--rm",
+                            "--name",
+                            envoy_container_name,
+                            "--network",
+                            "host",
+                            "-v",
+                            f"{cfg_path}:/etc/envoy/envoy.yaml:ro",
+                            "envoyproxy/envoy:v1.31-latest",
+                            "-c",
+                            "/etc/envoy/envoy.yaml",
+                            "--log-level",
+                            "warn",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                )
             _wait_http_ok(f"http://127.0.0.1:{envoy_admin}/ready")
             time.sleep(0.25)
 
@@ -324,12 +362,13 @@ static_resources:
                 disagg_urls=disagg_urls,
             )
         finally:
-            subprocess.run(
-                ["docker", "rm", "-f", envoy_container_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                check=False,
-            )
+            if shutil.which("docker") and sys.platform.startswith("linux"):
+                subprocess.run(
+                    ["docker", "rm", "-f", envoy_container_name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    check=False,
+                )
             for p in reversed(procs):
                 p.terminate()
             for p in reversed(procs):
