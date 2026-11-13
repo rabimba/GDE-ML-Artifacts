@@ -1,0 +1,642 @@
+<!--===== BEGIN BLOGGER PASTE =====-->
+<div class="fleetkv-blog-post" style="font-family: Georgia, 'Times New Roman', serif; font-size: 18.5px; line-height: 1.76; color: #1c1b18; max-width: 780px; margin: 0 auto;">
+  <!-- Absorbs Blogger theme .post-body:first-letter and .post-body:first-line overrides cleanly -->
+  <div style="text-align: center; font-size: 1px; line-height: 1px; height: 1px; overflow: hidden; opacity: 0;" aria-hidden="true">&nbsp;</div>
+
+  <!-- Masthead Banner -->
+  <div style="text-align: center; background: #0b0e14; border-radius: 8px; padding: 34px 32px 30px 32px; color: #f8fafc; margin-bottom: 36px; border: 1px solid #1e2533;">
+    <div style="text-align: left;">
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #10b981; margin-bottom: 14px;">
+        KUBECON NA 2026 &middot; GKE INFERENCE GATEWAY &middot; CLOUD TPU v6e
+      </div>
+      <h1 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 32px; font-weight: 800; color: #f8fafc; margin: 0 0 14px 0; line-height: 1.18; letter-spacing: -0.025em;">
+        The Locality Trap: Surviving Agentic Fork Storms with KV-Tier-Aware Routing and Disaggregated Cloud TPUs on GKE
+      </h1>
+      <p style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; color: #94a3b8; margin: 0 0 22px 0; line-height: 1.55; max-width: 680px;">
+        Companion deep-dive to my KubeCon NA 2026 talk—why naive KV-sticky routing makes tail TTFT 2.7x worse than Round-Robin under parallel agent fan-out, how we built an Envoy ext_proc router and local TPU Digital Twin to fix it, and three distributed-systems bugs we squashed along the way.
+      </p>
+      <div style="border-top: 1px solid #1e2533; padding-top: 14px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; color: #94a3b8; font-variant-numeric: tabular-nums;">
+        By <strong style="color: #e2e8f0;">Rabimba Karanjai</strong> &middot;
+        Interactive Slides: <a href="https://rabimba.github.io/GDE-ML-Artifacts/KubeCon26/slides/" rel="noopener" style="color: #10b981; text-decoration: underline; font-weight: 600;" target="_blank">rabimba.github.io/GDE-ML-Artifacts/KubeCon26/slides/</a> &middot;
+        Reference Source: <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26" rel="noopener" style="color: #38bdf8; text-decoration: underline; font-weight: 600;" target="_blank">github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Opening Hook -->
+  <p style="margin: 0 0 22px 0;">
+    At KubeCon NA 2026 in Salt Lake City, I presented a 15-minute case study on serving multi-agent workloads over Google Kubernetes Engine (GKE) and Cloud TPU v6e (Trillium). Fifteen minutes on a conference stage gives you just enough room to deliver the high-level architecture, flash the final scorecard, and show a terminal demo. It leaves zero room for the gnarly distributed-systems details: the wire-level Envoy <code>ext_proc</code> state machines, the ZeroMQ DNS discovery traps inside Kubernetes, or the debugging scars from tracking down why multi-turn prompt hashes drifted across container boundaries.
+  </p>
+
+  <p style="margin: 0 0 22px 0;">
+    This post is the companion deep-dive. It documents the engineering mechanics behind <strong>FleetKV</strong>—an open-source, fit-aware KV router built for the Kubernetes Gateway API Inference Extension (GAIE v1)—and explains why the conventional wisdom around LLM prefix caching breaks down the moment sequential chat turns into parallel agentic execution trees.
+  </p>
+
+  <p style="margin: 0 0 24px 0;">
+    All the code, Kubernetes manifests, and a trace-calibrated local Digital Twin are open-sourced in our Google Developer Expert (GDE) reference repository: <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26" rel="noopener" style="color: #0f52ba; text-decoration: underline;" target="_blank">github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26</a>.
+  </p>
+
+  <!-- Editorial Thesis Callout -->
+  <div role="note" style="background: #f6f4ee; border-left: 3px solid #0f766e; padding: 18px 22px; margin: 28px 0; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
+    <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #0f766e; margin-bottom: 6px;">
+      The Single-Variable Testbed: Fork-Storm Harness &amp; Digital Twin
+    </div>
+    <p style="margin: 0; font-size: 15.5px; line-height: 1.6; color: #262522;">
+      Vendor benchmarks often disguise LLM serving bottlenecks by altering model weights, testing tiny 2K prompts, or discarding tail latency. To keep our findings reproducible, we held every application variable fixed: a <strong>Qwen2.5-32B</strong> model executed in <code>bfloat16</code>, strict <strong>256-token blocks</strong>, and an 8-orchestrator &times; 8-sub-agent fork storm (64 active branches, 416 streaming requests) sharing a 20,480-token trunk. Latency SLOs were strictly enforced: <strong>TTFT &le; 3,000 ms</strong> and <strong>ITL &le; 50 ms</strong>. Our local Python Digital Twin (<code>twin/tpu_worker_twin.py</code>) replicates these exact TPU v6e cycle dynamics on any laptop via <code>make gate-g1</code>.
+    </p>
+  </div>
+
+  <!-- =====================================================================
+       SECTION 1: WHEN CHAT BECOMES A TREE
+       ===================================================================== -->
+  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 800; color: #111827; margin: 44px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #d6d3cd; letter-spacing: -0.015em;">
+    1. When Chat Becomes a Tree: Why Naive Locality Fails
+  </h2>
+
+  <p style="margin: 0 0 20px 0;">
+    For the past two years, LLM serving teams have optimized for sequential conversational threads. In linear chat, context grows monotonically: turn 1 adds 500 tokens, turn 2 appends another 400 tokens, and turn 3 appends 300 tokens. The cache eviction horizon is predictable, and basic round-robin or least-request load balancing across identical model replicas works well enough.
+  </p>
+
+  <p style="margin: 0 0 20px 0;">
+    Agentic systems change the geometry of inference traffic from a linear list into a rapidly branching tree. Consider an enterprise triage or coding agent:
+  </p>
+
+  <ol style="margin: 0 0 22px 0; padding-left: 24px; font-size: 17.5px; line-height: 1.7;">
+    <li style="margin-bottom: 8px;">An orchestrator receives a customer query or incident log. It builds a hefty, shared system prompt—retrieval context, API schemas, tool definitions, and few-shot examples—totaling 16,000 to 24,000 tokens (the <em>shared trunk</em>).</li>
+    <li style="margin-bottom: 8px;">Instead of waiting for one answer, the orchestrator spawns four to eight sub-agents concurrently: a query planner, a database extractor, a code runner, and an adversarial verification bot.</li>
+    <li style="margin-bottom: 8px;">Each sub-agent inherits the exact same 20,480-token trunk, appends its own 1,000-to-2,000-token branch instruction, and fires a request into the serving cluster at the exact same millisecond.</li>
+  </ol>
+
+  <p style="margin: 0 0 22px 0;">
+    At <code>256 KiB</code> per token for a 32B model in <code>bfloat16</code>, caching that 20,480-token prefix preserves over <strong>5 GiB of Key-Value tensor state</strong>. Recomputing it from scratch on every branch burns tens of millions of systolic matrix multiply operations and spikes hardware Time to First Token (TTFT).
+  </p>
+
+  <!-- Figure 1: Inline SVG Diagram: Fork Storm vs Linear Chat & The Herd Collapse -->
+  <div style="margin: 32px 0 36px 0; background: #0b0e14; padding: 18px; border-radius: 8px; border: 1px solid #1e2533;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12.5px;">
+      <span style="color: #e2e8f0; font-weight: 600;">FIG. 01 &middot; Linear Chat vs. Agentic Fork Storm: Why Naive Stickiness Triggers the Herd Collapse</span>
+      <span style="color: #94a3b8; font-family: 'SF Mono', Menlo, monospace; font-size: 11px;">416 Requests &bull; 64 Active Branches</span>
+    </div>
+    <svg viewBox="0 0 740 330" width="100%" height="auto" style="display: block; margin: 0 auto; background: #080b11; border-radius: 6px; border: 1px solid #1e2533;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison between linear chat memory growth and multi-agent fork storm prefix herd collapse">
+      <!-- Lane 1: Linear Chat -->
+      <rect x="20" y="20" width="700" height="95" rx="6" fill="#0f1422" stroke="#253248" stroke-width="1.2" />
+      <text x="36" y="42" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" font-weight="700">LANE A: Conventional Linear Chat (O(Turns) Sequential Growth)</text>
+      <text x="36" y="60" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">Predictable memory horizon &#8226; Single worker cache residency &#8226; Round-robin works well enough</text>
+      
+      <!-- Linear Blocks -->
+      <rect x="36" y="72" width="140" height="28" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+      <text x="106" y="90" fill="#f8fafc" font-family="monospace" font-size="11" text-anchor="middle">Turn 1 (500 tok)</text>
+      <text x="186" y="90" fill="#64748b" font-family="sans-serif" font-size="14">&#8594;</text>
+      <rect x="206" y="72" width="160" height="28" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+      <text x="286" y="90" fill="#f8fafc" font-family="monospace" font-size="11" text-anchor="middle">Turn 2 (+400 tok)</text>
+      <text x="376" y="90" fill="#64748b" font-family="sans-serif" font-size="14">&#8594;</text>
+      <rect x="396" y="72" width="180" height="28" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1" />
+      <text x="486" y="90" fill="#f8fafc" font-family="monospace" font-size="11" text-anchor="middle">Turn 3 (+300 tok)</text>
+      <rect x="590" y="72" width="115" height="28" rx="4" fill="#042f2e" stroke="#14b8a6" stroke-width="1" />
+      <text x="647" y="90" fill="#2dd4bf" font-family="monospace" font-size="10.5" font-weight="700" text-anchor="middle">Cache Hit OK</text>
+
+      <!-- Lane 2: Agentic Fork Storm -->
+      <rect x="20" y="130" width="700" height="180" rx="6" fill="#0f1422" stroke="#253248" stroke-width="1.2" />
+      <text x="36" y="152" fill="#fbbf24" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" font-weight="700">LANE B: Agentic Fork Storm (1 &#8594; 8 Parallel Branches Off 20,480-Token Shared Trunk)</text>
+      <text x="36" y="170" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">Shared 80-block prefix (5.2 GiB KV state) &#8226; 8 sub-agents fire at exact same millisecond</text>
+
+      <!-- Trunk Box -->
+      <rect x="36" y="186" width="220" height="42" rx="4" fill="#1c1917" stroke="#f59e0b" stroke-width="1.5" />
+      <text x="146" y="204" fill="#fbbf24" font-family="monospace" font-size="11.5" font-weight="700" text-anchor="middle">Shared Trunk (20,480 Tok)</text>
+      <text x="146" y="220" fill="#d6d3d1" font-family="monospace" font-size="9.5" text-anchor="middle">80 Blocks &#8226; Incident Logs + RAG</text>
+
+      <!-- Routing Split Arrows -->
+      <path d="M 256 198 L 320 180" stroke="#f87171" stroke-width="1.8" stroke-dasharray="3,3" fill="none" />
+      <path d="M 256 216 L 320 236" stroke="#34d399" stroke-width="1.8" fill="none" />
+
+      <!-- Outcome 1: Naive Sticky Herd Collapse -->
+      <rect x="325" y="160" width="380" height="60" rx="4" fill="#2a1215" stroke="#ef4444" stroke-width="1.2" />
+      <text x="337" y="178" fill="#fca5a5" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700">Stage 2: Naive Sticky Routing &#8594; Prefix-Herd Trap on agg-0</text>
+      <text x="337" y="196" fill="#fecaca" font-family="monospace" font-size="10.5">8/8 branches stampede same pod &#8226; Queue depth = 8</text>
+      <text x="337" y="212" fill="#ef4444" font-family="monospace" font-size="10.5" font-weight="700">P95 TTFT: 33,375 ms (2.7x worse) &#8226; 9,931 HBM evictions</text>
+
+      <!-- Outcome 2: FleetKV Fit-Aware Spillover -->
+      <rect x="325" y="232" width="380" height="66" rx="4" fill="#062e24" stroke="#10b981" stroke-width="1.2" />
+      <text x="337" y="250" fill="#6ee7b7" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700">Stage 3: FleetKV Fit-Aware Admission &amp; P/D Disaggregation</text>
+      <text x="337" y="268" fill="#a7f3d0" font-family="monospace" font-size="10.5">Admit 3 branches to HBM &#8226; Spill 5 to DRAM / agg-1</text>
+      <text x="337" y="284" fill="#10b981" font-family="monospace" font-size="10.5" font-weight="700">P95 TTFT: 2,507 ms (Twin) / 485 ms (GKE) &#8226; 0 evictions</text>
+    </svg>
+    <p style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; color: #94a3b8; margin: 10px 0 0 0;">
+      Under an 8-way agent fork storm, naive longest-prefix stickiness herds all branches onto <code>agg-0</code>, blowing up queue depth and triggering self-eviction cascades. FleetKV gates admission by HBM capacity, spilling excess branches before queues back up.
+    </p>
+  </div>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 12px 0;">
+    The False-Obvious Fix and the Prefix-Herd Collapse
+  </h3>
+
+  <p style="margin: 0 0 20px 0;">
+    The obvious architectural reaction is simple: enable <code>--enable-prefix-caching</code> in vLLM and slap a prefix-sticky routing policy in front of the cluster. If Worker <code>agg-0</code> already holds the trunk in its High-Bandwidth Memory (HBM), route all matching requests to <code>agg-0</code>.
+  </p>
+
+  <p style="margin: 0 0 20px 0;">
+    When you test that policy against a real multi-agent fork storm, your cluster suffers a catastrophic <strong>Prefix-Herd Collapse</strong>:
+  </p>
+
+  <ul style="margin: 0 0 22px 0; padding-left: 24px; font-size: 17.5px; line-height: 1.7;">
+    <li style="margin-bottom: 10px;">
+      <strong>Massive Tail TTFT Inflation:</strong> Every concurrent sub-agent branch matches the same longest prefix on <code>agg-0</code>. Instead of distributing compute load, your ingress proxy queues all eight branches on the exact same worker. On our 4-replica benchmark cluster, Stage 1 (Kubernetes Round-Robin) produced a P95 TTFT of <strong>12,497 ms</strong>. Under Stage 2 (Naive KV-Sticky), P95 TTFT spiked to <strong>33,375 ms</strong>—a <strong>2.7x degradation</strong> under identical traffic.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Self-Eviction Cascades:</strong> Worker <code>agg-0</code> exhausts its available HBM block pool trying to allocate KV slots for eight concurrent branches. It starts evicting cached blocks—including the very 20,480-token trunk that attracted the traffic in the first place. Across a 416-request test wave, naive stickiness caused <strong>9,931 HBM evictions</strong>.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Decode Starvation (Inter-Token Jitter):</strong> Because <code>agg-0</code> is an aggregated worker running both prefill and decode phases on the same chips, its Matrix Multiply Units (MXUs) freeze existing token-generation streams while crunching through queued 20K-token prefill chunks. P99 Inter-Token Latency (ITL) spiked to <strong>156.5 ms</strong>, well above acceptable streaming thresholds.
+    </li>
+  </ul>
+
+  <!-- =====================================================================
+       SECTION 2: TWO-PLANE FIX
+       ===================================================================== -->
+  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 800; color: #111827; margin: 44px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #d6d3cd; letter-spacing: -0.015em;">
+    2. The Two-Plane Solution: FleetKV and Disaggregated TPUs
+  </h2>
+
+  <p style="margin: 0 0 20px 0;">
+    Solving the locality trap requires decoupling your routing intelligence from naive cache matching and splitting your accelerator topology into specialized hardware roles.
+  </p>
+
+  <!-- Figure 2: Inline SVG Architecture Diagram -->
+  <div style="margin: 32px 0 36px 0; background: #0b0e14; padding: 18px; border-radius: 8px; border: 1px solid #1e2533;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12.5px;">
+      <span style="color: #38bdf8; font-weight: 600;">FIG. 02 &middot; FleetKV Dual-Plane Architecture: Envoy ext_proc &amp; GKE Disaggregated Cloud TPUs</span>
+      <span style="color: #94a3b8; font-family: 'SF Mono', Menlo, monospace; font-size: 11px;">GAIE v1 InferencePool &bull; 8x TPU v6e</span>
+    </div>
+    <svg viewBox="0 0 740 310" width="100%" height="auto" style="display: block; margin: 0 auto; background: #080b11; border-radius: 6px; border: 1px solid #1e2533;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FleetKV Dual-Plane Architecture diagram showing Envoy ext_proc integration with GKE DisaggregatedSet Cloud TPU v6e workers">
+      <!-- Client Box -->
+      <rect x="20" y="110" width="100" height="70" rx="6" fill="#111827" stroke="#38bdf8" stroke-width="1.5" />
+      <text x="70" y="140" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">Agent Ingress</text>
+      <text x="70" y="158" fill="#94a3b8" font-family="monospace" font-size="9.5" text-anchor="middle">8-Way Fork</text>
+
+      <!-- Client to Envoy Arrow -->
+      <path d="M 120 145 L 155 145" stroke="#38bdf8" stroke-width="1.8" fill="none" />
+
+      <!-- Envoy Gateway -->
+      <rect x="155" y="90" width="120" height="110" rx="6" fill="#111827" stroke="#a855f7" stroke-width="1.5" />
+      <text x="215" y="120" fill="#c084fc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="700" text-anchor="middle">Envoy Gateway</text>
+      <text x="215" y="138" fill="#94a3b8" font-family="monospace" font-size="10" text-anchor="middle">HTTP :80</text>
+      <text x="215" y="156" fill="#cbd5e1" font-family="monospace" font-size="9" text-anchor="middle">Gateway API v1</text>
+      <text x="215" y="172" fill="#38bdf8" font-family="monospace" font-size="8.5" text-anchor="middle">x-target-pod header</text>
+
+      <!-- Envoy to EPP Arrow -->
+      <path d="M 215 90 L 215 65 L 305 65" stroke="#a855f7" stroke-width="1.6" fill="none" />
+      <path d="M 305 75 L 215 75 L 215 90" stroke="#10b981" stroke-width="1.6" fill="none" />
+      <text x="250" y="55" fill="#a855f7" font-family="monospace" font-size="8.5" text-anchor="middle">gRPC :9002</text>
+
+      <!-- FleetKV EPP Router Box -->
+      <rect x="305" y="30" width="195" height="180" rx="6" fill="#0d1b2a" stroke="#10b981" stroke-width="1.8" />
+      <text x="402" y="52" fill="#34d399" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">fleetkv-epp (Control Plane)</text>
+      <text x="402" y="68" fill="#94a3b8" font-family="monospace" font-size="9.5" text-anchor="middle">GAIE v1 Endpoint Picker</text>
+      
+      <rect x="315" y="80" width="175" height="34" rx="4" fill="#132a42" stroke="#1e40af" stroke-width="1" />
+      <text x="402" y="96" fill="#93c5fd" font-family="monospace" font-size="9" font-weight="700" text-anchor="middle">Radix Index: HBM + DRAM</text>
+      <text x="402" y="108" fill="#bfdbfe" font-family="monospace" font-size="8" text-anchor="middle">ZMQ PUB/SUB (:5557) &#8226; Headless DNS</text>
+
+      <rect x="315" y="122" width="175" height="42" rx="4" fill="#064e3b" stroke="#059669" stroke-width="1" />
+      <text x="402" y="138" fill="#6ee7b7" font-family="monospace" font-size="9" font-weight="700" text-anchor="middle">Fit-Aware Scoring Engine</text>
+      <text x="402" y="150" fill="#a7f3d0" font-family="monospace" font-size="8" text-anchor="middle">FitsHBM Gate &#8226; Queue Penalties</text>
+      <text x="402" y="160" fill="#a7f3d0" font-family="monospace" font-size="8" text-anchor="middle">AcquireStagedLease &#8226; TTFT Release</text>
+
+      <rect x="315" y="172" width="175" height="26" rx="4" fill="#1f2937" stroke="#4b5563" stroke-width="1" />
+      <text x="402" y="188" fill="#e5e7eb" font-family="monospace" font-size="8.5" text-anchor="middle">256-Token Chained SHA-256</text>
+
+      <!-- Routing Forward Arrows -->
+      <path d="M 275 145 L 530 115" stroke="#38bdf8" stroke-width="1.8" fill="none" />
+      <path d="M 275 145 L 530 225" stroke="#38bdf8" stroke-width="1.8" fill="none" />
+
+      <!-- Data Plane: DisaggregatedSet -->
+      <rect x="530" y="30" width="190" height="260" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1.5" />
+      <text x="625" y="52" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" font-weight="700" text-anchor="middle">GKE DisaggregatedSet</text>
+      <text x="625" y="68" fill="#94a3b8" font-family="monospace" font-size="9.5" text-anchor="middle">2x ct6e-standard-4t (8x TPU v6e)</text>
+
+      <!-- Prefill Pod -->
+      <rect x="542" y="80" width="166" height="80" rx="4" fill="#1e1b4b" stroke="#6366f1" stroke-width="1.2" />
+      <text x="625" y="98" fill="#a5b4fc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="middle">vllm-prefill-0 (TP=4)</text>
+      <text x="625" y="114" fill="#cbd5e1" font-family="monospace" font-size="8.5" text-anchor="middle">Compute-Bound &#8226; Pallas RPA v3</text>
+      <text x="625" y="128" fill="#cbd5e1" font-family="monospace" font-size="8.5" text-anchor="middle">--block-size 256 &#8226; 64 GiB /dev/shm</text>
+      <text x="625" y="142" fill="#818cf8" font-family="monospace" font-size="8" text-anchor="middle">ZMQ KVEvents PUB :5557</text>
+
+      <!-- KV Transfer Arrow -->
+      <path d="M 625 160 L 625 190" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,3" fill="none" />
+      <text x="630" y="178" fill="#fbbf24" font-family="monospace" font-size="8" text-anchor="start">TPUConnectorHMA (MTU=8896)</text>
+
+      <!-- Decode Pod -->
+      <rect x="542" y="190" width="166" height="85" rx="4" fill="#042f2e" stroke="#14b8a6" stroke-width="1.2" />
+      <text x="625" y="210" fill="#5eead4" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="middle">vllm-decode-0 (TP=4)</text>
+      <text x="625" y="226" fill="#cbd5e1" font-family="monospace" font-size="8.5" text-anchor="middle">Bandwidth-Bound &#8226; Token Gen</text>
+      <text x="625" y="240" fill="#2dd4bf" font-family="monospace" font-size="9" font-weight="700" text-anchor="middle">P99 ITL = 27 ms (Zero Jitter)</text>
+      <text x="625" y="254" fill="#cbd5e1" font-family="monospace" font-size="8" text-anchor="middle">SSE Streaming &#8594; Client</text>
+    </svg>
+    <p style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; color: #94a3b8; margin: 10px 0 0 0;">
+      FleetKV inspects incoming requests via Envoy <code>ext_proc</code>, looks up cached blocks in its lock-free Radix Tree, and selects optimal workers using Fit-Aware scoring. The GKE <code>DisaggregatedSet</code> offloads KV tensors over high-speed host DMA, shielding decode pods from prefill bursts.
+    </p>
+  </div>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 12px 0;">
+    Plane 1: FleetKV Fit-Aware Envoy ext_proc Router
+  </h3>
+
+  <p style="margin: 0 0 20px 0;">
+    Instead of letting an ingress proxy guess worker state based on external HTTP response codes, FleetKV runs as a standalone Go service (<code>fleetkv-epp</code>) implementing the Envoy v3 <code>ExternalProcessor</code> gRPC protocol. It listens on port <code>:9002</code> and integrates directly with the GKE Gateway API Inference Extension via an <code>InferencePool</code> specification.
+  </p>
+
+  <p style="margin: 0 0 20px 0;">
+    FleetKV maintains a lock-free, concurrency-safe in-memory Radix Tree (<code>router/pkg/radix/kv_tree.go</code>). It subscribes to real-time ZeroMQ event streams published by every vLLM worker on port <code>:5557</code>:
+  </p>
+
+  <ul style="margin: 0 0 22px 0; padding-left: 24px; font-size: 17.5px; line-height: 1.7;">
+    <li style="margin-bottom: 8px;"><code>BlockStored</code>: Block hash inserted into HBM or Tier-2 Host DRAM.</li>
+    <li style="margin-bottom: 8px;"><code>BlockRemoved</code>: Block evicted due to memory pressure.</li>
+    <li style="margin-bottom: 8px;"><code>AllBlocksCleared</code>: Worker reboot or cache reset.</li>
+  </ul>
+
+  <p style="margin: 0 0 22px 0;">
+    When an 8-way fork storm arrives at Envoy, FleetKV hashes the incoming prompt tokens in deterministic 256-token chunks (<code>router/pkg/hash/blockhash.go</code>) and evaluates every worker through its <strong>Fit-Aware Scoring Engine</strong> (<code>router/pkg/scorer/policies.go</code>):
+  </p>
+
+  <!-- Code Block Container -->
+  <div style="background: #0b0e14; border-radius: 6px; border: 1px solid #1e2533; padding: 16px 18px; margin: 24px 0 26px 0; overflow-x: auto;">
+    <div style="font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; text-transform: uppercase; color: #10b981; letter-spacing: 0.08em; margin-bottom: 10px;">
+      router/pkg/scorer/policies.go &middot; Fit-Aware Admission &amp; Scoring
+    </div>
+    <pre style="margin: 0; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; line-height: 1.55; color: #e2e8f0;"><code><span style="color: #64748b;">// 1. Hard HBM Fit Admission Gate: Reject pods that cannot fit the branch without eviction</span>
+<span style="color: #f43f5e;">if</span> m.Pod.EffectiveFreeHBMBlocks() &lt; estBlocks + cfg.SafetyReserveBlocks {
+    <span style="color: #f43f5e;">continue</span>
+}
+
+<span style="color: #64748b;">// 2. Peak Prefill Queue Gate: Shed load if pending prefill backlog exceeds throughput limits</span>
+<span style="color: #f43f5e;">if</span> cfg.PeakPrefillThresholdTokens &gt; 0 &amp;&amp; m.Pod.InFlightPrefillTokens &gt; cfg.PeakPrefillThresholdTokens {
+    <span style="color: #f43f5e;">continue</span>
+}
+
+<span style="color: #64748b;">// 3. Marginal Saved Prefill Cost minus Live Queue Wait Time</span>
+marginalSavedMs := <span style="color: #38bdf8;">float64</span>(m.MatchedHBMBlocks) * hbmSavedPerBlock + 
+                   <span style="color: #38bdf8;">float64</span>(m.MatchedDRAMBlocks) * dramSavedPerBlock
+
+queueWaitMs := (<span style="color: #38bdf8;">float64</span>(m.Pod.InFlightPrefillTokens) / cfg.PodThroughputTokPerMs) +
+               (<span style="color: #38bdf8;">float64</span>(m.Pod.ActiveRequests) * cfg.ActiveDecodeWeightMs) +
+               (<span style="color: #38bdf8;">float64</span>(m.Pod.ReservedBlocks) * 0.05)
+
+score := marginalSavedMs - queueWaitMs</code></pre>
+  </div>
+
+  <p style="margin: 0 0 22px 0;">
+    If Worker <code>agg-0</code> already holds the 80-block prefix but is running out of headroom, its score drops immediately. FleetKV admits the first three branches to <code>agg-0</code> (maximizing cache reuse) and automatically spills branches 4 through 8 over to <code>agg-1</code> or Tier-2 Host DRAM before <code>agg-0</code> can trigger an eviction cascade.
+  </p>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 12px 0;">
+    Plane 2: TorchTPU P/D Disaggregation and Tier-2 Memory
+  </h3>
+
+  <p style="margin: 0 0 20px 0;">
+    Routing alone cannot fix the fundamental hardware tension of aggregated serving: large, ragged prefill chunks require maximum compute throughput, while autoregressive decode loops are starved for memory bandwidth.
+  </p>
+
+  <p style="margin: 0 0 20px 0;">
+    On Google Cloud TPU v6e (Trillium), we deploy a disaggregated architecture using GKE's <code>DisaggregatedSet</code> (<code>deploy/gke/02-disaggregatedset-torchtpu.yaml</code>):
+  </p>
+
+  <ul style="margin: 0 0 22px 0; padding-left: 24px; font-size: 17.5px; line-height: 1.7;">
+    <li style="margin-bottom: 10px;">
+      <strong>Prefill Workers (<code>role: prefill</code>):</strong> Sized for massive parallel matrix operations. Configured with <code>--block-size 256</code> to match the Scalar Memory (SMEM) limits of Pallas paged-attention kernels.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Tier-2 Memory Spillover (<code>TPUConnectorHMA</code>):</strong> Each worker maps a 64 GiB <code>emptyDir: Memory</code> volume to <code>/dev/shm</code>. When TPU HBM fills, older KV blocks are copied via high-speed host DMA into host RAM rather than discarded. Loading a block from host RAM to HBM over PCIe takes a fraction of the time required to recompute 256 tokens through the systolic array.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Decode Workers (<code>role: decode</code>):</strong> Dedicated exclusively to continuous token generation. Free from prefill interruptions, decode pods deliver a jitter-free streaming experience with a P99 ITL of <strong>27 ms</strong> on real TPU v6e chips (<strong>33.1 ms</strong> in our Digital Twin).
+    </li>
+  </ul>
+
+  <!-- =====================================================================
+       SECTION 3: THREE DISTRIBUTED-SYSTEMS BUGS
+       ===================================================================== -->
+  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 800; color: #111827; margin: 44px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #d6d3cd; letter-spacing: -0.015em;">
+    3. Where the Wheels Came Off: Three Distributed-Systems Bugs
+  </h2>
+
+  <p style="margin: 0 0 20px 0;">
+    Building a clean architecture on paper is straightforward; making it survive high-concurrency fork storms under live telemetry exposed three subtle bugs that required surgical fixes.
+  </p>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 10px 0;">
+    Bug 1: Phantom Prefill Leases Cripple Upstream Routing
+  </h3>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Failure:</strong> When FleetKV routed a request, it reserved an <code>InFlightPrefillTokens</code> lease on the target worker to prevent subsequent requests from double-booking its compute pipeline. In our initial implementation, this lease was held until the entire HTTP request finished.
+  </p>
+
+  <p style="margin: 0 0 18px 0;">
+    For a streaming response generating 500 tokens, the request stays open for 10 to 15 seconds. Even though the worker completed the 20,480-token prefill in 300 milliseconds and transitioned immediately to low-overhead decode, FleetKV’s <code>queueWaitMs</code> formula continued to penalize the worker as if its prefill MXU pipeline was 100% saturated. As a result, the router refused to send new requests to perfectly idle prefill workers.
+  </p>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Fix:</strong> We refactored <code>router/pkg/extproc/server.go</code> and <code>router/pkg/radix/kv_tree.go</code> into a two-stage lease lifecycle:
+  </p>
+
+  <ul style="margin: 0 0 20px 0; padding-left: 24px; font-size: 17px; line-height: 1.65;">
+    <li><code>AcquireStagedLease(podID, estBlocks, unmatchedTokens)</code> returns two distinct release handles: <code>releasePrefillFn</code> and <code>releaseFn</code>.</li>
+    <li>In the Envoy <code>ext_proc</code> event loop, FleetKV inspects downstream stream events. The exact moment Envoy receives <code>ResponseHeaders</code> from the backend worker (signaling that the first output token has been produced and prefill is finished), FleetKV calls <code>ReleasePrefill()</code>.</li>
+    <li>The remaining lightweight <code>ActiveRequests</code> token lease is held until <code>ResponseBody.EndOfStream</code> or context cancellation.</li>
+  </ul>
+
+  <div style="background: #0b0e14; border-radius: 6px; border: 1px solid #1e2533; padding: 14px 18px; margin: 20px 0 24px 0; overflow-x: auto;">
+    <div style="font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; text-transform: uppercase; color: #10b981; letter-spacing: 0.08em; margin-bottom: 8px;">
+      router/pkg/extproc/server.go &middot; Immediate Prefill Release at TTFT
+    </div>
+    <pre style="margin: 0; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.5; color: #e2e8f0;"><code><span style="color: #f43f5e;">case</span> *extprocv3.ProcessingRequest_ResponseHeaders:
+    <span style="color: #64748b;">// TTFT achieved! Backend produced first token; prefill phase complete.</span>
+    <span style="color: #f43f5e;">if</span> ctx.routeDecision != <span style="color: #f43f5e;">nil</span> {
+        ctx.routeDecision.ReleasePrefill()
+    }
+    <span style="color: #f43f5e;">return</span> &amp;extprocv3.ProcessingResponse{...}</code></pre>
+  </div>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 10px 0;">
+    Bug 2: The Kubernetes ClusterIP ZeroMQ Blackhole
+  </h3>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Failure:</strong> To discover TPU workers, <code>fleetkv-epp</code> was initially pointed at the Kubernetes Service DNS name: <code>tcp://vllm-prefill-service:5557</code>. In Kubernetes, standard Services use <code>ClusterIP</code> virtual IP addresses managed by <code>kube-proxy</code> (iptables or IPVS).
+  </p>
+
+  <p style="margin: 0 0 18px 0;">
+    ZeroMQ <code>SUB</code> sockets establish long-lived TCP connections. When <code>fleetkv-epp</code> initialized its subscriber socket, <code>kube-proxy</code> mapped that single TCP handshake to <strong>one random prefill pod</strong>. FleetKV successfully ingested cache events from <code>prefill-0</code>, but was completely blind to cache allocations on <code>prefill-1</code>, <code>prefill-2</code>, and <code>prefill-3</code>. The router's radix tree remained starved of cluster state, causing erratic routing decisions.
+  </p>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Fix:</strong> We switched the Kubernetes Service definition to a <strong>Headless Service</strong> (<code>clusterIP: None</code> in <code>deploy/gke/03-fleetkv-epp-and-pool.yaml</code>):
+  </p>
+
+  <div style="background: #0b0e14; border-radius: 6px; border: 1px solid #1e2533; padding: 14px 18px; margin: 20px 0 24px 0; overflow-x: auto;">
+    <div style="font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; text-transform: uppercase; color: #38bdf8; letter-spacing: 0.08em; margin-bottom: 8px;">
+      deploy/gke/03-fleetkv-epp-and-pool.yaml &middot; Headless Discovery Service
+    </div>
+    <pre style="margin: 0; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.5; color: #e2e8f0;"><code><span style="color: #f43f5e;">apiVersion</span>: v1
+<span style="color: #f43f5e;">kind</span>: Service
+<span style="color: #f43f5e;">metadata</span>:
+  <span style="color: #38bdf8;">name</span>: fleetkv-prefill-headless
+  <span style="color: #38bdf8;">namespace</span>: fleetkv-serving
+<span style="color: #f43f5e;">spec</span>:
+  <span style="color: #38bdf8;">clusterIP</span>: None
+  <span style="color: #38bdf8;">selector</span>:
+    <span style="color: #10b981;">llm-d.ai/role</span>: prefill
+  <span style="color: #38bdf8;">ports</span>:
+    - <span style="color: #38bdf8;">name</span>: http-inference
+      <span style="color: #38bdf8;">port</span>: 8000
+    - <span style="color: #38bdf8;">name</span>: zmq-kvevents
+      <span style="color: #38bdf8;">port</span>: 5557</code></pre>
+  </div>
+
+  <p style="margin: 0 0 22px 0;">
+    In the Go subscriber client (<code>router/pkg/zmqsub/subscriber.go</code>), we implemented periodic DNS SRV / multi-A record polling via <code>net.LookupHost</code>. FleetKV resolves every backing pod IP address and attaches distinct, parallel ZeroMQ TCP connections (<code>tcp://&lt;pod-ip&gt;:5557</code>) across the entire worker fleet.
+  </p>
+
+  <h3 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 19px; font-weight: 700; color: #111827; margin: 28px 0 10px 0;">
+    Bug 3: Multi-Turn Block Boundary Drift Spikes ITL
+  </h3>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Failure:</strong> In Stage 1 and Stage 2 testing, Turn 1 requests hit the cache cleanly, but Turn 2 and Turn 3 requests experienced unexpected cache misses, dropping the effective hit rate by over 30% and causing sudden P99 ITL spikes up to 173 ms.
+  </p>
+
+  <p style="margin: 0 0 18px 0;">
+    <strong>The Fix:</strong> Digging into the block hashing logic revealed a token alignment mismatch. In vLLM, blocks are strictly allocated on 256-token multiples. If Turn 1 ends at token offset 20,600, that corresponds to 80 full blocks (20,480 tokens) plus 120 residual tokens.
+  </p>
+
+  <p style="margin: 0 0 22px 0;">
+    When Turn 2 added a 150-token user response, our initial router code hashed Turn 2 starting from index 0 of the new text. This created an artificial 150-token chunk that misaligned all subsequent 256-token boundaries with vLLM's internal KV allocator! We updated <code>router/pkg/hash/blockhash.go</code> to carry over unaligned tail tokens from prior turns, maintaining bit-exact block alignment, and enforced <code>PYTHONHASHSEED="0"</code> across all containers.
+  </p>
+
+  <!-- =====================================================================
+       SECTION 4: EMPIRICAL SCORECARD
+       ===================================================================== -->
+  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 800; color: #111827; margin: 44px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #d6d3cd; letter-spacing: -0.015em;">
+    4. Empirical Scorecard: Local Digital Twin vs. GKE Cloud TPU v6e
+  </h2>
+
+  <p style="margin: 0 0 20px 0;">
+    To quantify the impact of these optimizations, we ran our 64-branch fork-storm harness (2 waves of 8 orchestrators &times; 8 sub-agents, 416 streaming requests per stage) across three cluster configurations:
+  </p>
+
+  <!-- Figure 3: Inline SVG Scorecard Bars -->
+  <div style="margin: 32px 0 36px 0; background: #0b0e14; padding: 18px; border-radius: 8px; border: 1px solid #1e2533;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12.5px;">
+      <span style="color: #f8fafc; font-weight: 600;">FIG. 03 &middot; Empirical Scorecard: Tail TTFT, Cache Hit Rate &amp; Output Goodput</span>
+      <span style="color: #94a3b8; font-family: 'SF Mono', Menlo, monospace; font-size: 11px;">Verified Gate G1 &bull; 416 Requests/Stage</span>
+    </div>
+    <svg viewBox="0 0 740 280" width="100%" height="auto" style="display: block; margin: 0 auto; background: #080b11; border-radius: 6px; border: 1px solid #1e2533;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Horizontal bar chart comparing tail TTFT, cache hit rate, and goodput across Stage 1, Stage 2, and Stage 3">
+      <!-- Metric 1: Fork-Burst Tail TTFT (P95 ms) - Lower is better -->
+      <text x="24" y="30" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="700">Fork-Burst Tail TTFT (P95 ms &#183; Lower is better)</text>
+      
+      <!-- S1 Bar -->
+      <rect x="180" y="44" width="180" height="20" rx="3" fill="#475569" />
+      <text x="24" y="58" fill="#94a3b8" font-family="monospace" font-size="10.5">S1: Round-Robin</text>
+      <text x="368" y="58" fill="#cbd5e1" font-family="monospace" font-size="10">12,497 ms</text>
+
+      <!-- S2 Bar (Herd Spike) -->
+      <rect x="180" y="70" width="480" height="20" rx="3" fill="#dc2626" />
+      <text x="24" y="84" fill="#f87171" font-family="monospace" font-size="10.5" font-weight="700">S2: Naive Sticky</text>
+      <text x="668" y="84" fill="#fca5a5" font-family="monospace" font-size="10" font-weight="700">33,375 ms (Herd Collapse!)</text>
+
+      <!-- S3 Bar (FleetKV) -->
+      <rect x="180" y="96" width="45" height="20" rx="3" fill="#10b981" />
+      <text x="24" y="110" fill="#34d399" font-family="monospace" font-size="10.5" font-weight="700">S3: FleetKV Disagg</text>
+      <text x="233" y="110" fill="#6ee7b7" font-family="monospace" font-size="10" font-weight="700">2,507 ms Twin / 485 ms GKE (-86%)</text>
+
+      <!-- Metric 2: Cache Hit Rate (%) - Higher is better -->
+      <text x="24" y="146" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="700">Effective Prefix Hit Rate (% &#183; Higher is better)</text>
+      
+      <!-- S1 Hit -->
+      <rect x="180" y="158" width="138" height="18" rx="3" fill="#475569" />
+      <text x="24" y="172" fill="#94a3b8" font-family="monospace" font-size="10.5">S1: Round-Robin</text>
+      <text x="326" y="172" fill="#cbd5e1" font-family="monospace" font-size="10">30.8%</text>
+
+      <!-- S2 Hit -->
+      <rect x="180" y="180" width="280" height="18" rx="3" fill="#ea580c" />
+      <text x="24" y="194" fill="#fb923c" font-family="monospace" font-size="10.5">S2: Naive Sticky</text>
+      <text x="468" y="194" fill="#fdba74" font-family="monospace" font-size="10">62.5% (Thrashing)</text>
+
+      <!-- S3 Hit -->
+      <rect x="180" y="202" width="388" height="18" rx="3" fill="#10b981" />
+      <text x="24" y="216" fill="#34d399" font-family="monospace" font-size="10.5" font-weight="700">S3: FleetKV Disagg</text>
+      <text x="576" y="216" fill="#6ee7b7" font-family="monospace" font-size="10" font-weight="700">86.1% Twin / 91.6% GKE</text>
+
+      <!-- Metric 3: Cluster Output Goodput (tok/s) -->
+      <text x="24" y="248" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12" font-weight="700">Usable Output Goodput (SLO Compliant &#183; Higher is better)</text>
+      <rect x="180" y="258" width="80" height="14" rx="2" fill="#475569" />
+      <text x="268" y="270" fill="#cbd5e1" font-family="monospace" font-size="10">31.6 tok/s (1.0x)</text>
+
+      <rect x="360" y="258" width="46" height="14" rx="2" fill="#dc2626" />
+      <text x="414" y="270" fill="#fca5a5" font-family="monospace" font-size="10">18.5 tok/s (0.59x)</text>
+
+      <rect x="520" y="258" width="130" height="14" rx="2" fill="#10b981" />
+      <text x="658" y="270" fill="#6ee7b7" font-family="monospace" font-size="10" font-weight="700">134.7 tok/s (4.26x Twin / 2.55x GKE)</text>
+    </svg>
+    <p style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; color: #94a3b8; margin: 10px 0 0 0;">
+      Stage 2 doubles the cache hit rate on paper, but causes a 33.4-second herd stall and cuts goodput by 41%. Stage 3 eliminates evictions completely, driving goodput up by 4.26x on our Digital Twin and 2.55x on real Cloud TPU v6e hardware.
+    </p>
+  </div>
+
+  <!-- Scorecard Table -->
+  <div style="overflow-x: auto; margin: 28px 0 32px 0;">
+    <table style="width: 100%; border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; border: 1px solid #cbd5e1; font-variant-numeric: tabular-nums;">
+      <thead>
+        <tr style="background: #0b0e14; color: #f8fafc; text-align: left;">
+          <th style="padding: 10px 12px; border-bottom: 1px solid #334155;">Metric</th>
+          <th style="padding: 10px 12px; border-bottom: 1px solid #334155;">Stage 1: Round-Robin</th>
+          <th style="padding: 10px 12px; border-bottom: 1px solid #334155;">Stage 2: Naive Sticky</th>
+          <th style="padding: 10px 12px; border-bottom: 1px solid #334155;">Stage 3: FleetKV + Disagg</th>
+          <th style="padding: 10px 12px; border-bottom: 1px solid #334155;">Delta (S3 vs S1)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Prefix Hit Rate</td>
+          <td style="padding: 9px 12px;">30.79 %</td>
+          <td style="padding: 9px 12px;">62.48 % (thrashing)</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">86.07 %</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">+55.3 pts</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Median TTFT (P50)</td>
+          <td style="padding: 9px 12px;">6,498.4 ms</td>
+          <td style="padding: 9px 12px;">5,581.1 ms</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">1,152.7 ms</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">-82.3 %</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Fork Tail TTFT (P95)</td>
+          <td style="padding: 9px 12px;">12,082.8 ms</td>
+          <td style="padding: 9px 12px; color: #b91c1c; font-weight: 700;">33,376.6 ms (herd)</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">2,507.1 ms</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">-79.2 %</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Decode Jitter (P99 ITL)</td>
+          <td style="padding: 9px 12px;">133.12 ms</td>
+          <td style="padding: 9px 12px;">141.43 ms</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">33.12 ms</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">-75.1 % (&lt; 40ms)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Cluster Output Goodput</td>
+          <td style="padding: 9px 12px;">31.6 tok/s (1.0x)</td>
+          <td style="padding: 9px 12px; color: #b91c1c;">18.5 tok/s (0.59x)</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">134.7 tok/s</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">4.26x Goodput</td>
+        </tr>
+        <tr style="border-bottom: 2px solid #cbd5e1; background: #f8fafc;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #0f172a;">Twin: Lost HBM Evictions</td>
+          <td style="padding: 9px 12px;">17,377</td>
+          <td style="padding: 9px 12px; color: #b91c1c;">10,585</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #047857;">0 evictions</td>
+          <td style="padding: 9px 12px; color: #047857; font-weight: 700;">Zero Evictions</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">GKE Cloud TPU: Hit Rate</td>
+          <td style="padding: 9px 12px;">19.4 %</td>
+          <td style="padding: 9px 12px;">52.8 %</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">91.6 %</td>
+          <td style="padding: 9px 12px; color: #1e40af; font-weight: 700;">+72.2 pts</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">GKE Cloud TPU: P50 TTFT</td>
+          <td style="padding: 9px 12px;">2,710 ms</td>
+          <td style="padding: 9px 12px;">1,180 ms</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">315 ms</td>
+          <td style="padding: 9px 12px; color: #1e40af; font-weight: 700;">-88.4 %</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">GKE Cloud TPU: P95 Tail TTFT</td>
+          <td style="padding: 9px 12px;">3,420 ms</td>
+          <td style="padding: 9px 12px; color: #b91c1c; font-weight: 700;">3,890 ms (herd)</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">485 ms</td>
+          <td style="padding: 9px 12px; color: #1e40af; font-weight: 700;">-85.8 %</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">GKE Cloud TPU: P99 ITL</td>
+          <td style="padding: 9px 12px;">116 ms</td>
+          <td style="padding: 9px 12px;">98 ms</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">27 ms</td>
+          <td style="padding: 9px 12px; color: #1e40af; font-weight: 700;">-76.7 %</td>
+        </tr>
+        <tr style="background: #ffffff;">
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">GKE Cloud TPU: Goodput</td>
+          <td style="padding: 9px 12px;">1.0x</td>
+          <td style="padding: 9px 12px;">1.35x</td>
+          <td style="padding: 9px 12px; font-weight: 700; color: #1e40af;">2.55x</td>
+          <td style="padding: 9px 12px; color: #1e40af; font-weight: 700;">2.55x Goodput</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- =====================================================================
+       SECTION 5: PRODUCTION PLAYBOOK
+       ===================================================================== -->
+  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 24px; font-weight: 800; color: #111827; margin: 44px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid #d6d3cd; letter-spacing: -0.015em;">
+    5. Production Playbook and 5-Minute Reproduction
+  </h2>
+
+  <p style="margin: 0 0 20px 0;">
+    If you are running multi-agent workloads or large shared prompt prefixes on Kubernetes today, here is the production checklist:
+  </p>
+
+  <ol style="margin: 0 0 24px 0; padding-left: 24px; font-size: 17px; line-height: 1.7;">
+    <li style="margin-bottom: 10px;">
+      <strong>Never Deploy Naive Prefix-Sticky Routing Without Admission Gates:</strong> If your ingress controller routes purely on longest-prefix matches without verifying target worker queue depths and remaining HBM capacity, a sudden surge of agent branches will herd onto a single pod and blow up your tail latency.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Lock Step Block Sizes and Hash Seeds:</strong> Ensure your router and inference workers agree on token chunking. On TPU v6e, always use <code>--block-size 256</code> to avoid Pallas kernel SMEM overflows, and export <code>PYTHONHASHSEED="0"</code> across all pods.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Use Headless Services for Control-Plane Discovery:</strong> Do not point ZeroMQ or stateful gRPC telemetry subscribers at standard Kubernetes <code>ClusterIP</code> VIPs. Use <code>clusterIP: None</code> so your control plane maintains independent connections to every individual worker pod.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Size /dev/shm for Host DRAM Offloading:</strong> In your GKE manifests, mount an <code>emptyDir</code> with <code>medium: Memory</code> to <code>/dev/shm</code> sized to at least 64 GiB. Enabling <code>TPUConnectorHMA</code> allows vLLM to stage KV blocks into host memory, preventing cold systolic recomputations when HBM fills.
+    </li>
+    <li style="margin-bottom: 10px;">
+      <strong>Release Ingress Leases at TTFT:</strong> If you implement custom capacity accounting in Envoy or an API gateway, ensure prefill token leases are freed the millisecond <code>ResponseHeaders</code> are received. Holding prefill reservations during long decode loops will artificially throttle your cluster.
+    </li>
+  </ol>
+
+  <!-- Reproduction Card -->
+  <div style="background: #0b0e14; color: #f8fafc; border-radius: 8px; padding: 26px 28px; margin: 36px 0 16px 0; border: 1px solid #1e2533; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;">
+    <div style="font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #10b981; margin-bottom: 8px;">
+      Run the 3-Stage Benchmark on Your Laptop
+    </div>
+    <h3 style="font-size: 20px; font-weight: 700; color: #f8fafc; margin: 0 0 10px 0;">
+      Try FleetKV in 5 Minutes (Zero TPU Quota Required)
+    </h3>
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #cbd5e1; line-height: 1.6;">
+      The entire testbed—Envoy proxy, Go <code>fleetkv-epp</code> router, and multi-worker TPU digital twin—runs locally via native Go/Python harnesses or Docker Compose:
+    </p>
+
+    <div style="background: #080b11; border-radius: 6px; border: 1px solid #1e2533; padding: 12px 14px; margin: 0 0 18px 0; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; color: #38bdf8; line-height: 1.6;">
+      git clone https://github.com/rabimba/GDE-ML-Artifacts.git<br/>
+      cd GDE-ML-Artifacts/KubeCon26<br/>
+      make gate-all &nbsp;&nbsp;<span style="color: #64748b;"># Runs Go race tests + 3-stage physics + K8s audit</span><br/>
+      make gate-g1 &nbsp;&nbsp;&nbsp;<span style="color: #64748b;"># Runs just the 3-stage fork-storm benchmark</span>
+    </div>
+
+    <div style="font-size: 13.5px; line-height: 1.85; color: #cbd5e1; font-family: 'SF Mono', Menlo, Consolas, monospace;">
+      &rarr; <strong>Interactive Slide Deck:</strong> <a href="https://rabimba.github.io/GDE-ML-Artifacts/KubeCon26/slides/" rel="noopener" style="color: #10b981; text-decoration: underline;" target="_blank">rabimba.github.io/GDE-ML-Artifacts/KubeCon26/slides/</a><br/>
+      &rarr; <strong>Presenter Script &amp; Teleprompter:</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/blob/main/KubeCon26/slides/SPEAKER_NOTES_AND_SCRIPT.md" rel="noopener" style="color: #fbbf24; text-decoration: underline;" target="_blank">slides/SPEAKER_NOTES_AND_SCRIPT.md</a><br/>
+      &rarr; <strong>PowerPoint Deck (Google Cloud Labs Branded):</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/raw/main/KubeCon26/slides/KubeCon26-FleetKV-GKE.pptx" rel="noopener" style="color: #38bdf8; text-decoration: underline;" target="_blank">slides/KubeCon26-FleetKV-GKE.pptx</a><br/>
+      &rarr; <strong>Reference Source &amp; Manifests:</strong> <a href="https://github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26" rel="noopener" style="color: #cbd5e1; text-decoration: underline;" target="_blank">github.com/rabimba/GDE-ML-Artifacts/tree/main/KubeCon26</a>
+    </div>
+  </div>
+
+  <!-- Post Labels for Blogger -->
+  <p style="border-top: 1px solid #e2e8f0; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif; font-size: 12.5px; margin-top: 28px; padding-top: 14px;">
+    <strong>Labels:</strong> AI Systems, Cloud TPU, Envoy, GKE, Google Developer Expert, KubeCon, Kubernetes, LLM Serving, OpenXLA, vLLM
+  </p>
+</div>
+<!--===== END BLOGGER PASTE =====-->
